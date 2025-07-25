@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "JW Auto Clinic",
+    "slug": "jw-auto-clinic",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/splash-icon-light.png",
+    "scheme": "jwautoclinic",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "icon": {
+        "dark": "./assets/icons/ios-dark.png",
+        "light": "./assets/icons/ios-light.png",
+        "tinted": "./assets/icons/ios-tinted.png"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "monochromeImage": "./assets/icons/adaptive-icon.png",
+        "backgroundImage": "./assets/icons/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/icons/splash-icon-dark.png",
+          "resizeMode": "contain",
+          "imageWidth": 200
+        }
+      ],
+      "expo-mail-composer"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

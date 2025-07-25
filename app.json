@@ -2,6 +2,7 @@
   "expo": {
     "name": "JW Auto Clinic",
     "slug": "jw-auto-clinic",
+    "extra": "https://jw-auto-clinic-246.onrender.com"
     "platforms": [
       "ios",
       "android",

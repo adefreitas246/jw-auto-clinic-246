@@ -1,5 +1,5 @@
 ﻿// app/(customer)/home.tsx
-import { Colors, IconBg } from '@/constants/Colors';
+import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,7 +29,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: 'Browse Services',
     sub: 'Packages & add-ons',
     color: Colors.accent,
-    bg: IconBg.teal,
+    bg: Colors.accentMuted,
     route: '/(customer)/catalog',
   },
   {
@@ -37,7 +37,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: 'My Vehicles',
     sub: 'Manage saved cars',
     color: Colors.info,
-    bg: IconBg.blue,
+    bg: Colors.infoBg,
     route: '/(customer)/vehicles',
   },
   {
@@ -45,7 +45,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: 'Loyalty Rewards',
     sub: 'Points & milestones',
     color: Colors.warning,
-    bg: IconBg.amber,
+    bg: Colors.warningBg,
     route: '/(customer)/loyalty',
   },
   {
@@ -53,7 +53,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: 'Subscriptions',
     sub: 'Monthly wash plans',
     color: Colors.success,
-    bg: IconBg.green,
+    bg: Colors.successBg,
     route: '/(customer)/subscriptions',
   },
   {
@@ -61,7 +61,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: 'Refer a Friend',
     sub: 'Share code & earn',
     color: Colors.info,
-    bg: IconBg.blue,
+    bg: Colors.infoBg,
     route: '/(customer)/referral',
   },
 ];

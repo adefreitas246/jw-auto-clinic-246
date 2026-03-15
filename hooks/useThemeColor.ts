@@ -1,21 +1,20 @@
-/**
- * Learn more about light and dark modes:
- * https://docs.expo.dev/guides/color-schemes/
- */
-
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+
+// Maps the legacy Expo template colorName keys to our flat Colors tokens.
+const colorMap = {
+  text:       Colors.textPrimary,
+  background: Colors.background,
+  tint:       Colors.accent,
+  icon:       Colors.textMuted,
+  tabIconDefault:  Colors.textMuted,
+  tabIconSelected: Colors.accent,
+} as const;
+
+type ColorName = keyof typeof colorMap;
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+  colorName: ColorName,
 ) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
-
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
-  }
+  return props.light ?? colorMap[colorName];
 }

@@ -18,12 +18,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 
 import {
-import { Colors } from '@/constants/Colors';
   JobSummary,
   JobStatus,
   STAFF_STATUS_LABELS,
   STAFF_STATUS_COLORS,
 } from '@/types/job';
+import { Colors } from '@/constants/Colors';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function todayISO(): string {

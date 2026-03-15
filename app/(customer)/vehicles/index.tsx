@@ -182,7 +182,7 @@ export default function VehicleListScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f7fb' },
+  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   list: { padding: 16 },
   separator: { height: 8 },
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f3eafd',
+    backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#fdecea',
+    backgroundColor: Colors.errorBg,
     padding: 12,
     marginHorizontal: 16,
     marginTop: 12,

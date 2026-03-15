@@ -248,7 +248,7 @@ export default function CouponsScreen() {
                 <Switch
                   value={c.active}
                   onValueChange={() => handleToggle(c)}
-                  trackColor={{ false: Colors.border, true: '#a855f7' }}
+                  trackColor={{ false: Colors.border, true: Colors.accentLight }}
                   thumbColor={c.active ? Colors.accent : Colors.white}
                 />
               </View>
@@ -370,7 +370,7 @@ const cp = StyleSheet.create({
   err:          { fontSize: 11, color: Colors.error, marginTop: 3 },
   typeRow:      { flexDirection: 'row', gap: 8, marginTop: 6 },
   typeBtn:      { flex: 1, padding: 10, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, alignItems: 'center', backgroundColor: Colors.surfaceAlt },
-  typeBtnActive: { borderColor: Colors.accent, backgroundColor: '#f5f0ff' },
+  typeBtnActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   typeBtnText:  { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
   sheetBtns:    { flexDirection: 'row', gap: 12, marginTop: 20 },
   sheetCancel:  { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center' },

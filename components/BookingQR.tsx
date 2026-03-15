@@ -139,7 +139,7 @@ const q = StyleSheet.create({
     marginTop:       6,
     paddingHorizontal: 18,
     paddingVertical:  8,
-    backgroundColor:  '#f3eafd',
+    backgroundColor:  Colors.accentMuted,
     borderRadius:    999,
   },
   retryText: { fontSize: 13, fontWeight: '700', color: Colors.accent },

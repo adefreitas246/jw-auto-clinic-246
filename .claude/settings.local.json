@@ -3,7 +3,13 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(cd:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(powershell -Command \"$PSVersionTable.PSVersion\")",
+      "Bash(powershell -Command \"Write-Host $PSVersionTable.PSVersion\")",
+      "Bash(powershell -Command \"Write-Host \\($PSVersionTable.PSVersion.ToString\\(\\)\\)\")",
+      "Bash(powershell -NoProfile -Command \"Write-Host $host.Version\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\AddeS\\\\Documents\\\\ASD Inova Technologia\\\\jw-auto-clinic\\\\check-ps.ps1\")",
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"Get-Content 'C:\\\\Users\\\\AddeS\\\\Documents\\\\ASD Inova Technologia\\\\jw-auto-clinic\\\\add-colors-import.ps1' | Select-Object -Last 10\")"
     ]
   }
 }

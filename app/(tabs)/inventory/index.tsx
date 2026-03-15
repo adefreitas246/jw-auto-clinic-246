@@ -59,10 +59,10 @@ function stockLevel(item: InventoryItem): StockLevel {
 }
 
 const LEVEL_CONFIG: Record<StockLevel, { border: string; badge: string; text: string; label: string }> = {
-  ok:   { border: Colors.success, badge: '#d1fae5', text: Colors.success, label: 'In Stock'  },
+  ok:   { border: Colors.success, badge: Colors.successBg, text: Colors.success, label: 'In Stock'  },
   warn: { border: Colors.warning, badge: Colors.warningBg, text: Colors.warning, label: 'Watch'     },
   low:  { border: Colors.error, badge: Colors.errorBg, text: Colors.error, label: 'Low Stock' },
-  out:  { border: '#7c3aed', badge: '#ede9fe', text: '#7c3aed', label: 'Out'       },
+  out:  { border: Colors.accent, badge: Colors.accentMuted, text: Colors.accent, label: 'Out'       },
 };
 
 const ALL_CATEGORIES = [
@@ -436,7 +436,7 @@ export default function InventoryScreen() {
       {/* Offline banner */}
       {isOffline && (
         <View style={s.offlineBanner}>
-          <Ionicons name="cloud-offline-outline" size={14} color="#92400e" />
+          <Ionicons name="cloud-offline-outline" size={14} color={Colors.warning}Text />
           <Text style={s.offlineText}>Offline — showing cached data</Text>
         </View>
       )}
@@ -534,7 +534,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: {
@@ -545,7 +545,7 @@ const s = StyleSheet.create({
   sub:         { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   headerBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7,
+    backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7,
   },
   headerBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
@@ -554,7 +554,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.warningBg, marginHorizontal: 16, borderRadius: 8,
     paddingHorizontal: 12, paddingVertical: 6, marginBottom: 8,
   },
-  offlineText: { fontSize: 12, color: '#92400e', fontWeight: '600' },
+  offlineText: { fontSize: 12, color: Colors.warningText, fontWeight: '600' },
 
   // Search
   searchWrap: {
@@ -573,7 +573,7 @@ const s = StyleSheet.create({
     borderRadius: 99, borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 14, paddingVertical: 6, backgroundColor: Colors.white,
   },
-  catChipActive: { borderColor: Colors.accent, backgroundColor: '#f3eafd' },
+  catChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   catText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
   catTextActive: { color: Colors.accent },
 

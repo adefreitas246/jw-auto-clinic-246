@@ -34,7 +34,7 @@ function OfflineBanner({ lastSyncedAt }: { lastSyncedAt: number | null }) {
     : 'unknown';
   return (
     <View style={s.offlineBanner}>
-      <Ionicons name="cloud-offline-outline" size={15} color="#7a5200" />
+      <Ionicons name="cloud-offline-outline" size={15} color={Colors.warning}Text />
       <Text style={s.offlineText}>
         Offline — showing cached services{lastSyncedAt ? ` (synced ${when})` : ''}
       </Text>
@@ -319,7 +319,7 @@ export default function CatalogScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f7fb' },
+  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   list:      { padding: 16, paddingBottom: 32 },
 
@@ -328,19 +328,19 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#fff8e1',
+    backgroundColor: Colors.warningBg,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#ffe082',
+    borderBottomColor: Colors.warningBg,
   },
-  offlineText: { fontSize: 12, color: '#7a5200', flex: 1 },
+  offlineText: { fontSize: 12, color: Colors.warningText, flex: 1 },
 
   // Segment control
   segmentWrap: {
     flexDirection: 'row',
     margin: 16,
-    backgroundColor: '#e9e0f7',
+    backgroundColor: Colors.accentMuted,
     borderRadius: 10,
     padding: 3,
   },
@@ -367,11 +367,11 @@ const s = StyleSheet.create({
       android: { elevation: 2 },
     }),
   },
-  pkgCardSelected: { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
+  pkgCardSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   pkgHeader:       { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   pkgName:         { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
   pkgNameSelected: { color: Colors.accent },
-  pkgPriceBadge:   { backgroundColor: '#f3eafd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  pkgPriceBadge:   { backgroundColor: Colors.accentMuted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
   pkgPrice:        { fontSize: 14, fontWeight: '700', color: Colors.accent },
   pkgDesc:         { fontSize: 13, color: Colors.textSecondary, marginBottom: 8 },
   pkgServices:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },

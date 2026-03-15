@@ -190,7 +190,7 @@ const st = StyleSheet.create({
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
   content:   { flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 32 },
-  iconWrap:  { width: 90, height: 90, borderRadius: 45, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  iconWrap:  { width: 90, height: 90, borderRadius: 45, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   title:     { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
   subtitle:  { fontSize: 14, color: Colors.textSecondary, marginBottom: 28 },
 

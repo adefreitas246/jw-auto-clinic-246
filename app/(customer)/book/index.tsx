@@ -93,7 +93,7 @@ export default function BookVehicleStep() {
 }
 
 const s = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:      { flex: 1, backgroundColor: Colors.surfaceAlt },
   container: { flex: 1, padding: 20 },
   heading:   { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
   sub:       { fontSize: 14, color: Colors.textMuted, marginBottom: 24 },
@@ -103,7 +103,7 @@ const s = StyleSheet.create({
     backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 2, borderColor: Colors.accent,
     ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }),
   },
-  vehicleIcon: { width: 50, height: 50, borderRadius: 14, backgroundColor: '#f3eafd', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  vehicleIcon: { width: 50, height: 50, borderRadius: 14, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   vehicleBody: { flex: 1 },
   vehicleName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   vehicleNameMuted: { fontSize: 15, fontWeight: '600', color: Colors.textMuted },

@@ -209,7 +209,7 @@ export default function BookDateTimeStep() {
 const CELL = 44;
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   content: { padding: 16, paddingBottom: 120 },
 
   calCard:   { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginBottom: 20, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }) },

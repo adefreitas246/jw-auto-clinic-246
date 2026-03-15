@@ -137,7 +137,7 @@ export default function ForgotPasswordScreen() {
                 style={({ hovered }) => [
                   styles.backButton,
                   hovered &&
-                    Platform.OS === "web" && { backgroundColor: "#f3eaff" },
+                    Platform.OS === "web" && { backgroundColor: Colors.accentMuted },
                 ]}
               >
                 <Ionicons name="arrow-back" size={16} color={Colors.accent} />
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textAlign: "center",
     marginBottom: 8,
-    color: "#0d1321",
+    color: Colors.primaryDark,
   },
   subtext: {
     fontSize: 14,
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     marginTop: -8, // Optional to fine-tune spacing
   },
   // imageWrapper: {
-  //   backgroundColor: '#f3eaff',
+  //   backgroundColor: Colors.accentMuted,
   //   width: 260,
   //   height: 260,
   //   borderRadius: 130,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   //   marginBottom: 12,
   // },
   input: {
-    backgroundColor: "#f3f3f3",
+    backgroundColor: Colors.surfaceAlt,
     padding: 14,
     borderRadius: 10,
     marginBottom: 24,

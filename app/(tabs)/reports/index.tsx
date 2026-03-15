@@ -59,7 +59,7 @@ const CHART_BASE = {
   propsForBackgroundLines: { stroke: Colors.surfaceAlt },
 };
 
-const PIE_PALETTE = [Colors.accent, '#a855f7', '#ec4899', Colors.warning, Colors.success];
+const PIE_PALETTE = [Colors.accent, Colors.accentLight, Colors.error, Colors.warning, Colors.success];
 
 const REPORT_CARDS = [
   {
@@ -88,7 +88,7 @@ const REPORT_CARDS = [
     title: 'Service Analytics',
     desc:  'Service popularity, revenue per service, discount impact.',
     icon:  'car-sport-outline',
-    color: '#ec4899',
+    color: Colors.error,
   },
 ] as const;
 
@@ -370,7 +370,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const rd = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: {
@@ -421,7 +421,7 @@ const rd = StyleSheet.create({
   reportDesc:  { fontSize: 12, color: Colors.textMuted, lineHeight: 17 },
 
   exportBadges: { flexDirection: 'row', gap: 4 },
-  badge:        { borderRadius: 6, backgroundColor: '#f0fdf4', paddingHorizontal: 6, paddingVertical: 3 },
+  badge:        { borderRadius: 6, backgroundColor: Colors.successBg, paddingHorizontal: 6, paddingVertical: 3 },
   badgePdf:     { backgroundColor: Colors.error },
   badgeText:    { fontSize: 9, fontWeight: '800', color: Colors.success, letterSpacing: 0.3 },
 });

@@ -1,9 +1,9 @@
 ﻿// app/(customer)/vehicles/_form.tsx
 // Shared form for adding and editing a vehicle.
 // Not an Expo Router route (prefixed with _).
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,17 +16,18 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
+} from "react-native";
 
-import { useVehicles } from '@/hooks/useVehicles';
+import { Colors } from "@/constants/Colors";
+import { useVehicles } from "@/hooks/useVehicles";
 import {
-import { Colors } from '@/constants/Colors';
   EMPTY_VEHICLE_FORM,
   Vehicle,
-  VehicleForm,
   VEHICLE_SIZES,
+  VehicleForm,
   VehicleSize,
-} from '@/types/vehicle';
+} from "@/types/vehicle";
+import { Colors } from '@/constants/Colors';
 
 // ─── Camera modal ─────────────────────────────────────────────────────────────
 function PlateCamera({
@@ -58,10 +59,10 @@ function PlateCamera({
       if (photo?.base64) {
         onCapture(photo.base64);
       } else {
-        Alert.alert('Error', 'Could not capture image.');
+        Alert.alert("Error", "Could not capture image.");
       }
     } catch {
-      Alert.alert('Error', 'Camera capture failed.');
+      Alert.alert("Error", "Camera capture failed.");
     } finally {
       setCapturing(false);
     }
@@ -76,7 +77,9 @@ function PlateCamera({
               {/* Plate guide overlay */}
               <View style={cam.overlay}>
                 <View style={cam.guideBox} />
-                <Text style={cam.guideText}>Centre the licence plate in the box</Text>
+                <Text style={cam.guideText}>
+                  Centre the licence plate in the box
+                </Text>
               </View>
             </CameraView>
 
@@ -102,7 +105,9 @@ function PlateCamera({
           </>
         ) : (
           <View style={cam.permView}>
-            <Text style={cam.permText}>Camera permission is required to scan plates.</Text>
+            <Text style={cam.permText}>
+              Camera permission is required to scan plates.
+            </Text>
             <Pressable style={cam.permBtn} onPress={requestPermission}>
               <Text style={cam.permBtnText}>Grant Permission</Text>
             </Pressable>
@@ -118,7 +123,7 @@ function PlateCamera({
 
 // ─── Main form ────────────────────────────────────────────────────────────────
 interface Props {
-  mode: 'add' | 'edit';
+  mode: "add" | "edit";
 }
 
 export default function AddEditVehicleScreen({ mode }: Props) {
@@ -132,7 +137,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 
   // Populate form when editing
   useEffect(() => {
-    if (mode === 'edit' && id) {
+    if (mode === "edit" && id) {
       const existing = vehicles.find((v: Vehicle) => v._id === id);
       if (existing) {
         setForm({
@@ -149,7 +154,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
   }, [mode, id, vehicles]);
 
   const set = (field: keyof VehicleForm) => (value: string) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+    setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleCapture = async (base64: string) => {
     setCameraOpen(false);
@@ -157,37 +162,53 @@ export default function AddEditVehicleScreen({ mode }: Props) {
     try {
       const plate = await scanPlate(base64);
       if (plate) {
-        setForm(prev => ({ ...prev, licensePlate: plate, platePhotoUrl: '' }));
+        setForm((prev) => ({
+          ...prev,
+          licensePlate: plate,
+          platePhotoUrl: "",
+        }));
       } else {
-        Alert.alert('No plate detected', 'Please enter the licence plate manually.');
+        Alert.alert(
+          "No plate detected",
+          "Please enter the licence plate manually.",
+        );
       }
     } catch {
-      Alert.alert('OCR failed', 'Could not read the plate. Please type it manually.');
+      Alert.alert(
+        "OCR failed",
+        "Could not read the plate. Please type it manually.",
+      );
     } finally {
       setScanning(false);
     }
   };
 
   const validate = (): string | null => {
-    if (!form.make.trim())  return 'Make is required.';
-    if (!form.model.trim()) return 'Model is required.';
+    if (!form.make.trim()) return "Make is required.";
+    if (!form.model.trim()) return "Model is required.";
     return null;
   };
 
   const handleSave = async () => {
     const err = validate();
-    if (err) { Alert.alert('Validation', err); return; }
+    if (err) {
+      Alert.alert("Validation", err);
+      return;
+    }
 
     setSaving(true);
     try {
-      if (mode === 'add') {
+      if (mode === "add") {
         await addVehicle(form);
       } else if (id) {
         await updateVehicle(id, form);
       }
       router.back();
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.error ?? 'Could not save vehicle.');
+      Alert.alert(
+        "Error",
+        e?.response?.data?.error ?? "Could not save vehicle.",
+      );
     } finally {
       setSaving(false);
     }
@@ -203,7 +224,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           style={s.container}
@@ -216,7 +237,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
             style={s.input}
             placeholder="e.g. Toyota"
             value={form.make}
-            onChangeText={set('make')}
+            onChangeText={set("make")}
             autoCapitalize="words"
           />
 
@@ -226,7 +247,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
             style={s.input}
             placeholder="e.g. Corolla"
             value={form.model}
-            onChangeText={set('model')}
+            onChangeText={set("model")}
             autoCapitalize="words"
           />
 
@@ -237,7 +258,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
               style={[s.input, { flex: 1, marginBottom: 0 }]}
               placeholder="e.g. PBM 1234"
               value={form.licensePlate}
-              onChangeText={set('licensePlate')}
+              onChangeText={set("licensePlate")}
               autoCapitalize="characters"
             />
             <Pressable
@@ -259,7 +280,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
             style={s.input}
             placeholder="e.g. Silver"
             value={form.color}
-            onChangeText={set('color')}
+            onChangeText={set("color")}
             autoCapitalize="words"
           />
 
@@ -270,9 +291,16 @@ export default function AddEditVehicleScreen({ mode }: Props) {
               <Pressable
                 key={sz}
                 style={[s.sizePill, form.size === sz && s.sizePillActive]}
-                onPress={() => setForm(prev => ({ ...prev, size: sz as VehicleSize }))}
+                onPress={() =>
+                  setForm((prev) => ({ ...prev, size: sz as VehicleSize }))
+                }
               >
-                <Text style={[s.sizePillText, form.size === sz && s.sizePillTextActive]}>
+                <Text
+                  style={[
+                    s.sizePillText,
+                    form.size === sz && s.sizePillTextActive,
+                  ]}
+                >
                   {sz}
                 </Text>
               </Pressable>
@@ -285,7 +313,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
             style={[s.input, s.multiline]}
             placeholder="Any special instructions or details…"
             value={form.notes}
-            onChangeText={set('notes')}
+            onChangeText={set("notes")}
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -301,7 +329,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
               <ActivityIndicator color={Colors.white} />
             ) : (
               <Text style={s.saveBtnText}>
-                {mode === 'add' ? 'Add Vehicle' : 'Save Changes'}
+                {mode === "add" ? "Add Vehicle" : "Save Changes"}
               </Text>
             )}
           </Pressable>
@@ -313,10 +341,16 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f7fb' },
-  content:   { padding: 20, paddingBottom: 48 },
+  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
+  content: { padding: 20, paddingBottom: 48 },
 
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 6, marginTop: 14 },
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textPrimary,
+    marginBottom: 6,
+    marginTop: 14,
+  },
   input: {
     backgroundColor: Colors.white,
     borderRadius: 10,
@@ -330,20 +364,20 @@ const s = StyleSheet.create({
   },
   multiline: { minHeight: 80, paddingTop: 10 },
 
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  row: { flexDirection: "row", alignItems: "center", gap: 8 },
 
   scanBtn: {
     backgroundColor: Colors.accent,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     minWidth: 100,
   },
-  scanBtnText: { color: Colors.white, fontWeight: '600', fontSize: 14 },
+  scanBtnText: { color: Colors.white, fontWeight: "600", fontSize: 14 },
 
-  sizeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  sizeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
   sizePill: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -352,28 +386,31 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  sizePillActive:     { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  sizePillText:       { fontSize: 13, color: Colors.textSecondary },
-  sizePillTextActive: { color: Colors.white, fontWeight: '600' },
+  sizePillActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  sizePillText: { fontSize: 13, color: Colors.textSecondary },
+  sizePillTextActive: { color: Colors.white, fontWeight: "600" },
 
   saveBtn: {
     backgroundColor: Colors.accent,
     borderRadius: 12,
     paddingVertical: 14,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 24,
   },
-  saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 });
 
 // Camera modal styles
 const cam = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.black },
-  preview:   { flex: 1 },
+  preview: { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   guideBox: {
     width: 280,
@@ -381,18 +418,18 @@ const cam = StyleSheet.create({
     borderWidth: 2,
     borderColor: Colors.white,
     borderRadius: 8,
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
   },
   guideText: {
     color: Colors.white,
     marginTop: 12,
     fontSize: 13,
-    textAlign: 'center',
+    textAlign: "center",
   },
   toolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 24,
     paddingVertical: 20,
     backgroundColor: Colors.black,
@@ -402,8 +439,8 @@ const cam = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   captureInner: {
     width: 52,
@@ -414,13 +451,23 @@ const cam = StyleSheet.create({
   cancelBtn: { padding: 8 },
   cancelText: { color: Colors.white, fontSize: 15 },
 
-  permView: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  permText: { color: Colors.white, fontSize: 15, textAlign: 'center', marginBottom: 20 },
+  permView: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+  },
+  permText: {
+    color: Colors.white,
+    fontSize: 15,
+    textAlign: "center",
+    marginBottom: 20,
+  },
   permBtn: {
     backgroundColor: Colors.accent,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
   },
-  permBtnText: { color: Colors.white, fontWeight: '700' },
+  permBtnText: { color: Colors.white, fontWeight: "700" },
 });

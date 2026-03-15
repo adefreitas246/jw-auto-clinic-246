@@ -233,7 +233,7 @@ export default function BookReviewStep() {
 }
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   content: { padding: 20, paddingBottom: 120 },
   heading: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 16 },
 
@@ -244,14 +244,14 @@ const s = StyleSheet.create({
   rowLabel:   { fontSize: 13, color: Colors.textMuted, width: 72 },
   rowValue:   { flex: 1, fontSize: 14, fontWeight: '600', color: Colors.textPrimary, textAlign: 'right' },
 
-  priceCard:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f3eafd', borderRadius: 12, padding: 16, marginBottom: 20 },
+  priceCard:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: Colors.accentMuted, borderRadius: 12, padding: 16, marginBottom: 20 },
   priceLabel:  { fontSize: 14, fontWeight: '700', color: Colors.accent },
   priceAmount: { fontSize: 24, fontWeight: '800', color: Colors.accent },
 
   sectionTitle: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10, marginTop: 4 },
   paymentRow:  { flexDirection: 'row', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
   payBtn:      { flex: 1, minWidth: 90, flexDirection: 'column', alignItems: 'center', gap: 4, backgroundColor: Colors.white, borderRadius: 12, paddingVertical: 12, borderWidth: 2, borderColor: Colors.border },
-  payBtnActive:{ borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
+  payBtnActive:{ borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   payBtnText:  { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
   payBtnTextActive: { color: Colors.accent },
 
@@ -259,10 +259,10 @@ const s = StyleSheet.create({
 
   couponRow:        { flexDirection: 'row', gap: 8, marginBottom: 6 },
   couponInput:      { flex: 1, backgroundColor: Colors.white, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontWeight: '600', letterSpacing: 1, color: Colors.textPrimary },
-  couponInputValid: { borderColor: Colors.success, backgroundColor: '#f0fdf4' },
+  couponInputValid: { borderColor: Colors.success, backgroundColor: Colors.successBg },
   couponApplyBtn:   { backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center' },
   couponApplyText:  { color: Colors.white, fontWeight: '700', fontSize: 13 },
-  couponRemoveBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, backgroundColor: '#fef2f2', borderRadius: 10, borderWidth: 1, borderColor: '#fca5a5' },
+  couponRemoveBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, backgroundColor: Colors.errorBg, borderRadius: 10, borderWidth: 1, borderColor: Colors.errorBg },
   couponRemoveText: { color: Colors.error, fontWeight: '600', fontSize: 12 },
   couponMsg:        { fontSize: 12, marginBottom: 12, fontWeight: '600' },
   couponMsgOk:      { color: Colors.success },

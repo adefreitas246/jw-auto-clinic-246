@@ -99,7 +99,7 @@ export default function ResetPasswordScreen() {
       case "Weak":
         return "red";
       case "Medium":
-        return "#f0ad4e";
+        return Colors.warning;
       case "Strong":
         return "green";
       default:
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     marginBottom: -50,
   },
   input: {
-    backgroundColor: "#f3f3f3",
+    backgroundColor: Colors.surfaceAlt,
     padding: 14,
     borderRadius: 10,
     marginBottom: 24,

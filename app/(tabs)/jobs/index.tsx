@@ -244,7 +244,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const jd = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Header
@@ -256,7 +256,7 @@ const jd = StyleSheet.create({
   sub:      { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   adminBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: '#f3eafd', borderRadius: 99,
+    backgroundColor: Colors.accentMuted, borderRadius: 99,
     paddingHorizontal: 12, paddingVertical: 7,
   },
   adminBtnText: { fontSize: 13, fontWeight: '700', color: Colors.accent },

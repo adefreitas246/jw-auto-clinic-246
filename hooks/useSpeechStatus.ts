@@ -2,16 +2,13 @@
 // Wraps expo-speech for customer job-status readout.
 //
 // • Reads user preference from AsyncStorage key 'voice_status_enabled'
-// • Checks silent mode via expo-av before speaking
+// • Checks silent mode via expo-audio before speaking
 // • Stops any in-progress speech on unmount
 //
 // Usage:
 //   const { speak, stop, voiceEnabled, setVoiceEnabled } = useSpeechStatus();
-//
-// Requires:
-//   npx expo install expo-speech expo-av
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Audio } from 'expo-av';
+import { setAudioModeAsync } from 'expo-audio';
 import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -46,10 +43,10 @@ export function useSpeechStatus(): UseSpeechStatus {
 
     // Check if audio is available (respects silent mode on iOS)
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS:   false,
-        playsInSilentModeIOS: false, // won't play if silent mode is on
-        staysActiveInBackground: false,
+      await setAudioModeAsync({
+        allowsRecording:        false,
+        playsInSilentMode:      false, // won't play if silent mode is on
+        shouldPlayInBackground: false,
       });
     } catch {
       // If audio setup fails, skip speech

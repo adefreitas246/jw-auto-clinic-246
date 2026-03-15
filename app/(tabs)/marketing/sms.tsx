@@ -249,22 +249,22 @@ const sm = StyleSheet.create({
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  statusBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fffbeb', borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#fde68a' },
+  statusBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.warningBg, borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: Colors.warningBg },
   statusIcon:   { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.warningBg, justifyContent: 'center', alignItems: 'center' },
-  statusTitle:  { fontSize: 14, fontWeight: '700', color: '#92400e', marginBottom: 2 },
-  statusDesc:   { fontSize: 12, color: '#78350f', lineHeight: 18 },
+  statusTitle:  { fontSize: 14, fontWeight: '700', color: Colors.warningText, marginBottom: 2 },
+  statusDesc:   { fontSize: 12, color: Colors.warningText, lineHeight: 18 },
 
   section:      { marginBottom: 16 },
   sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
 
   flowCard: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: Colors.border },
   flowStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  flowDot:  { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center' },
+  flowDot:  { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
   flowLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', flex: 1 },
   flowLine: { position: 'absolute', left: 15, top: 32, width: 2, height: 20, backgroundColor: Colors.border },
 
   stepCard:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
-  stepNum:     { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.accent },
+  stepNum:     { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.accent },
   stepNumDone: { backgroundColor: Colors.success, borderColor: Colors.success },
   stepNumText: { fontSize: 13, fontWeight: '800', color: Colors.accent },
   stepTitle:   { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
@@ -277,10 +277,10 @@ const sm = StyleSheet.create({
   providerName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   providerDesc: { fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginBottom: 8 },
   envChips:    { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  envChip:     { backgroundColor: '#1e1b4b', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 4 },
-  envChipText: { fontSize: 9, fontWeight: '700', color: '#e0e7ff', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
+  envChip:     { backgroundColor: Colors.primaryDark, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 4 },
+  envChipText: { fontSize: 9, fontWeight: '700', color: Colors.accentMuted, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
 
-  codeRef:     { flexDirection: 'row', gap: 10, backgroundColor: '#f5f0ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#d8b4fe', alignItems: 'flex-start' },
+  codeRef:     { flexDirection: 'row', gap: 10, backgroundColor: Colors.accentMuted, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.accentLight, alignItems: 'flex-start' },
   codeRefText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 20, flex: 1 },
   codeRefFile: { fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', color: Colors.accent, fontWeight: '700' },
 

@@ -335,7 +335,7 @@ export default function ScannerScreen() {
 // ─── Styles: scanner ─────────────────────────────────────────────────────────
 
 const sc = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
 
   header: {

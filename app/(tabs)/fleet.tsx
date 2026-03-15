@@ -391,9 +391,9 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const fl = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:           { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0edf8' },
+  mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
 
   // ── Floating header ──
   headerOverlay: {
@@ -422,7 +422,7 @@ const fl = StyleSheet.create({
 
   countChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: '#f0edf8', borderRadius: 999,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 999,
     paddingHorizontal: 10, paddingVertical: 3,
   },
   chipDot:    { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.success },
@@ -449,7 +449,7 @@ const fl = StyleSheet.create({
   },
   markerAvatarSel: {
     width: 46, height: 46, borderRadius: 23,
-    backgroundColor: '#4a0090',
+    backgroundColor: Colors.primary,
     borderWidth: 3, borderColor: Colors.white,
   },
   markerInitials:    { fontSize: 13, fontWeight: '800', color: Colors.white },
@@ -499,7 +499,7 @@ const fl = StyleSheet.create({
   onlineText:     { fontSize: 12, color: Colors.success, fontWeight: '600' },
   rolePill: {
     fontSize: 11, color: Colors.accent, fontWeight: '700',
-    backgroundColor: '#f0edf8', borderRadius: 999,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 999,
     paddingHorizontal: 8, paddingVertical: 2,
   },
   closeBtn: {
@@ -522,7 +522,7 @@ const fl = StyleSheet.create({
   // ── Error toast ──
   errorToast: {
     position: 'absolute', bottom: 100, left: 16, right: 16,
-    backgroundColor: '#fff3f3',
+    backgroundColor: Colors.errorBg,
     borderRadius: 12, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderLeftWidth: 3, borderLeftColor: Colors.error,

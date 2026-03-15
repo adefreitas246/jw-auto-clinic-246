@@ -212,7 +212,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
     marginVertical: 3,
   },
-  rowActive: { backgroundColor: '#f3eafd' },
+  rowActive: { backgroundColor: Colors.accentMuted },
   iconWrap: {
     width: 36,
     height: 36,

@@ -17,7 +17,7 @@ const FEATURES = [
     route:       '/(tabs)/ai/schedule',
     icon:        'calendar-outline',
     color:       Colors.accent,
-    bg:          '#f3eafd',
+    bg:          Colors.accentMuted,
     title:       'Smart Scheduling',
     description: 'AI recommends the optimal time slot and best technician for a new booking based on current workload.',
     badge:       'Scheduling',
@@ -26,7 +26,7 @@ const FEATURES = [
     route:       '/(tabs)/ai/insights',
     icon:        'bar-chart-outline',
     color:       Colors.accent,
-    bg:          '#e8f4fd',
+    bg:          Colors.accentMuted,
     title:       'Demand Insights',
     description: 'Analyse 90 days of bookings to identify peak hours, slow days, and get 3 staffing recommendations.',
     badge:       'Analytics',
@@ -35,7 +35,7 @@ const FEATURES = [
     route:       '/(tabs)/ai/pricing',
     icon:        'pricetag-outline',
     color:       Colors.success,
-    bg:          '#ecfdf5',
+    bg:          Colors.successBg,
     title:       'Dynamic Pricing',
     description: 'Claude checks live queue depth vs. historical demand and suggests a surcharge or discount right now.',
     badge:       'Pricing',
@@ -119,7 +119,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { padding: 20, paddingBottom: 48, gap: 14 },
 
@@ -140,7 +140,7 @@ const s = StyleSheet.create({
 
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#f3eafd', borderRadius: 12, padding: 12,
+    backgroundColor: Colors.accentMuted, borderRadius: 12, padding: 12,
   },
   infoText: { flex: 1, fontSize: 12, color: Colors.accent, lineHeight: 18 },
 

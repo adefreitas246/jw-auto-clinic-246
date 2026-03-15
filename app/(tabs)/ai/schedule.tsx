@@ -325,7 +325,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { padding: 20, paddingBottom: 60, gap: 14 },
 
@@ -339,9 +339,9 @@ const s = StyleSheet.create({
   claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 
   descCard: {
-    backgroundColor: '#f3eafd', borderRadius: 14, padding: 14,
+    backgroundColor: Colors.accentMuted, borderRadius: 14, padding: 14,
   },
-  descText: { fontSize: 13, color: '#4b1683', lineHeight: 20 },
+  descText: { fontSize: 13, color: Colors.primary, lineHeight: 20 },
 
   formCard: {
     backgroundColor: Colors.white, borderRadius: 16, padding: 18, gap: 10, ...SHADOW,
@@ -370,10 +370,10 @@ const s = StyleSheet.create({
 
   warnCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fffbeb', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#fde68a',
+    backgroundColor: Colors.warningBg, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: Colors.warningBg,
   },
-  warnText: { flex: 1, fontSize: 13, color: '#92400e' },
+  warnText: { flex: 1, fontSize: 13, color: Colors.warningText },
 
   askBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -387,17 +387,17 @@ const s = StyleSheet.create({
 
   errCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fef2f2', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#fca5a5',
+    backgroundColor: Colors.errorBg, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: Colors.errorBg,
   },
   errCardText: { flex: 1, fontSize: 13, color: Colors.error },
 
   acceptedCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#ecfdf5', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#6ee7b7',
+    backgroundColor: Colors.successBg, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: Colors.accentLight,
   },
-  acceptedText: { fontSize: 13, color: '#065f46', fontWeight: '600' },
+  acceptedText: { fontSize: 13, color: Colors.successText, fontWeight: '600' },
 });
 
 // ─── Banner styles ────────────────────────────────────────────────────────────
@@ -409,7 +409,7 @@ const b = StyleSheet.create({
     padding: 20,
     gap: 16,
     borderWidth: 2,
-    borderColor: '#d8b4fe',
+    borderColor: Colors.accentLight,
     ...Platform.select({
       ios:     { shadowColor: Colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
@@ -426,13 +426,13 @@ const b = StyleSheet.create({
   timeRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   timePill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#f3eafd', borderRadius: 99,
+    backgroundColor: Colors.accentMuted, borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 8,
   },
   timePillText:  { fontSize: 20, fontWeight: '900', color: Colors.accent, letterSpacing: 1 },
   staffPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#e8f4fd', borderRadius: 99,
+    backgroundColor: Colors.accentMuted, borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 8,
   },
   staffPillText: { fontSize: 14, fontWeight: '700', color: Colors.accent },

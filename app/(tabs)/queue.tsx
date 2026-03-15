@@ -61,11 +61,11 @@ interface QueueEntry {
 const REFRESH_INTERVAL = 20; // seconds
 
 const STATUS_CONFIG: Record<QStatus, { label: string; bg: string; text: string; dot: string }> = {
-  waiting:    { label: 'Waiting',     bg: '#e8f0fe', text: Colors.accent, dot: Colors.accent },
+  waiting:    { label: 'Waiting',     bg: Colors.accentMuted, text: Colors.accent, dot: Colors.accent },
   called:     { label: 'Called',      bg: Colors.warningBg, text: Colors.warning, dot: Colors.warning },
-  in_service: { label: 'In Service',  bg: '#d1fae5', text: Colors.success, dot: Colors.success },
+  in_service: { label: 'In Service',  bg: Colors.successBg, text: Colors.success, dot: Colors.success },
   completed:  { label: 'Completed',   bg: Colors.surfaceAlt, text: Colors.textSecondary, dot: Colors.textMuted },
-  skipped:    { label: 'Skipped',     bg: '#fce7f3', text: '#be185d', dot: '#ec4899' },
+  skipped:    { label: 'Skipped',     bg: Colors.errorBg, text: Colors.error, dot: Colors.error },
   cancelled:  { label: 'Cancelled',   bg: Colors.errorBg, text: Colors.error, dot: Colors.error },
 };
 
@@ -187,7 +187,7 @@ function QueueCard({
             <>
               <ActionChip label="Call"   color={Colors.warning} icon="megaphone-outline"
                 onPress={() => onAction(entry._id, 'called')} />
-              <ActionChip label="Skip"   color="#be185d" icon="arrow-forward-outline"
+              <ActionChip label="Skip"   color={Colors.error} icon="arrow-forward-outline"
                 onPress={() => onAction(entry._id, 'skipped')} />
             </>
           )}
@@ -197,7 +197,7 @@ function QueueCard({
                 onPress={() => onAction(entry._id, 'in_service')} />
               <ActionChip label="Re-queue" color={Colors.accent} icon="refresh-outline"
                 onPress={() => onAction(entry._id, 'waiting')} />
-              <ActionChip label="Skip"     color="#be185d" icon="arrow-forward-outline"
+              <ActionChip label="Skip"     color={Colors.error} icon="arrow-forward-outline"
                 onPress={() => onAction(entry._id, 'skipped')} />
             </>
           )}
@@ -447,7 +447,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const qd = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Header
@@ -467,7 +467,7 @@ const qd = StyleSheet.create({
   tvBtnActive: { backgroundColor: Colors.accent },
   walkinBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#f3eafd', borderRadius: 99,
+    backgroundColor: Colors.accentMuted, borderRadius: 99,
     paddingHorizontal: 11, paddingVertical: 6, marginLeft: 8,
   },
   walkinBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
@@ -507,7 +507,7 @@ const qd = StyleSheet.create({
   cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   numCircle: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#f3eafd', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center',
   },
   numText:  { fontSize: 13, fontWeight: '800', color: Colors.accent },
   name:     { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },

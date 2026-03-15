@@ -189,7 +189,7 @@ export default function PackageFormScreen({ mode }: Props) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f7fb' },
+  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
   content:   { padding: 20, paddingBottom: 48 },
   label:     { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 6, marginTop: 14 },
   hint:      { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic' },
@@ -198,13 +198,13 @@ const s = StyleSheet.create({
 
   checklist:    { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
   checkRow:     { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.background },
-  checkRowActive: { backgroundColor: '#fdf8ff' },
+  checkRowActive: { backgroundColor: Colors.accentMuted },
   checkBody:    { flex: 1, marginLeft: 10 },
   checkName:    { fontSize: 14, color: Colors.textPrimary },
   checkNameActive: { color: Colors.accent, fontWeight: '600' },
   checkMeta:    { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
 
-  sumRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f3eafd', borderRadius: 10, padding: 12, marginTop: 10 },
+  sumRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: Colors.accentMuted, borderRadius: 10, padding: 12, marginTop: 10 },
   sumLabel: { fontSize: 13, color: Colors.accent },
   sumValue: { fontSize: 16, fontWeight: '700', color: Colors.accent },
 

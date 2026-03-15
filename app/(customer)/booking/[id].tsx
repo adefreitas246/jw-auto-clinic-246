@@ -42,10 +42,10 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; icon: string }
 > = {
-  pending_payment: { label: 'Awaiting Payment', color: Colors.warning, bg: '#fff3e0', icon: 'time-outline'          },
-  confirmed:       { label: 'Confirmed',         color: Colors.accent, bg: '#f3eafd', icon: 'checkmark-circle'     },
-  cancelled:       { label: 'Cancelled',          color: Colors.error, bg: '#ffebee', icon: 'close-circle'        },
-  completed:       { label: 'Completed',          color: Colors.success, bg: '#e8f5e9', icon: 'checkmark-done-circle'},
+  pending_payment: { label: 'Awaiting Payment', color: Colors.warning, bg: Colors.warningBg, icon: 'time-outline'          },
+  confirmed:       { label: 'Confirmed',         color: Colors.accent, bg: Colors.accentMuted, icon: 'checkmark-circle'     },
+  cancelled:       { label: 'Cancelled',          color: Colors.error, bg: Colors.errorBg, icon: 'close-circle'        },
+  completed:       { label: 'Completed',          color: Colors.success, bg: Colors.successBg, icon: 'checkmark-done-circle'},
 };
 
 const JOB_STATUS_LABELS: Record<string, string> = {
@@ -301,7 +301,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
 
   header: {
@@ -348,7 +348,7 @@ const s = StyleSheet.create({
 
   checkedInBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#e8f5e9', borderRadius: 12, padding: 14,
+    backgroundColor: Colors.successBg, borderRadius: 12, padding: 14,
     marginHorizontal: 16, marginBottom: 14,
     borderLeftWidth: 3, borderLeftColor: Colors.success,
   },
@@ -357,13 +357,13 @@ const s = StyleSheet.create({
   actions:  { marginHorizontal: 16, gap: 10 },
   trackBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#f3eafd', borderRadius: 14, paddingVertical: 14,
+    backgroundColor: Colors.accentMuted, borderRadius: 14, paddingVertical: 14,
   },
   trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
   cancelBtn:    { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.error },
   cancelBtnText:{ color: Colors.error, fontSize: 15, fontWeight: '700' },
 
   errorText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
-  retryBtn:  { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: '#f3eafd', borderRadius: 999 },
+  retryBtn:  { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: Colors.accentMuted, borderRadius: 999 },
   retryText: { color: Colors.accent, fontWeight: '700' },
 });

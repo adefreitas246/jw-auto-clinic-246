@@ -651,7 +651,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const wf = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
@@ -674,7 +674,7 @@ const wf = StyleSheet.create({
   },
   sectionTitle:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  micBtn:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 },
+  micBtn:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 },
   micBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   // Summary
@@ -705,7 +705,7 @@ const wf = StyleSheet.create({
   // Done card
   doneCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#e8f5e9', borderRadius: 14, padding: 16,
+    backgroundColor: Colors.successBg, borderRadius: 14, padding: 16,
     marginHorizontal: 16, marginBottom: 14,
   },
   doneText: { fontSize: 14, fontWeight: '700', color: Colors.success, flex: 1 },
@@ -716,7 +716,7 @@ const wf = StyleSheet.create({
     flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
     backgroundColor: Colors.background,
   },
-  labelBtnActive:     { backgroundColor: '#f3eafd' },
+  labelBtnActive:     { backgroundColor: Colors.accentMuted },
   labelBtnText:       { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
   labelBtnTextActive: { color: Colors.accent },
 
@@ -724,7 +724,7 @@ const wf = StyleSheet.create({
   captureRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   captureBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
-    backgroundColor: '#f3eafd', borderRadius: 12, paddingVertical: 12,
+    backgroundColor: Colors.accentMuted, borderRadius: 12, paddingVertical: 12,
   },
   captureBtnText: { fontSize: 14, fontWeight: '700', color: Colors.accent },
 
@@ -752,13 +752,13 @@ const wf = StyleSheet.create({
 
   // Notes
   notesInput: {
-    backgroundColor: '#f7f7fb', borderRadius: 10, padding: 12,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 10, padding: 12,
     fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 12,
     borderWidth: 1, borderColor: Colors.border,
   },
   saveNotesBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: '#f3eafd', borderRadius: 10, paddingVertical: 10,
+    backgroundColor: Colors.accentMuted, borderRadius: 10, paddingVertical: 10,
   },
   saveNotesBtnText: { color: Colors.accent, fontWeight: '700', fontSize: 14 },
 });

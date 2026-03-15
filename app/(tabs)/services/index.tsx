@@ -171,7 +171,7 @@ export default function ManageServicesScreen() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f7fb' },
+  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { color: Colors.textMuted, marginTop: 12, fontSize: 14 },
   sep:       { height: 8 },

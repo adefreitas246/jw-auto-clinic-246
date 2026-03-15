@@ -148,11 +148,11 @@ const rf = StyleSheet.create({
 
   card:     { backgroundColor: Colors.white, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: Colors.border },
   cardTop:  { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  avatar:   { width: 38, height: 38, borderRadius: 19, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center' },
+  avatar:   { width: 38, height: 38, borderRadius: 19, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
   avatarText: { fontSize: 15, fontWeight: '700', color: Colors.accent },
   name:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   email:    { fontSize: 11, color: Colors.textMuted },
-  codeBadge: { backgroundColor: '#f5f0ff', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
+  codeBadge: { backgroundColor: Colors.accentMuted, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
   codeText:  { fontSize: 13, fontWeight: '800', color: Colors.accent, letterSpacing: 1 },
   statsRow2: { flexDirection: 'row', gap: 16 },
   miniStat:  { flexDirection: 'row', alignItems: 'center', gap: 4 },

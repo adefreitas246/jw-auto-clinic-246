@@ -1,4 +1,4 @@
-// app/auth/login.tsx
+﻿// app/auth/login.tsx
 import { SECURE_STORE_KEYS } from "@/constants/secureStoreKeys";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/AuthContext";
@@ -35,6 +35,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { Colors } from '@/constants/Colors';
 
 // Required for expo-auth-session on native
 WebBrowser.maybeCompleteAuthSession();
@@ -500,7 +501,7 @@ const s = StyleSheet.create({
     paddingVertical: 13, marginBottom: 12,
     backgroundColor: Colors.surface,
   },
-  googleG:     { fontSize: 16, fontWeight: '800', color: '#4285F4', width: 20, textAlign: 'center' },
+  googleG:     { fontSize: 16, fontWeight: '800', color: Colors.accent, width: 20, textAlign: 'center' },
   oauthBtnText:{ fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
 
   appleBtn: { width: '100%', height: 50, marginBottom: 12 },

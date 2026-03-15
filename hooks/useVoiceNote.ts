@@ -1,12 +1,14 @@
 // hooks/useVoiceNote.ts
-// expo-av Audio.Recording wrapper for staff voice notes.
+// expo-audio AudioRecorder wrapper for staff voice notes.
 //
 // Usage:
 //   const { state, duration, uri, startRecording, stopRecording, cancelRecording, reset } = useVoiceNote();
-//
-// Requires:
-//   npx expo install expo-av
-import { Audio } from 'expo-av';
+import {
+  RecordingPresets,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  useAudioRecorder,
+} from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type VoiceNoteState = 'idle' | 'recording' | 'stopped';
@@ -26,77 +28,67 @@ export function useVoiceNote(): UseVoiceNote {
   const [duration, setDuration] = useState(0);
   const [uri,      setUri]      = useState<string | null>(null);
 
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
-      if (timerRef.current)     clearInterval(timerRef.current);
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => {});
-      }
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
   const startRecording = useCallback(async () => {
-    const { granted } = await Audio.requestPermissionsAsync();
+    const { granted } = await requestRecordingPermissionsAsync();
     if (!granted) throw new Error('Microphone permission denied');
 
     // iOS: allow recording even when ringer is silent
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS:    true,
-      playsInSilentModeIOS:  true,
+    await setAudioModeAsync({
+      allowsRecording:   true,
+      playsInSilentMode: true,
     });
 
-    const { recording } = await Audio.Recording.createAsync(
-      Audio.RecordingOptionsPresets.HIGH_QUALITY
-    );
+    await recorder.prepareToRecordAsync();
+    recorder.record();
 
-    recordingRef.current = recording;
     setState('recording');
     setDuration(0);
     setUri(null);
 
     timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
-  }, []);
+  }, [recorder]);
 
   const stopRecording = useCallback(async (): Promise<string | null> => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (!recordingRef.current) return null;
 
-    await recordingRef.current.stopAndUnloadAsync();
-    const fileUri = recordingRef.current.getURI() ?? null;
-    recordingRef.current = null;
+    await recorder.stop();
+    const fileUri = recorder.uri ?? null;
 
     // Restore audio mode so the player can play back through speaker
-    await Audio.setAudioModeAsync({
-      allowsRecordingIOS:   false,
-      playsInSilentModeIOS: true,
+    await setAudioModeAsync({
+      allowsRecording:   false,
+      playsInSilentMode: true,
     });
 
     setState('stopped');
     setUri(fileUri);
     return fileUri;
-  }, []);
+  }, [recorder]);
 
   const cancelRecording = useCallback(async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (recordingRef.current) {
-      try { await recordingRef.current.stopAndUnloadAsync(); } catch {}
-      recordingRef.current = null;
-    }
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false }).catch(() => {});
+    try { await recorder.stop(); } catch {}
+    await setAudioModeAsync({ allowsRecording: false }).catch(() => {});
     setState('idle');
     setDuration(0);
     setUri(null);
-  }, []);
+  }, [recorder]);
 
   const reset = useCallback(() => {
     setState('idle');

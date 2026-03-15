@@ -90,7 +90,7 @@ const pm = StyleSheet.create({
   },
   title:           { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
   option:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
-  optionActive:    { backgroundColor: '#f3eafd', borderRadius: 8, paddingHorizontal: 8 },
+  optionActive:    { backgroundColor: Colors.accentMuted, borderRadius: 8, paddingHorizontal: 8 },
   optionText:      { fontSize: 15, color: Colors.textSecondary },
   optionTextActive:{ color: Colors.accent, fontWeight: '700' },
 });
@@ -352,7 +352,7 @@ export default function EditInventoryScreen() {
                   if (s <= 0)      level = 'out';
                   else if (s < t)  level = 'low';
                   else if (s < t * 1.75) level = 'warn';
-                  const colors = { ok: Colors.success, warn: Colors.warning, low: Colors.error, out: '#7c3aed' };
+                  const colors = { ok: Colors.success, warn: Colors.warning, low: Colors.error, out: Colors.accent };
                   return (
                     <View key={label} style={es.previewPill}>
                       <View style={[es.dot, { backgroundColor: colors[level] }]} />
@@ -397,7 +397,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const es = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: {

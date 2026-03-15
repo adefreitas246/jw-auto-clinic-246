@@ -40,9 +40,9 @@ const SUGGESTION_CONFIG = {
   surcharge: {
     label:     'Peak Surcharge',
     icon:      'trending-up-outline',
-    chipBg:    '#fff7ed',
+    chipBg:    Colors.warningBg,
     chipColor: Colors.warning,
-    chipBorder:'#fed7aa',
+    chipBorder:Colors.warningBg,
     description: 'High demand detected. Consider a temporary price increase.',
     applyText: 'Apply Surcharge',
     applyBg:   Colors.warning,
@@ -50,9 +50,9 @@ const SUGGESTION_CONFIG = {
   discount: {
     label:     'Off-Peak Discount',
     icon:      'trending-down-outline',
-    chipBg:    '#ecfdf5',
+    chipBg:    Colors.successBg,
     chipColor: Colors.success,
-    chipBorder:'#a7f3d0',
+    chipBorder:Colors.successBg,
     description: 'Low demand right now. A discount could attract more bookings.',
     applyText: 'Apply Discount',
     applyBg:   Colors.success,
@@ -334,7 +334,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { padding: 20, paddingBottom: 60, gap: 14 },
 
@@ -347,8 +347,8 @@ const s = StyleSheet.create({
   claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
   claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 
-  descCard: { backgroundColor: '#ecfdf5', borderRadius: 14, padding: 14 },
-  descText: { fontSize: 13, color: '#065f46', lineHeight: 20 },
+  descCard: { backgroundColor: Colors.successBg, borderRadius: 14, padding: 14 },
+  descText: { fontSize: 13, color: Colors.successText, lineHeight: 20 },
 
   loadingCard: {
     backgroundColor: Colors.white, borderRadius: 16, padding: 32,
@@ -357,8 +357,8 @@ const s = StyleSheet.create({
   loadingText: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center' },
 
   errCard: {
-    backgroundColor: '#fef2f2', borderRadius: 14, padding: 16,
-    borderWidth: 1, borderColor: '#fca5a5', gap: 10,
+    backgroundColor: Colors.errorBg, borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: Colors.errorBg, gap: 10,
   },
   errText:   { fontSize: 13, color: Colors.error, flex: 1 },
   retryBtn:  { backgroundColor: Colors.error, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start' },
@@ -366,7 +366,7 @@ const s = StyleSheet.create({
 
   refreshBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center',
-    backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 16, paddingVertical: 8,
+    backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 16, paddingVertical: 8,
   },
   refreshText: { fontSize: 13, color: Colors.accent, fontWeight: '700' },
 
@@ -433,7 +433,7 @@ const sc = StyleSheet.create({
 
   appliedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#ecfdf5', borderRadius: 12, padding: 12,
+    backgroundColor: Colors.successBg, borderRadius: 12, padding: 12,
   },
-  appliedText: { fontSize: 13, color: '#065f46', fontWeight: '600', flex: 1 },
+  appliedText: { fontSize: 13, color: Colors.successText, fontWeight: '600', flex: 1 },
 });

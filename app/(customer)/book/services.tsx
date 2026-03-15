@@ -137,12 +137,12 @@ export default function BookServicesStep() {
 }
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   center:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
   sectionHeader: { fontSize: 11, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginTop: 12, marginBottom: 6, paddingHorizontal: 4 },
 
   pkgCard:         { backgroundColor: Colors.white, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent', ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 1 } }) },
-  pkgCardSelected: { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
+  pkgCardSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   pkgHeader:       { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   pkgName:         { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   pkgPrice:        { fontSize: 15, fontWeight: '700', color: Colors.accent },

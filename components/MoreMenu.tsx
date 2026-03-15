@@ -118,10 +118,10 @@ const mm = StyleSheet.create({
   },
   iconWrap: {
     width: 38, height: 38, borderRadius: 10,
-    backgroundColor: '#f5f0ff',
+    backgroundColor: Colors.accentMuted,
     alignItems: 'center', justifyContent: 'center',
   },
-  iconWrapDanger: { backgroundColor: '#fef2f2' },
+  iconWrapDanger: { backgroundColor: Colors.errorBg },
   rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
   rowLabelDanger: { color: Colors.error },
 });

@@ -23,7 +23,7 @@ const CARDS: Card[] = [
     label: 'Broadcast Push',
     sub:   'Send campaigns to customers',
     color: Colors.accent,
-    bg:    '#f5f0ff',
+    bg:    Colors.accentMuted,
     route: '/(tabs)/marketing/campaigns',
   },
   {
@@ -31,7 +31,7 @@ const CARDS: Card[] = [
     label: 'Coupon Codes',
     sub:   'Create & track discount codes',
     color: Colors.accent,
-    bg:    '#e8f4fd',
+    bg:    Colors.accentMuted,
     route: '/(tabs)/marketing/coupons',
   },
   {
@@ -39,7 +39,7 @@ const CARDS: Card[] = [
     label: 'SMS Reminders',
     sub:   '24h appointment reminders',
     color: Colors.success,
-    bg:    '#ecfdf5',
+    bg:    Colors.successBg,
     route: '/(tabs)/marketing/sms',
     badge: 'Setup required',
   },
@@ -48,7 +48,7 @@ const CARDS: Card[] = [
     label: 'Referral Program',
     sub:   'Track customer referrals',
     color: Colors.warning,
-    bg:    '#fffbeb',
+    bg:    Colors.warningBg,
     route: '/(tabs)/marketing/referrals',
   },
 ];

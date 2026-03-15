@@ -242,7 +242,7 @@ const rf = StyleSheet.create({
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  heroCard:      { backgroundColor: '#f5f0ff', borderRadius: 18, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#d8b4fe' },
+  heroCard:      { backgroundColor: Colors.accentMuted, borderRadius: 18, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: Colors.accentLight },
   heroEmoji:     { fontSize: 44, marginBottom: 10 },
   heroTitle:     { fontSize: 22, fontWeight: '900', color: Colors.textPrimary, marginBottom: 8 },
   heroDesc:      { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
@@ -262,7 +262,7 @@ const rf = StyleSheet.create({
   howCard:  { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
   howTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
   howRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  howDot:   { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center' },
+  howDot:   { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
   howText:  { fontSize: 13, color: Colors.textSecondary, flex: 1 },
 
   statsRow: { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },

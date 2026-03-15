@@ -22,7 +22,7 @@ export function BookingProgressBar({ step }: { step: number }) {
 
 const pb = StyleSheet.create({
   container: { backgroundColor: Colors.white, paddingHorizontal: 20, paddingBottom: 8 },
-  track:     { height: 3, backgroundColor: '#ede0f7', borderRadius: 99, overflow: 'hidden' },
+  track:     { height: 3, backgroundColor: Colors.accentMuted, borderRadius: 99, overflow: 'hidden' },
   fill:      { height: 3, backgroundColor: Colors.accent, borderRadius: 99 },
   label:     { fontSize: 11, color: Colors.textMuted, marginTop: 5 },
 });
@@ -36,7 +36,7 @@ export default function BookLayout() {
           headerTintColor: Colors.accent,
           headerTitleStyle: { fontWeight: '700', color: Colors.textPrimary },
           headerShadowVisible: false,
-          contentStyle: { backgroundColor: '#f7f7fb' },
+          contentStyle: { backgroundColor: Colors.surfaceAlt },
           ...Platform.select({ ios: {}, android: { animation: 'slide_from_right' } }),
         }}
       >

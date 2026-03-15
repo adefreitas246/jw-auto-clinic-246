@@ -2125,7 +2125,7 @@ filteredTransactions.forEach((tx) => {
 });
 
 // Colors for pie slices
-const PIE_COLORS = [Colors.accent, "#fe811f", "#2d9cdb", "#27ae60", "#e74c3c"];
+const PIE_COLORS = [Colors.accent, Colors.warning, Colors.accent, Colors.success, Colors.error];
 
 const paymentMethodPieData = Object.entries(paymentMethodTotals).map(
   ([name, value], index) => ({
@@ -2149,7 +2149,7 @@ const earningsChartConfig = {
   color: (opacity = 1) => `rgba(106, 13, 173, ${opacity})`,
   labelColor: () => Colors.textMuted,
   propsForBackgroundLines: {
-    stroke: "#e3e3e3",
+    stroke: Colors.border,
     strokeDasharray: "6",
   },
 };
@@ -2437,7 +2437,7 @@ const earningsChartConfig = {
                                 borderRadius: 16,
                                 borderWidth: 1,
                                 borderColor: isActive ? Colors.accent : Colors.border,
-                                backgroundColor: isActive ? "#f7f1ff" : Colors.white,
+                                backgroundColor: isActive ? Colors.accentMuted : Colors.white,
                                 marginRight: 8,
                               }}
                             >
@@ -2533,9 +2533,9 @@ const earningsChartConfig = {
                       marginTop: 12,
                       padding: 10,
                       borderRadius: 12,
-                      backgroundColor: "#f7f1ff",
+                      backgroundColor: Colors.accentMuted,
                       borderWidth: 1,
-                      borderColor: "#e0d0ff",
+                      borderColor: Colors.accentMuted,
                     }}
                   >
                     <Text
@@ -2765,8 +2765,8 @@ const earningsChartConfig = {
                               style={{
                                 fontWeight: "700",
                                 fontSize: 14,
-                                color: tx.finalPrice >= 0 ? "#5E2BFF" : "#D93025",
-                                backgroundColor: tx.finalPrice >= 0 ? "#f0e8ff" : "#fee8e8",
+                                color: tx.finalPrice >= 0 ? Colors.accent : Colors.error,
+                                backgroundColor: tx.finalPrice >= 0 ? Colors.accentMuted : Colors.errorBg,
                                 paddingHorizontal: 10,
                                 paddingVertical: 4,
                                 borderRadius: 10,
@@ -2859,7 +2859,7 @@ const earningsChartConfig = {
                   marginTop: 8,
                   padding: 12,
                   borderRadius: 10,
-                  backgroundColor: "#f4f4f4",
+                  backgroundColor: Colors.surfaceAlt,
                   borderWidth: 1,
                   borderColor: Colors.border,
                 }}
@@ -3023,7 +3023,7 @@ const earningsChartConfig = {
                       paddingVertical: 6,
                       paddingHorizontal: 10,
                       borderRadius: 8,
-                      backgroundColor: "#f4e8ff",
+                      backgroundColor: Colors.accentMuted,
                     }}
                   >
                     <Text style={{ color: Colors.accent, fontWeight: "700" }}>
@@ -3213,7 +3213,7 @@ const earningsChartConfig = {
                     style={[
                       styles.tableRow,
                       styles.tableHeader,
-                      { backgroundColor: "#f3f3f3" },
+                      { backgroundColor: Colors.surfaceAlt },
                     ]}
                   >
                     <Text style={[styles.columnHeader, { width: 60 }]}></Text>
@@ -3396,7 +3396,7 @@ const earningsChartConfig = {
                       <Text
                         style={{
                           fontSize: 14,
-                          color: emp.clockedIn ? "#28a745" : "#dc3545",
+                          color: emp.clockedIn ? Colors.success : Colors.error,
                         }}
                       >
                         ⏱ Status:{" "}
@@ -3591,7 +3591,7 @@ const earningsChartConfig = {
                         paddingVertical: 6,
                         paddingHorizontal: 10,
                         borderRadius: 8,
-                        backgroundColor: "#f4e8ff",
+                        backgroundColor: Colors.accentMuted,
                       }}
                     >
                       <Text style={{ color: Colors.accent, fontWeight: "700" }}>
@@ -3716,7 +3716,7 @@ const earningsChartConfig = {
                       value={shiftSearchText}
                       onChangeText={setShiftSearchText}
                       style={{
-                        backgroundColor: "#f4f4f4",
+                        backgroundColor: Colors.surfaceAlt,
                         padding: 10,
                         borderRadius: 8,
                         borderWidth: 1,
@@ -3743,7 +3743,7 @@ const earningsChartConfig = {
                           style={
                             {
                               flex: 1,
-                              background: "#f4f4f4",
+                              background: Colors.surfaceAlt,
                               padding: 10,
                               borderRadius: 8,
                               border: "1px solid #ddd",
@@ -3756,7 +3756,7 @@ const earningsChartConfig = {
                           onPress={openFromPicker}
                           style={{
                             flex: 1,
-                            backgroundColor: "#f4f4f4",
+                            backgroundColor: Colors.surfaceAlt,
                             padding: 10,
                             borderRadius: 8,
                             borderWidth: 1,
@@ -3792,7 +3792,7 @@ const earningsChartConfig = {
                           style={
                             {
                               flex: 1,
-                              background: "#f4f4f4",
+                              background: Colors.surfaceAlt,
                               padding: 10,
                               borderRadius: 8,
                               border: "1px solid #ddd",
@@ -3805,7 +3805,7 @@ const earningsChartConfig = {
                           onPress={openToPicker}
                           style={{
                             flex: 1,
-                            backgroundColor: "#f4f4f4",
+                            backgroundColor: Colors.surfaceAlt,
                             padding: 10,
                             borderRadius: 8,
                             borderWidth: 1,
@@ -3931,7 +3931,7 @@ const earningsChartConfig = {
                         paddingVertical: 10,
                         paddingHorizontal: 12,
                         borderRadius: 8,
-                        backgroundColor: active ? "#f4e8ff" : Colors.white,
+                        backgroundColor: active ? Colors.accentMuted : Colors.white,
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 8,
@@ -4043,7 +4043,7 @@ const earningsChartConfig = {
                               styles.tableRow,
                               {
                                 backgroundColor:
-                                  index % 2 === 0 ? "#f9f9f9" : Colors.white,
+                                  index % 2 === 0 ? Colors.surfaceAlt : Colors.white,
                               },
                             ]}
                           >
@@ -4582,7 +4582,7 @@ const earningsChartConfig = {
               activeOpacity={0.82}
               onPress={() => router.push("/(tabs)/services")}
             >
-              <View style={[styles.manageCardIcon, { backgroundColor: "#f3eafd" }]}>
+              <View style={[styles.manageCardIcon, { backgroundColor: Colors.accentMuted }]}>
                 <Ionicons name="construct" size={26} color={Colors.accent} />
               </View>
               <View style={styles.manageCardBody}>
@@ -4599,7 +4599,7 @@ const earningsChartConfig = {
               activeOpacity={0.82}
               onPress={() => router.push("/(tabs)/packages")}
             >
-              <View style={[styles.manageCardIcon, { backgroundColor: "#e8f4fd" }]}>
+              <View style={[styles.manageCardIcon, { backgroundColor: Colors.accentMuted }]}>
                 <Ionicons name="albums" size={26} color={Colors.accent} />
               </View>
               <View style={styles.manageCardBody}>
@@ -4685,7 +4685,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   filterActive: {
-    backgroundColor: "#efdbff",
+    backgroundColor: Colors.accentMuted,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -4747,7 +4747,7 @@ const styles = StyleSheet.create({
 
   segmentedControl: {
     flexDirection: "row",
-    backgroundColor: "#f2e9fb",
+    backgroundColor: Colors.accentMuted,
     borderRadius: 20,
     padding: 2,
     flexShrink: 1,
@@ -4810,12 +4810,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.black,
   },
-  statusActive: { backgroundColor: "#d2f7e3" },
+  statusActive: { backgroundColor: Colors.successBg },
   statusCompleted: { backgroundColor: Colors.border },
   exportButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#e6d4ff",
+    backgroundColor: Colors.accentMuted,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -4831,7 +4831,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: "#f4f1fc",
+    backgroundColor: Colors.accentMuted,
     borderRadius: 10,
     marginTop: 10,
   },
@@ -4856,7 +4856,7 @@ const styles = StyleSheet.create({
   reportCard: {
     flexGrow: 1,
     flexBasis: "48%",
-    backgroundColor: "#f9f9f9",
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -4864,7 +4864,7 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
   },
   performanceCard: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: Colors.background,
     padding: 20,
     borderRadius: 12,
     marginTop: 20,
@@ -4912,13 +4912,13 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginTop: -10,
     marginBottom: 10,
-    backgroundColor: "#e1e1ff",
+    backgroundColor: Colors.accentMuted,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
   },
   refreshText: {
-    color: "#4b3ca6",
+    color: Colors.primary,
     fontWeight: "600",
   },
   recentCard: {
@@ -5022,7 +5022,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.border,
   },
   searchBox: {
-    backgroundColor: "#f3f3f3",
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -5110,15 +5110,15 @@ const styles = StyleSheet.create({
     elevation: 4, // Android
   },
   periodPicker: {
-    borderColor: "#f3e8ff",
+    borderColor: Colors.accentMuted,
     borderRadius: 10,
     minHeight: 40,
-    backgroundColor: "#f3e8ff",
+    backgroundColor: Colors.accentMuted,
   },
   periodPickerDropdown: {
-    borderColor: "#f3e8ff",
+    borderColor: Colors.accentMuted,
     borderRadius: 10,
-    backgroundColor: "#f3e8ff",
+    backgroundColor: Colors.accentMuted,
   },
   periodPickerText: {
     fontSize: 14,
@@ -5161,7 +5161,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#f4e8ff",
+    backgroundColor: Colors.accentMuted,
     borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 12,
@@ -5220,10 +5220,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: Platform.select({ ios: 6, android: 6, default: 8 }),
-    backgroundColor: "#f3e9ff",
+    backgroundColor: Colors.accentMuted,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e6d7fb",
+    borderColor: Colors.accentMuted,
   },
 
   headingButtonText: {

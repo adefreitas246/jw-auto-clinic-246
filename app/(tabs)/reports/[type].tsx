@@ -576,7 +576,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const rv = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
 
   // Header
@@ -601,7 +601,7 @@ const rv = StyleSheet.create({
     borderRadius: 99, borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  chipActive:     { borderColor: Colors.accent, backgroundColor: '#f3eafd' },
+  chipActive:     { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   chipText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
   chipTextActive: { color: Colors.accent },
 
@@ -623,7 +623,7 @@ const rv = StyleSheet.create({
   errorBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: '#fef2f2', borderRadius: 10, padding: 12,
+    backgroundColor: Colors.errorBg, borderRadius: 10, padding: 12,
     borderLeftWidth: 3, borderLeftColor: Colors.error,
   },
   errorText: { fontSize: 13, color: Colors.error, flex: 1 },
@@ -654,7 +654,7 @@ const rv = StyleSheet.create({
   th: { fontSize: 10, fontWeight: '700', color: Colors.white, letterSpacing: 0.3, textTransform: 'uppercase' },
 
   tdRow:  { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Colors.white },
-  tdEven: { backgroundColor: '#faf9ff' },
+  tdEven: { backgroundColor: Colors.surfaceAlt },
   td:     { fontSize: 12, color: Colors.textSecondary },
 
   truncNote: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },

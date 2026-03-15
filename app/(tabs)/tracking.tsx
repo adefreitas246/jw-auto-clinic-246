@@ -440,7 +440,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const tr = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -458,7 +458,7 @@ const tr = StyleSheet.create({
     marginHorizontal: 16, borderRadius: 16, padding: 20,
     marginBottom: 14, ...SHADOW,
   },
-  heroCardActive: { backgroundColor: '#e8f5e9' },
+  heroCardActive: { backgroundColor: Colors.successBg },
   heroCardIdle:   { backgroundColor: Colors.white },
   heroRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   liveDot:   { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.success },
@@ -469,7 +469,7 @@ const tr = StyleSheet.create({
   // Warning banner
   warningBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#fff3e0', borderRadius: 12, padding: 14,
+    backgroundColor: Colors.warningBg, borderRadius: 12, padding: 14,
     marginHorizontal: 16, marginBottom: 14, borderLeftWidth: 3, borderLeftColor: Colors.error,
   },
   warningText: { flex: 1, fontSize: 13, color: Colors.error, fontWeight: '600', lineHeight: 18 },
@@ -495,7 +495,7 @@ const tr = StyleSheet.create({
   permLabel: { flex: 1, fontSize: 14, color: Colors.textSecondary },
   permValue: { fontSize: 13, fontWeight: '700' },
   grantBtn:  {
-    marginTop: 6, backgroundColor: '#f3eafd', borderRadius: 10,
+    marginTop: 6, backgroundColor: Colors.accentMuted, borderRadius: 10,
     paddingVertical: 10, alignItems: 'center',
   },
   grantBtnText: { color: Colors.accent, fontSize: 13, fontWeight: '700' },

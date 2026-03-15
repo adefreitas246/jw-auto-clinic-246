@@ -404,7 +404,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const st = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
@@ -429,7 +429,7 @@ const st = StyleSheet.create({
   backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
   voiceBtn:    { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
-  voiceBtnOn:  { backgroundColor: '#f3eafd' },
+  voiceBtnOn:  { backgroundColor: Colors.accentMuted },
 
   // Shared card
   card: {
@@ -461,7 +461,7 @@ const st = StyleSheet.create({
   etaRow: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     marginHorizontal: 16, marginBottom: 14,
-    backgroundColor: '#f3eafd', borderRadius: 99,
+    backgroundColor: Colors.accentMuted, borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start',
   },
   etaText: { fontSize: 13, color: Colors.textSecondary },

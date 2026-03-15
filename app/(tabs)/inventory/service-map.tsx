@@ -370,7 +370,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const sm = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: {
@@ -382,7 +382,7 @@ const sm = StyleSheet.create({
 
   infoBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#eff6ff', marginHorizontal: 16, borderRadius: 10,
+    backgroundColor: Colors.accentMuted, marginHorizontal: 16, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
   },
   infoText: { fontSize: 12, color: Colors.accent, flex: 1, lineHeight: 17 },
@@ -410,7 +410,7 @@ const sm = StyleSheet.create({
     backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 8, marginTop: 6,
   },
   mapIconWrap: {
-    width: 28, height: 28, borderRadius: 8, backgroundColor: '#f3eafd',
+    width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.accentMuted,
     alignItems: 'center', justifyContent: 'center',
   },
   mapItemName: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },

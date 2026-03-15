@@ -59,13 +59,13 @@ function EmployeesScreen() {
     padX: 18,
     radius: Platform.select({ ios: 14, android: 10, default: 12 })!,
     colors: {
-      bg:          "#F5F7FA",  // Wash Hub background
+      bg:          Colors.background,  // Wash Hub background
       card:        Colors.white,
-      border:      "#E5E7EB",
+      border:      Colors.border,
       text:        Colors.primary,
-      sub:         "#6B7280",
+      sub:         Colors.textSecondary,
       primary:     Colors.accent,  // teal accent
-      glyphBorder: "#E6FAF8",
+      glyphBorder: Colors.accentMuted,
     },
   };
 
@@ -845,7 +845,7 @@ function EmployeesScreen() {
             )}
 
             <View style={[styles.roleBadge, emp.role === "admin" ? styles.roleAdmin : styles.roleStaff]}>
-              <Text style={[styles.roleText, emp.role === "admin" ? { color: Colors.accent } : { color: "#065f46" }]} numberOfLines={1}>
+              <Text style={[styles.roleText, emp.role === "admin" ? { color: Colors.accent } : { color: Colors.successText }]} numberOfLines={1}>
                 {String(emp.role).toUpperCase()}
               </Text>
             </View>
@@ -878,7 +878,7 @@ function EmployeesScreen() {
             style={[
               styles.lunchButton,
               (lunchState === "none" || lunchState === "done" || lunchingIds.has(emp._id)) && { opacity: 0.5 },
-              lunchState === "canStart" && { backgroundColor: "#fbbf24" },
+              lunchState === "canStart" && { backgroundColor: Colors.warning },
               lunchState === "canEnd" && { backgroundColor: Colors.info },
             ]}
             onPress={() => handleLunchToggle(emp)}
@@ -988,7 +988,7 @@ function EmployeesScreen() {
         {/* Role */}
         <View style={[styles.webTd, { flex: 1 }]}>
           <View style={[styles.webRoleBadge, emp.role === "admin" ? styles.webRoleAdmin : styles.webRoleStaff]}>
-            <Text style={[styles.webRoleText, emp.role === "admin" ? { color: Colors.accent } : { color: "#065f46" }]} numberOfLines={1}>
+            <Text style={[styles.webRoleText, emp.role === "admin" ? { color: Colors.accent } : { color: Colors.successText }]} numberOfLines={1}>
               {String(emp.role).toUpperCase()}
             </Text>
           </View>
@@ -1040,7 +1040,7 @@ function EmployeesScreen() {
   const renderRightActions = (emp: Worker) => (
     <View style={styles.swipeActions}>
       <TouchableOpacity
-        style={[styles.swipeBtn, { backgroundColor: "#fbbf24" }]}
+        style={[styles.swipeBtn, { backgroundColor: Colors.warning }]}
         onPress={() => openEdit(emp)}
         accessibilityRole="button"
         accessibilityLabel={`Edit ${emp.name}`}
@@ -1568,7 +1568,7 @@ function EmployeesScreen() {
                             key={r}
                             style={[
                               styles.badgeChoice,
-                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: Colors.accent },
+                              editing.role === r && { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
                             ]}
                             onPress={() => setEditing({ ...editing, role: r })}
                           >
@@ -1674,7 +1674,7 @@ function EmployeesScreen() {
                             key={r}
                             style={[
                               styles.badgeChoice,
-                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: Colors.accent },
+                              editing.role === r && { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
                             ]}
                             onPress={() => setEditing({ ...editing, role: r })}
                           >
@@ -1898,7 +1898,7 @@ const styles = StyleSheet.create({
   employeeCard: {
     flex: 1,
     minWidth: 0,
-    backgroundColor: "#f9f9ff",
+    backgroundColor: Colors.surfaceAlt,
     padding: 14,
     marginBottom: 10,
     borderRadius: 12,
@@ -1931,8 +1931,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderWidth: 1,
   },
-  roleAdmin: { backgroundColor: "#F0FDFA", borderColor: "#5EEAD4" },
-  roleStaff: { backgroundColor: "#ECFDF5", borderColor: "#bbf7d0" },
+  roleAdmin: { backgroundColor: Colors.accentMuted, borderColor: Colors.accentLight },
+  roleStaff: { backgroundColor: Colors.successBg, borderColor: Colors.successBg },
   roleText: { fontSize: 12, fontWeight: "800" },
 
   cardFooter: { flexDirection: "row", alignItems: "center", marginTop: 8, gap: 10, flexWrap: "wrap" },
@@ -1947,7 +1947,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: "#fbbf24",
+    backgroundColor: Colors.warning,
   },
   lunchText: { color: Colors.white, fontWeight: "700" },
 
@@ -1966,14 +1966,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f1f1",
+    borderBottomColor: Colors.surfaceAlt,
     gap: 8,
   },
   historyDate: { width: 96, color: Colors.textPrimary, fontWeight: "600" },
   historyDur: { flex: 1, textAlign: "left", color: Colors.textPrimary, fontWeight: "600" },
   historyStatus: { width: 88, textAlign: "center", paddingVertical: 4, borderRadius: 999, overflow: "hidden", fontWeight: "700" },
-  statusDone: { backgroundColor: "#EEF2FF", color: "#3730a3" },
-  statusActive: { backgroundColor: Colors.warningBg, color: "#92400e" },
+  statusDone: { backgroundColor: Colors.accentMuted, color: Colors.primary },
+  statusActive: { backgroundColor: Colors.warningBg, color: Colors.warningText },
   historyEmpty: { padding: 10, color: Colors.textSecondary },
 
   // Swipe actions (mobile)
@@ -2046,7 +2046,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.border,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: Colors.surfaceAlt,
   },
 
   // ---------- WEB-ONLY STYLES ----------
@@ -2126,8 +2126,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceAlt,
     borderRadius: 999,
   },
-  webChipGreen: { backgroundColor: "#ecfdf5" },
-  webChipBlue: { backgroundColor: "#eff6ff" },
+  webChipGreen: { backgroundColor: Colors.successBg },
+  webChipBlue: { backgroundColor: Colors.accentMuted },
   webChipText: { color: Colors.textSecondary, fontWeight: "700", fontSize: 12 },
 
   webTableHeader: {
@@ -2152,7 +2152,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: Colors.surfaceAlt,
   },
-  webTrAlt: { backgroundColor: "#fcfcff" }, // zebra rows
+  webTrAlt: { backgroundColor: Colors.surface }, // zebra rows
   webTd: { justifyContent: "center" },
   webName: { fontWeight: "700", color: Colors.textPrimary },
   webCellText: { color: Colors.textPrimary },
@@ -2168,12 +2168,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: "flex-start",
   },
-  webRoleAdmin: { backgroundColor: "#F0FDFA", borderColor: "#5EEAD4" },
-  webRoleStaff: { backgroundColor: "#ECFDF5", borderColor: "#bbf7d0" },
+  webRoleAdmin: { backgroundColor: Colors.accentMuted, borderColor: Colors.accentLight },
+  webRoleStaff: { backgroundColor: Colors.successBg, borderColor: Colors.successBg },
   webRoleText: { fontSize: 11, fontWeight: "800" },
 
   webStatus: { fontWeight: "700", fontSize: 12 },
-  webStatusActive: { color: "#065f46" },
+  webStatusActive: { color: Colors.successText },
   webStatusDone: { color: Colors.textSecondary },
 
   // Wrap actions so they don't overflow on mid-width screens

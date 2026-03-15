@@ -178,7 +178,7 @@ function AssignModal({
               style={[ad.assignOption, isSelected && ad.assignOptionActive]}
               onPress={() => { onSelect(job._id, w._id, w.name); onClose(); }}
             >
-              <View style={[ad.assignAvatar, isSelected && { backgroundColor: '#f3eafd' }]}>
+              <View style={[ad.assignAvatar, isSelected && { backgroundColor: Colors.accentMuted }]}>
                 <Text style={[ad.assignInitials, isSelected && { color: Colors.accent }]}>
                   {w.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
                 </Text>
@@ -413,7 +413,7 @@ export default function AdminJobManage() {
           <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/marketing')} hitSlop={8}>
             <Ionicons name="megaphone-outline" size={20} color={Colors.accent} />
           </Pressable>
-          <Pressable style={[ad.refreshBtn, { backgroundColor: '#f3eafd' }]} onPress={() => router.push('/(tabs)/ai')} hitSlop={8}>
+          <Pressable style={[ad.refreshBtn, { backgroundColor: Colors.accentMuted }]} onPress={() => router.push('/(tabs)/ai')} hitSlop={8}>
             <Text style={{ fontSize: 14, fontWeight: '900', color: Colors.accent }}>✨</Text>
           </Pressable>
           <Pressable style={ad.refreshBtn} onPress={() => fetchJobs(true)} hitSlop={8}>
@@ -476,7 +476,7 @@ export default function AdminJobManage() {
                 key={f.key}
                 style={[
                   ad.filterPill,
-                  active && { backgroundColor: col?.bg ?? '#f3eafd', borderColor: col?.text ?? Colors.accent },
+                  active && { backgroundColor: col?.bg ?? Colors.accentMuted, borderColor: col?.text ?? Colors.accent },
                 ]}
                 onPress={() => setStatusFilter(f.key as JobStatus | 'all')}
               >
@@ -579,7 +579,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const ad = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Header
@@ -622,7 +622,7 @@ const ad = StyleSheet.create({
     backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border,
   },
   filterPillText:        { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
-  filterPillWorkerActive:{ backgroundColor: '#e8f4fd', borderColor: Colors.accent },
+  filterPillWorkerActive:{ backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
   filterPillWorkerActiveText: { color: Colors.accent, fontWeight: '700' },
 
   // List
@@ -646,7 +646,7 @@ const ad = StyleSheet.create({
   // Assignment chip
   assignChip:     {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#f7f7fb', borderRadius: 99,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 99,
     paddingHorizontal: 10, paddingVertical: 5,
   },
   assignChipText: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, flex: 1 },
@@ -657,7 +657,7 @@ const ad = StyleSheet.create({
 
   viewBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#f3eafd', borderRadius: 8,
+    backgroundColor: Colors.accentMuted, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 6,
   },
   viewBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
@@ -697,7 +697,7 @@ const ad = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     paddingVertical: 11, paddingHorizontal: 10, borderRadius: 10, marginBottom: 4,
   },
-  assignOptionActive: { backgroundColor: '#f3eafd' },
+  assignOptionActive: { backgroundColor: Colors.accentMuted },
   assignAvatar: {
     width: 38, height: 38, borderRadius: 19,
     backgroundColor: Colors.background,

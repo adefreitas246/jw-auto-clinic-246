@@ -1,5 +1,6 @@
-// app/(tabs)/jobs/_layout.tsx
+﻿// app/(tabs)/jobs/_layout.tsx
 import { Stack } from 'expo-router';
+import { Colors } from '@/constants/Colors';
 
 export default function JobsLayout() {
   return (
@@ -7,7 +8,7 @@ export default function JobsLayout() {
       screenOptions={{
         headerShown:     false,
         animation:       'slide_from_right',
-        contentStyle:    { backgroundColor: '#f7f7fb' },
+        contentStyle:    { backgroundColor: Colors.surfaceAlt },
       }}
     />
   );

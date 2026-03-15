@@ -12,8 +12,8 @@
                  "icon":  "./assets/images/splash-icon-light.png",
                  "scheme":  "washhub",
                  "userInterfaceStyle":  "light",
-                 "primaryColor":  "#2196F3",
-                 "backgroundColor":  "#F4F6F8",
+                 "primaryColor":  "#0EA5E9",
+                 "backgroundColor":  "#F8F9FA",
                  "runtimeVersion":  "1.4.0",
                  "updates":  {
                                  "enabled":  true,
@@ -85,7 +85,7 @@
                                                      "android.permission.RECEIVE_BOOT_COMPLETED"
                                                  ],
                                  "navigationBar":  {
-                                                       "backgroundColor":  "#1E2A3A",
+                                                       "backgroundColor":  "#0A1628",
                                                        "barStyle":  "light-content"
                                                    },
                                  "softwareKeyboardLayoutMode":  "pan"
@@ -99,7 +99,7 @@
                                  [
                                      "expo-splash-screen",
                                      {
-                                         "backgroundColor":  "#ffffff",
+                                         "backgroundColor":  "#0A1628",
                                          "image":  "./assets/icons/splash-icon-dark.png",
                                          "resizeMode":  "contain",
                                          "imageWidth":  200

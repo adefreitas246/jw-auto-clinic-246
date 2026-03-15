@@ -207,7 +207,7 @@ const vr = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#fca5a5',
+    borderColor: Colors.errorBg,
     overflow: 'hidden',
     ...Platform.select({
       ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
@@ -218,11 +218,11 @@ const vr = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#fff1f2',
+    backgroundColor: Colors.errorBg,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#fca5a5',
+    borderBottomColor: Colors.errorBg,
   },
   headerText: { fontSize: 13, fontWeight: '700', color: Colors.error },
 

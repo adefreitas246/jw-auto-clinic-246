@@ -55,9 +55,9 @@ type LoyaltyData = {
 };
 
 const TIER_META = {
-  bronze: { color: '#cd7f32', bg: '#fdf5ec', label: 'Bronze',  icon: '🥉' },
+  bronze: { color: Colors.warning, bg: Colors.warningBg, label: 'Bronze',  icon: '🥉' },
   silver: { color: Colors.textMuted, bg: Colors.surfaceAlt, label: 'Silver',  icon: '🥈' },
-  gold:   { color: Colors.warning, bg: '#fffbeb', label: 'Gold',    icon: '🥇' },
+  gold:   { color: Colors.warning, bg: Colors.warningBg, label: 'Gold',    icon: '🥇' },
 };
 
 // ─── Animated points counter ──────────────────────────────────────────────────
@@ -215,7 +215,7 @@ export default function LoyaltyScreen() {
         {/* Tier thresholds info */}
         <View style={st.tiersRow}>
           {[
-            { icon: '🥉', label: 'Bronze',  pts: 0,         color: '#cd7f32' },
+            { icon: '🥉', label: 'Bronze',  pts: 0,         color: Colors.warning },
             { icon: '🥈', label: 'Silver',  pts: silverT,   color: Colors.textMuted },
             { icon: '🥇', label: 'Gold',    pts: goldT,     color: Colors.warning },
           ].map(t => (
@@ -340,7 +340,7 @@ const st = StyleSheet.create({
 
   tiersRow:      { flexDirection: 'row', gap: 8, marginBottom: 16 },
   tierChip:      { flex: 1, backgroundColor: Colors.surfaceAlt, borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
-  tierChipActive: { borderColor: Colors.accent, backgroundColor: '#f5f0ff' },
+  tierChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   tierChipEmoji: { fontSize: 20 },
   tierChipLabel: { fontSize: 12, fontWeight: '700', marginTop: 4 },
   tierChipPts:   { fontSize: 10, color: Colors.textMuted, marginTop: 2 },

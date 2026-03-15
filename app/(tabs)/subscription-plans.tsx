@@ -244,7 +244,7 @@ export default function SubscriptionPlansScreen() {
                 <Switch
                   value={plan.active}
                   onValueChange={() => handleToggle(plan)}
-                  trackColor={{ false: Colors.border, true: '#a855f7' }}
+                  trackColor={{ false: Colors.border, true: Colors.accentLight }}
                   thumbColor={plan.active ? Colors.accent : Colors.white}
                 />
               </View>
@@ -300,7 +300,7 @@ export default function SubscriptionPlansScreen() {
               <Switch
                 value={form.highlighted}
                 onValueChange={v => setForm(f => ({ ...f, highlighted: v }))}
-                trackColor={{ false: Colors.border, true: '#a855f7' }}
+                trackColor={{ false: Colors.border, true: Colors.accentLight }}
                 thumbColor={form.highlighted ? Colors.accent : Colors.white}
               />
             </View>
@@ -339,7 +339,7 @@ const st = StyleSheet.create({
   planTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
   planNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   planName:    { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  popularTag:  { fontSize: 10, color: Colors.accent, fontWeight: '600', backgroundColor: '#f5f0ff', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  popularTag:  { fontSize: 10, color: Colors.accent, fontWeight: '600', backgroundColor: Colors.accentMuted, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
   planPrice:   { fontSize: 14, color: Colors.accent, fontWeight: '600' },
   planDesc:    { fontSize: 12, color: Colors.textSecondary, marginBottom: 8 },
   planActions: { flexDirection: 'row', gap: 6 },

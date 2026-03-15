@@ -547,7 +547,7 @@ export default function TransactionsScreen() {
             style={styles.iconBtn}
             accessibilityLabel="Remove item"
           >
-            <Ionicons name="trash-outline" size={20} color="#d11a2a" />
+            <Ionicons name="trash-outline" size={20} color=Colors.error />
           </TouchableOpacity>
         </View>
       </View>
@@ -2244,8 +2244,8 @@ export default function TransactionsScreen() {
             <View
               style={{
                 marginTop: 8,
-                backgroundColor: "#faf5ff",
-                borderColor: "#ead7ff",
+                backgroundColor: Colors.accentMuted,
+                borderColor: Colors.accentMuted,
                 borderWidth: 1,
                 borderRadius: 10,
                 padding: 12,
@@ -2314,7 +2314,7 @@ export default function TransactionsScreen() {
                     <View
                       style={{
                         height: 1,
-                        backgroundColor: "#ead7ff",
+                        backgroundColor: Colors.accentMuted,
                         marginVertical: 8,
                       }}
                     />
@@ -2342,8 +2342,8 @@ export default function TransactionsScreen() {
                             paddingVertical: 6,
                             borderRadius: 999,
                             borderWidth: 1,
-                            borderColor: "#d3c2ff",
-                            backgroundColor: "#F0FDFA",
+                            borderColor: Colors.accentMuted,
+                            backgroundColor: Colors.accentMuted,
                           }}
                         >
                           <Text
@@ -2901,11 +2901,11 @@ const styles = StyleSheet.create({
   cartRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#faf7ff",
+    backgroundColor: Colors.accentMuted,
     borderRadius: 10,
     padding: 10,
     borderWidth: 1,
-    borderColor: "#f0e7ff",
+    borderColor: Colors.accentMuted,
   },
   cartRowTitle: { fontWeight: "700" },
   cartRowSub: { color: Colors.textSecondary, marginTop: 2, fontSize: 12 },
@@ -2923,8 +2923,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#d3c2ff",
-    backgroundColor: "#F0FDFA",
+    borderColor: Colors.accentMuted,
+    backgroundColor: Colors.accentMuted,
   },
   cartDetailsToggleText: {
     fontSize: 11,
@@ -3007,7 +3007,7 @@ const styles = StyleSheet.create({
 
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   card: {
-    backgroundColor: '#f9f9ff', borderRadius: 10, padding: 16, marginBottom: 12,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 10, padding: 16, marginBottom: 12,
     shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
   cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: Colors.textPrimary },

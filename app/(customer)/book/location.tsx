@@ -175,12 +175,12 @@ export default function BookLocationStep() {
 }
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   content: { padding: 20, paddingBottom: 120 },
 
   typeRow:         { flexDirection: 'row', gap: 12, marginBottom: 24 },
   typeBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.white, borderRadius: 12, paddingVertical: 14, borderWidth: 2, borderColor: Colors.border },
-  typeBtnActive:   { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
+  typeBtnActive:   { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   typeBtnText:     { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
   typeBtnTextActive: { color: Colors.accent },
 
@@ -188,14 +188,14 @@ const s = StyleSheet.create({
   hint:         { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic' },
 
   bayCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent', ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 1 } }) },
-  bayCardSel: { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
-  bayIconWrap:{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#f3eafd', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  bayCardSel: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
+  bayIconWrap:{ width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   bayBody:    { flex: 1 },
   bayLabel:   { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   bayAddr:    { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
 
   addressInput: { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 12, fontSize: 14, minHeight: 72, marginBottom: 12, color: Colors.textPrimary },
-  gpsBtn:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#f3eafd', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  gpsBtn:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: Colors.accentMuted, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
   gpsBtnText: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
   footer:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.white, padding: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20, borderTopWidth: 1, borderTopColor: Colors.background, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },

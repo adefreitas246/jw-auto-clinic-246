@@ -123,7 +123,7 @@ function CatalogTile({
         pressed && { opacity: 0.88 },
       ]}
       onPress={onPress}
-      android_ripple={{ color: "#e8dff8" }}
+      android_ripple={{ color: Colors.accentMuted }}
     >
       {item.itemType === "package" && (
         <View style={k.bundleBadge}>
@@ -344,7 +344,7 @@ export default function WalkinKioskScreen() {
       {step === 0 && (
         <Pressable style={{ flex: 1 }} onPress={() => goTo(1)}>
           <LinearGradient
-            colors={["#3d007a", Colors.accent, "#9c3fe0"]}
+            colors={[Colors.primaryDark, Colors.accent, Colors.accent]}
             style={k.idleScreen}
             start={{ x: 0.1, y: 0 }}
             end={{ x: 0.9, y: 1 }}
@@ -683,7 +683,7 @@ export default function WalkinKioskScreen() {
       {/* ── Step 4: Confirmation ── */}
       {step === 4 && result && (
         <LinearGradient
-          colors={["#1a5c2e", Colors.success, "#43a047"]}
+          colors={[Colors.successText, Colors.success, Colors.success]}
           style={k.confirmScreen}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -764,7 +764,7 @@ const SHADOW =
   }) ?? {};
 
 const k = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f7f7fb" },
+  safe: { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered: {
     flex: 1,
     alignItems: "center",
@@ -872,7 +872,7 @@ const k = StyleSheet.create({
     minHeight: 130,
     ...SHADOW,
   },
-  tileSelected: { borderColor: Colors.accent, backgroundColor: "#faf5ff" },
+  tileSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   bundleBadge: {
     alignSelf: "flex-start",
     backgroundColor: Colors.accent,
@@ -959,7 +959,7 @@ const k = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#f3eafd",
+    backgroundColor: Colors.accentMuted,
     borderRadius: 12,
     padding: 12,
     marginBottom: 24,
@@ -1008,12 +1008,12 @@ const k = StyleSheet.create({
     borderColor: "transparent",
     ...SHADOW,
   },
-  payCardSelected: { borderColor: Colors.accent, backgroundColor: "#faf5ff" },
+  payCardSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   payIconWrap: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#f3eafd",
+    backgroundColor: Colors.accentMuted,
     alignItems: "center",
     justifyContent: "center",
   },

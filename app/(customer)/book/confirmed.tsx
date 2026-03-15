@@ -238,11 +238,11 @@ const s = StyleSheet.create({
   highlight: { color: Colors.accent, fontWeight: '700' },
 
   notifBadge:   { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8, marginBottom: 24 },
-  notifGranted: { backgroundColor: '#e8f5e9' },
+  notifGranted: { backgroundColor: Colors.successBg },
   notifDenied:  { backgroundColor: Colors.background },
   notifText:    { fontSize: 13, fontWeight: '600' },
 
-  summaryCard: { width: '100%', backgroundColor: '#f7f7fb', borderRadius: 14, padding: 16, gap: 10, marginBottom: 28 },
+  summaryCard: { width: '100%', backgroundColor: Colors.surfaceAlt, borderRadius: 14, padding: 16, gap: 10, marginBottom: 28 },
   summaryRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
   summaryText: { fontSize: 14, color: Colors.textPrimary },
 
@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   },
   trackBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#f3eafd', borderRadius: 14, paddingVertical: 14,
+    backgroundColor: Colors.accentMuted, borderRadius: 14, paddingVertical: 14,
   },
   trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
   doneBtn: { backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },

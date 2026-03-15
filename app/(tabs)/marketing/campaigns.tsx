@@ -359,7 +359,7 @@ export default function CampaignsScreen() {
               <Switch
                 value={useSchedule}
                 onValueChange={setUseSchedule}
-                trackColor={{ false: Colors.border, true: '#a855f7' }}
+                trackColor={{ false: Colors.border, true: Colors.accentLight }}
                 thumbColor={useSchedule ? Colors.accent : Colors.white}
               />
             </View>
@@ -486,7 +486,7 @@ const bd = StyleSheet.create({
 
   audiencePicker:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   audienceChip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceAlt },
-  audienceChipActive: { borderColor: Colors.accent, backgroundColor: '#f5f0ff' },
+  audienceChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   audienceChipText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
 
   scheduleToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 },

@@ -122,13 +122,13 @@ const UI = {
   radius: Platform.select({ ios: 14, android: 10, default: 12 })!,
   colors: {
     // Light only
-    bg:          "#F5F7FA",  // Wash Hub background
+    bg:          Colors.background,  // Wash Hub background
     card:        Colors.white,
-    border:      "#E5E7EB",
+    border:      Colors.border,
     text:        Colors.primary,
-    sub:         "#6B7280",
+    sub:         Colors.textSecondary,
     primary:     Colors.accent,  // teal accent
-    glyphBorder: "#E6FAF8",
+    glyphBorder: Colors.accentMuted,
   },
 };
 
@@ -289,14 +289,14 @@ function Row({
           <Ionicons
             name="open-outline"
             size={18}
-            color="#9aa0a6"
+            color=Colors.textMuted
             style={{ marginLeft: 8 }}
           />
         ) : navigates ? (
           <Ionicons
             name={isIOS ? "chevron-forward" : "chevron-forward-outline"}
             size={18}
-            color="#9aa0a6"
+            color=Colors.textMuted
             style={{ marginLeft: 8 }}
           />
         ) : null}
@@ -329,7 +329,7 @@ function Row({
         styles.row,
         isWeb &&
           state.hovered &&
-          ({ backgroundColor: "#FAFAFA", cursor: "pointer" } as any),
+          ({ backgroundColor: Colors.surfaceAlt, cursor: "pointer" } as any),
         isIOS && state.pressed && { opacity: 0.75 },
       ]}
       accessibilityRole="button"
@@ -983,7 +983,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={[
                   styles.saveButton,
-                  { backgroundColor: "#e5e5ea", marginTop: 8 },
+                  { backgroundColor: Colors.border, marginTop: 8 },
                 ]}
                 onPress={() => setEditSheetVisible(false)}
               >
@@ -1054,7 +1054,7 @@ export default function SettingsScreen() {
               }}
               style={[
                 styles.submitReportButton,
-                { marginTop: 10, backgroundColor: "#8352d1" },
+                { marginTop: 10, backgroundColor: Colors.accent },
               ]}
             >
               <Text style={styles.submitReportText}>Email Support</Text>
@@ -1133,13 +1133,13 @@ export default function SettingsScreen() {
 }
 
 function getBadgeStyle(type: string) {
-  const base = { backgroundColor: "#eef0ff", borderColor: UI.colors.border };
+  const base = { backgroundColor: Colors.accentMuted, borderColor: UI.colors.border };
   if (type === "New")
-    return { backgroundColor: "#ECFDF3", borderColor: "#BBF7D0" };
+    return { backgroundColor: Colors.successBg, borderColor: Colors.successBg };
   if (type === "Improved")
-    return { backgroundColor: "#EEF2FF", borderColor: "#C7D2FE" };
+    return { backgroundColor: Colors.accentMuted, borderColor: Colors.accentMuted };
   if (type === "Fixed")
-    return { backgroundColor: "#FFF7ED", borderColor: "#FDE68A" };
+    return { backgroundColor: Colors.warningBg, borderColor: Colors.warningBg };
   return base;
 }
 
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
   profileAvatar: { width: 56, height: 56, borderRadius: 12, marginRight: 12 },
   profileName: { fontSize: 17, fontWeight: "700", color: UI.colors.text },
   profileEmail: { fontSize: 13, color: UI.colors.sub, marginTop: 2 },
-  profileHint: { fontSize: 12, color: "#8a8a8f", marginTop: 4 },
+  profileHint: { fontSize: 12, color: Colors.textMuted, marginTop: 4 },
   editPill: {
     backgroundColor: UI.colors.primary,
     paddingHorizontal: 12,
@@ -1247,7 +1247,7 @@ const styles = StyleSheet.create({
   },
   rowSubtitle: { fontSize: 12, color: UI.colors.sub, marginTop: 2 },
   rowRight: { flexDirection: "row", alignItems: "center" },
-  rowValue: { fontSize: 16, color: "#5f6368" },
+  rowValue: { fontSize: 16, color: Colors.textSecondary },
   rowDivider: {
     position: "absolute",
     left: 14 + 28 + 12, // left padding + glyph + gap
@@ -1263,7 +1263,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: "#F7F8FF",
+    backgroundColor: Colors.surfaceAlt,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1273,7 +1273,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: UI.colors.border,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: Colors.background,
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 10,
@@ -1311,7 +1311,7 @@ const styles = StyleSheet.create({
   savedMessage: {
     marginTop: 10,
     fontSize: 13,
-    color: "#0a7f32",
+    color: Colors.success,
     textAlign: "center",
     fontWeight: "700",
   },
@@ -1360,7 +1360,7 @@ const styles = StyleSheet.create({
     color: UI.colors.primary,
     fontWeight: "800",
   },
-  whatsNewError: { marginTop: 6, color: "#b45309", fontSize: 12 },
+  whatsNewError: { marginTop: 6, color: Colors.warningText, fontSize: 12 },
   whatsNewLoading: { marginTop: 8, color: Colors.textSecondary, fontSize: 13 },
   whatsNewItem: {
     marginTop: 10,
@@ -1403,12 +1403,12 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F7F8FF",
+    backgroundColor: Colors.surfaceAlt,
     borderWidth: 1,
     borderColor: UI.colors.glyphBorder,
   },
   footerLead: { fontSize: 14, color: UI.colors.sub },
-  footerMeta: { fontSize: 13, color: "#8a8a8f" },
+  footerMeta: { fontSize: 13, color: Colors.textMuted },
 
   // Columns for web desktop
   columns: {
@@ -1457,7 +1457,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 4,
     borderRadius: 999,
-    backgroundColor: "#D1D5DB",
+    backgroundColor: Colors.borderStrong,
     marginBottom: 8,
   },
   bsTitle: {

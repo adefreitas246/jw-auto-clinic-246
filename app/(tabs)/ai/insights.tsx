@@ -37,7 +37,7 @@ type DemandContext = {
 
 const REC_ICONS = ['person-add-outline', 'trending-up-outline', 'megaphone-outline'];
 const REC_COLORS = [Colors.accent, Colors.accent, Colors.success];
-const REC_BG     = ['#f3eafd', '#e8f4fd', '#ecfdf5'];
+const REC_BG     = [Colors.accentMuted, Colors.accentMuted, Colors.successBg];
 
 function RecCard({ rec, index }: { rec: Recommendation; index: number }) {
   const color = REC_COLORS[index % REC_COLORS.length];
@@ -232,7 +232,7 @@ export default function DemandInsightsScreen() {
                 </View>
                 <View style={s.chipRow}>
                   {result.peakHours.map((h, i) => (
-                    <HourChip key={i} time={h} color={Colors.error} bg="#fff1f2" />
+                    <HourChip key={i} time={h} color={Colors.error} bg={Colors.error}Bg />
                   ))}
                 </View>
               </View>
@@ -281,7 +281,7 @@ const SHADOW = Platform.select({
 }) ?? {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: '#f7f7fb' },
+  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
   content: { padding: 20, paddingBottom: 60, gap: 14 },
 
@@ -294,14 +294,14 @@ const s = StyleSheet.create({
   claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
   claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 
-  descCard: { backgroundColor: '#e8f4fd', borderRadius: 14, padding: 14 },
-  descText: { fontSize: 13, color: '#0c4a6e', lineHeight: 20 },
+  descCard: { backgroundColor: Colors.accentMuted, borderRadius: 14, padding: 14 },
+  descText: { fontSize: 13, color: Colors.primaryDark, lineHeight: 20 },
 
   ctxPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start',
-    backgroundColor: '#ecfdf5', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6,
+    backgroundColor: Colors.successBg, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6,
   },
-  ctxPillText: { fontSize: 12, color: '#065f46', fontWeight: '600' },
+  ctxPillText: { fontSize: 12, color: Colors.successText, fontWeight: '600' },
 
   loadBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -315,14 +315,14 @@ const s = StyleSheet.create({
 
   refreshBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end',
-    backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 7,
+    backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 7,
   },
   refreshText: { fontSize: 13, color: Colors.accent, fontWeight: '700' },
 
   errCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#fef2f2', borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: '#fca5a5',
+    backgroundColor: Colors.errorBg, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: Colors.errorBg,
   },
   errText: { flex: 1, fontSize: 13, color: Colors.error },
 

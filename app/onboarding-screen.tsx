@@ -38,70 +38,70 @@ const SLIDES: Slide[] = [
     title: "Live Dashboard",
     subtitle: "At-a-glance totals and charts for your day.",
     image: require("@/assets/images/onboarding/HomeDashboardTransactions.jpeg"),
-    gradient: ["#6a0dad", "#b07cf2"],
+    gradient: ["#1A1A2E", "#0F9B8E"],
   },
   {
     key: "home-workers",
     title: "Manage Staff",
     subtitle: "Filter by role, edit details, export lists.",
     image: require("@/assets/images/onboarding/HomeDashboardEmployees.jpeg"),
-    gradient: ["#6a0dad", "#22d3ee"],
+    gradient: ["#16213E", "#14C6B5"],
   },
   {
     key: "home-shifts",
     title: "Shifts & Status",
     subtitle: "Track active/completed shifts and export.",
     image: require("@/assets/images/onboarding/HomeDashboardShifts.jpeg"),
-    gradient: ["#6a0dad", "#84cc16"],
+    gradient: ["#1A1A2E", "#0F9B8E"],
   },
   {
     key: "home-reports",
     title: "Reports",
     subtitle: "Revenue, services, and expenses by period.",
     image: require("@/assets/images/onboarding/HomeDashboardReports.jpeg"),
-    gradient: ["#6a0dad", "#b07cf2"],
+    gradient: ["#16213E", "#14C6B5"],
   },
   {
     key: "add-transactions",
     title: "Add Transaction",
     subtitle: "Pick services/specials and calculate instantly.",
     image: require("@/assets/images/onboarding/AddTransactions.jpeg"),
-    gradient: ["#6a0dad", "#22d3ee"],
+    gradient: ["#1A1A2E", "#0F9B8E"],
   },
   {
     key: "cart-1",
     title: "Cart & Discounts",
     subtitle: "Edit items, apply discounts, and charge.",
     image: require("@/assets/images/onboarding/AddTransactionsCart2.jpeg"),
-    gradient: ["#6a0dad", "#84cc16"],
+    gradient: ["#16213E", "#14C6B5"],
   },
   {
     key: "cart-2",
     title: "Share or Clear",
     subtitle: "Quick actions before checkout.",
     image: require("@/assets/images/onboarding/AddTransactionsCart3.jpeg"),
-    gradient: ["#6a0dad", "#b07cf2"],
+    gradient: ["#1A1A2E", "#0F9B8E"],
   },
   {
     key: "workers-mgmt-1",
     title: "Quick Actions",
     subtitle: "Clock-in, lunch, and history from each card.",
     image: require("@/assets/images/onboarding/EmployeesManagement.jpeg"),
-    gradient: ["#6a0dad", "#22d3ee"],
+    gradient: ["#16213E", "#14C6B5"],
   },
   {
     key: "workers-mgmt-2",
     title: "Add Workers",
     subtitle: "Role-based setup with auto-formatted phone.",
     image: require("@/assets/images/onboarding/EmployeesManagement2.jpeg"),
-    gradient: ["#6a0dad", "#84cc16"],
+    gradient: ["#1A1A2E", "#0F9B8E"],
   },
   {
     key: "settings",
     title: "Settings",
     subtitle: "Profile, update checks, what’s new, and logout.",
     image: require("@/assets/images/onboarding/Settings.jpeg"),
-    gradient: ["#6a0dad", "#b07cf2"],
+    gradient: ["#16213E", "#14C6B5"],
   },
 ];
 
@@ -174,17 +174,17 @@ export default function OnboardingScreen() {
         onPress={goNext}
         style={{
           marginTop: 18,
-          backgroundColor: "white",
+          backgroundColor: "#0F9B8E",
           paddingVertical: 14,
-          borderRadius: 14,
+          borderRadius: 12,
           alignItems: "center",
-          shadowColor: "#000",
-          shadowOpacity: 0.2,
-          shadowRadius: 10,
+          shadowColor: "#0F9B8E",
+          shadowOpacity: 0.4,
+          shadowRadius: 12,
           elevation: 4,
         }}
       >
-        <Text style={{ color: "#111827", fontWeight: "800", fontSize: 16 }}>
+        <Text style={{ color: "#fff", fontWeight: "800", fontSize: 16 }}>
           {index === SLIDES.length - 1 ? "Get Started" : "Next"}
         </Text>
       </TouchableOpacity>

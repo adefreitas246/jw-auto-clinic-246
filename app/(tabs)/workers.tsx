@@ -58,14 +58,13 @@ function EmployeesScreen() {
     padX: 18,
     radius: Platform.select({ ios: 14, android: 10, default: 12 })!,
     colors: {
-      // Light only
-      bg: "#F2F2F7", // iOS grouped background (light)
-      card: "#FFFFFF",
-      border: "#E5E5EA",
-      text: "#111111",
-      sub: "#6E6E73",
-      primary: "#6A0DAD",
-      glyphBorder: "#e9ecf7",
+      bg:          "#F5F7FA",  // Wash Hub background
+      card:        "#FFFFFF",
+      border:      "#E5E7EB",
+      text:        "#1A1A2E",
+      sub:         "#6B7280",
+      primary:     "#0F9B8E",  // teal accent
+      glyphBorder: "#E6FAF8",
     },
   };
 
@@ -836,7 +835,7 @@ function EmployeesScreen() {
             {Platform.OS === "web" && (
               <>
                 <TouchableOpacity onPress={() => openEdit(emp)} accessibilityRole="button" accessibilityLabel={`Edit ${emp.name}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="create-outline" size={18} color="#6a0dad" />
+                  <Ionicons name="create-outline" size={18} color="#0F9B8E" />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => confirmDelete(emp)} accessibilityRole="button" accessibilityLabel={`Delete ${emp.name}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                   <Ionicons name="trash-outline" size={18} color="#ef4444" />
@@ -845,7 +844,7 @@ function EmployeesScreen() {
             )}
 
             <View style={[styles.roleBadge, emp.role === "admin" ? styles.roleAdmin : styles.roleStaff]}>
-              <Text style={[styles.roleText, emp.role === "admin" ? { color: "#6a0dad" } : { color: "#065f46" }]} numberOfLines={1}>
+              <Text style={[styles.roleText, emp.role === "admin" ? { color: "#0F9B8E" } : { color: "#065f46" }]} numberOfLines={1}>
                 {String(emp.role).toUpperCase()}
               </Text>
             </View>
@@ -988,7 +987,7 @@ function EmployeesScreen() {
         {/* Role */}
         <View style={[styles.webTd, { flex: 1 }]}>
           <View style={[styles.webRoleBadge, emp.role === "admin" ? styles.webRoleAdmin : styles.webRoleStaff]}>
-            <Text style={[styles.webRoleText, emp.role === "admin" ? { color: "#6a0dad" } : { color: "#065f46" }]} numberOfLines={1}>
+            <Text style={[styles.webRoleText, emp.role === "admin" ? { color: "#0F9B8E" } : { color: "#065f46" }]} numberOfLines={1}>
               {String(emp.role).toUpperCase()}
             </Text>
           </View>
@@ -1568,11 +1567,11 @@ function EmployeesScreen() {
                             key={r}
                             style={[
                               styles.badgeChoice,
-                              editing.role === r && { backgroundColor: "#E9D5FF", borderColor: "#6a0dad" },
+                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: "#0F9B8E" },
                             ]}
                             onPress={() => setEditing({ ...editing, role: r })}
                           >
-                            <Text style={{ color: "#6a0dad", fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
+                            <Text style={{ color: "#0F9B8E", fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1674,11 +1673,11 @@ function EmployeesScreen() {
                             key={r}
                             style={[
                               styles.badgeChoice,
-                              editing.role === r && { backgroundColor: "#E9D5FF", borderColor: "#6a0dad" },
+                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: "#0F9B8E" },
                             ]}
                             onPress={() => setEditing({ ...editing, role: r })}
                           >
-                            <Text style={{ color: "#6a0dad", fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
+                            <Text style={{ color: "#0F9B8E", fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1796,7 +1795,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: { fontSize: 20,
     fontWeight: "800",
-    color: "#6a0dad",
+    color: "#0F9B8E",
     marginBottom: 8,
   },
 
@@ -1804,7 +1803,7 @@ const styles = StyleSheet.create({
   largeTitle: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#6a0dad",
+    color: "#0F9B8E",
   },
   cardHelper: {
     color: "#666",
@@ -1880,7 +1879,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#6a0dad",
+    backgroundColor: "#0F9B8E",
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -1918,7 +1917,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  employeeName: { fontWeight: "800", fontSize: 16, color: "#6a0dad" },
+  employeeName: { fontWeight: "800", fontSize: 16, color: "#0F9B8E" },
   employeeInfo: { fontSize: 14, color: "#333", marginBottom: 2 },
 
   statusDot: { width: 10, height: 10, borderRadius: 6, backgroundColor: "#d1d5db" },
@@ -1931,7 +1930,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderWidth: 1,
   },
-  roleAdmin: { backgroundColor: "#F5EEFF", borderColor: "#d6bcfa" },
+  roleAdmin: { backgroundColor: "#F0FDFA", borderColor: "#5EEAD4" },
   roleStaff: { backgroundColor: "#ECFDF5", borderColor: "#bbf7d0" },
   roleText: { fontSize: 12, fontWeight: "800" },
 
@@ -1954,7 +1953,7 @@ const styles = StyleSheet.create({
   shiftMeta: { color: "#555", fontSize: 12 },
 
   toggleHistory: {
-    color: "#6a0dad",
+    color: "#0F9B8E",
     fontWeight: "700",
     ...(Platform.OS === "web" ? { cursor: "pointer" } : null),
   },
@@ -1993,7 +1992,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#6a0dad",
+    backgroundColor: "#0F9B8E",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -2056,7 +2055,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#6a0dad",
+    backgroundColor: "#0F9B8E",
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -2168,7 +2167,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: "flex-start",
   },
-  webRoleAdmin: { backgroundColor: "#F5EEFF", borderColor: "#d6bcfa" },
+  webRoleAdmin: { backgroundColor: "#F0FDFA", borderColor: "#5EEAD4" },
   webRoleStaff: { backgroundColor: "#ECFDF5", borderColor: "#bbf7d0" },
   webRoleText: { fontSize: 11, fontWeight: "800" },
 

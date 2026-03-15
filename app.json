@@ -7,7 +7,9 @@
     "orientation": "default",
     "icon": "./assets/images/splash-icon-light.png",
     "scheme": "washhub",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
+    "primaryColor": "#0F9B8E",
+    "backgroundColor": "#F5F7FA",
     "runtimeVersion": "1.4.0",
     "updates": {
       "enabled": true,

@@ -121,13 +121,13 @@ const UI = {
   radius: Platform.select({ ios: 14, android: 10, default: 12 })!,
   colors: {
     // Light only
-    bg: "#FFFFFF", // iOS grouped background (light)
-    card: "#f9f9ff",
-    border: "#E5E5EA",
-    text: "#111111",
-    sub: "#6E6E73",
-    primary: "#6A0DAD",
-    glyphBorder: "#e9ecf7",
+    bg:          "#F5F7FA",  // Wash Hub background
+    card:        "#FFFFFF",
+    border:      "#E5E7EB",
+    text:        "#1A1A2E",
+    sub:         "#6B7280",
+    primary:     "#0F9B8E",  // teal accent
+    glyphBorder: "#E6FAF8",
   },
 };
 
@@ -1175,7 +1175,7 @@ const styles = StyleSheet.create({
   largeTitle: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#6a0dad",
+    color: "#0F9B8E",
     letterSpacing: 0.4,
   },
 
@@ -1211,7 +1211,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#6a0dad",
+    color: "#0F9B8E",
     marginBottom: 8,
   },
   sectionBody: {
@@ -1272,7 +1272,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: UI.colors.border,
-    backgroundColor: "#f9f9ff",
+    backgroundColor: "#F5F7FA",
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 10,

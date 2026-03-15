@@ -539,7 +539,7 @@ export default function TransactionsScreen() {
             style={styles.iconBtn}
             accessibilityLabel="Edit item"
           >
-            <Ionicons name="create-outline" size={20} color="#6a0dad" />
+            <Ionicons name="create-outline" size={20} color="#0F9B8E" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => onRemove(item.id)}
@@ -1119,10 +1119,10 @@ export default function TransactionsScreen() {
             body { font-family: Arial, sans-serif; padding: 40px; background: #f9f9f9; color: #333; } 
             .header { display: flex; align-items: center; margin-bottom: 40px; } 
             .logo { width: 80px; height: auto; margin-right: 20px; } 
-            .company-info h1 { font-size: 24px; color: #6a0dad; margin: 0; } 
+            .company-info h1 { font-size: 24px; color: #0F9B8E; margin: 0; } 
             .company-info p { margin: 4px 0; font-size: 14px; color: #666; }
             .card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-            .section-title { font-size: 18px; margin-bottom: 10px; color: #6a0dad; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+            .section-title { font-size: 18px; margin-bottom: 10px; color: #0F9B8E; border-bottom: 1px solid #eee; padding-bottom: 4px; }
             table { width: 100%; border-collapse: collapse; margin-top: 20px; }
             th, td { padding: 10px 12px; border: 1px solid #e0e0e0; text-align: left; }
             th { background-color: #f5f5f5; }
@@ -1232,11 +1232,11 @@ export default function TransactionsScreen() {
           body { font-family: Arial, sans-serif; padding: 40px; background: #f9f9f9; color: #333; } 
           .header { display: flex; align-items: center; margin-bottom: 40px; } 
           .logo { width: 80px; height: auto; margin-right: 20px; } 
-          .company-info h1 { font-size: 24px; color: #6a0dad; margin: 0; } 
+          .company-info h1 { font-size: 24px; color: #0F9B8E; margin: 0; } 
           .company-info p { margin: 4px 0; font-size: 14px; color: #666; }
 
           .card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
-          .section-title { font-size: 18px; margin-bottom: 10px; color: #6a0dad; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+          .section-title { font-size: 18px; margin-bottom: 10px; color: #0F9B8E; border-bottom: 1px solid #eee; padding-bottom: 4px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
           th, td { padding: 10px 12px; border: 1px solid #e0e0e0; text-align: left; }
           th { background-color: #f5f5f5; }
@@ -1820,7 +1820,7 @@ export default function TransactionsScreen() {
                     {/* Add Transaction */}
                     <View style={styles.fabOptionRow}>
                       <TouchableOpacity
-                        style={[styles.smallFab, { backgroundColor: '#6a0dad' }]}
+                        style={[styles.smallFab, { backgroundColor: '#0F9B8E' }]}
                         onPress={() => { setTxFabOpen(false); openForm(); }}
                         accessibilityLabel="Add Transaction"
                       >
@@ -1908,7 +1908,7 @@ export default function TransactionsScreen() {
                   </View>
                 </View>
 
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#6a0dad" }]} onPress={submitAll}>
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#0F9B8E" }]} onPress={submitAll}>
                   <Ionicons name="cash-outline" size={20} color="#fff" />
                   <Text style={styles.checkoutBtnText}>Charge ${totals.grandTotal}</Text>
                 </TouchableOpacity>
@@ -1938,7 +1938,7 @@ export default function TransactionsScreen() {
               </View>
 
               <TouchableOpacity
-                style={[styles.checkoutBtnSmall, { backgroundColor: "#6a0dad", flexDirection: 'row', alignItems: 'center', gap: 8 }]}
+                style={[styles.checkoutBtnSmall, { backgroundColor: "#0F9B8E", flexDirection: 'row', alignItems: 'center', gap: 8 }]}
                 onPress={() => setCartModalVisible(true)}
                 accessibilityLabel="Open cart"
               >
@@ -2100,7 +2100,7 @@ export default function TransactionsScreen() {
                   <Text style={styles.checkoutBtnText}>Share</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.checkoutBtn, { backgroundColor: "#6a0dad", flex: 1 }]}
+                  style={[styles.checkoutBtn, { backgroundColor: "#0F9B8E", flex: 1 }]}
                   onPress={() => { setCartModalVisible(false); submitAll(); }}
                   accessibilityLabel="Charge and submit transactions"
                 >
@@ -2342,14 +2342,14 @@ export default function TransactionsScreen() {
                             borderRadius: 999,
                             borderWidth: 1,
                             borderColor: "#d3c2ff",
-                            backgroundColor: "#f5eeff",
+                            backgroundColor: "#F0FDFA",
                           }}
                         >
                           <Text
                             style={{
                               fontSize: 12,
                               fontWeight: "600",
-                              color: "#6a0dad",
+                              color: "#0F9B8E",
                             }}
                           >
                             {showCombinedList
@@ -2531,7 +2531,7 @@ export default function TransactionsScreen() {
             {/* Actions */}
             <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: "#6a0dad", flex: 1 }]}
+                style={[styles.submitButton, { backgroundColor: "#0F9B8E", flex: 1 }]}
                 onPress={addOrUpdateCartItem}
                 accessibilityLabel={editingId ? "Update item" : "Add to cart"}
               >
@@ -2553,7 +2553,7 @@ export default function TransactionsScreen() {
                   <Ionicons name="share-social-outline" size={20} color="#fff" />
                   <Text style={styles.checkoutBtnText}>Preview & Share</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#6a0dad", flex: 1 }]} onPress={submitAll}>
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#0F9B8E", flex: 1 }]} onPress={submitAll}>
                   <Ionicons name="cash-outline" size={20} color="#fff" />
                   <Text style={styles.checkoutBtnText}>Charge ${totals.grandTotal}</Text>
                 </TouchableOpacity>
@@ -2870,8 +2870,8 @@ const styles = StyleSheet.create({
     }), 
   },
   containerWide: {},
-  header: { fontSize: 18, fontWeight: 'bold', color: '#6a0dad', marginBottom: 16, },
-  logo: { fontSize: 18, fontWeight: 'bold', color: '#6a0dad', marginTop: 0, },
+  header: { fontSize: 18, fontWeight: 'bold', color: '#0F9B8E', marginBottom: 16, },
+  logo: { fontSize: 18, fontWeight: 'bold', color: '#0F9B8E', marginTop: 0, },
   label: { marginTop: 10, marginBottom: 4, color: '#333', fontWeight: '600' },
 
   posContainer: { flex: 1, backgroundColor: "#fff" },
@@ -2895,7 +2895,7 @@ const styles = StyleSheet.create({
   },
   cartHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cartTitle: { fontSize: 18, fontWeight: "800" },
-  badge: { minWidth: 28, height: 28, borderRadius: 14, backgroundColor: "#6a0dad", alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
+  badge: { minWidth: 28, height: 28, borderRadius: 14, backgroundColor: "#0F9B8E", alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
   badgeText: { color: "#fff", fontWeight: "800" },
   cartRow: {
     flexDirection: "row",
@@ -2923,12 +2923,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#d3c2ff",
-    backgroundColor: "#f5eeff",
+    backgroundColor: "#F0FDFA",
   },
   cartDetailsToggleText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#6a0dad",
+    color: "#0F9B8E",
   },
 
   checkoutBtn: {
@@ -3000,7 +3000,7 @@ const styles = StyleSheet.create({
   },
   dropdownContainer: { borderColor: '#ddd', borderWidth: 1, borderRadius: 8, backgroundColor: '#fafafa' },
   submitButton: {
-    backgroundColor: '#6a0dad', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 20,
+    backgroundColor: '#0F9B8E', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 20,
   },
   submitText: { color: '#fff', fontWeight: '600', fontSize: 16 },
 
@@ -3020,7 +3020,7 @@ const styles = StyleSheet.create({
     marginTop: -5, paddingHorizontal: 8, paddingVertical: 4, zIndex: 9999, maxHeight: 1000,
   },
   suggestionItem: { paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: '#eee' },
-  collapsibleHeader: { fontWeight: '700', fontSize: 16, marginTop: 20, marginBottom: 8, color: '#6a0dad' },
+  collapsibleHeader: { fontWeight: '700', fontSize: 16, marginTop: 20, marginBottom: 8, color: '#0F9B8E' },
 
   // Sticky header for Transactions FlatList
   stickyHeader: {
@@ -3052,7 +3052,7 @@ const styles = StyleSheet.create({
   stickyHeaderTitle: { 
     fontSize: 30, 
     fontWeight: '800', 
-    color: '#6a0dad', 
+    color: '#0F9B8E', 
   },
   stickyHeaderSubtitle: { color: '#666', marginTop: 4 },
 
@@ -3064,7 +3064,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#6a0dad",
+    backgroundColor: "#0F9B8E",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -3127,7 +3127,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#6a0dad",
+    backgroundColor: "#0F9B8E",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",

@@ -3,7 +3,7 @@ import { SECURE_STORE_KEYS } from "@/constants/secureStoreKeys";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Apple from "expo-auth-session/providers/apple";
+import * as AppleAuthentication from "expo-apple-authentication";
 import * as Google from "expo-auth-session/providers/google";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
@@ -30,7 +30,10 @@ import {
   useWindowDimensions,
 } from "react-native";
 import * as Animatable from "react-native-animatable";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 // Required for expo-auth-session on native
 WebBrowser.maybeCompleteAuthSession();
@@ -45,7 +48,9 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(
+    null,
+  );
   const [rememberMe, setRememberMe] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
@@ -76,14 +81,22 @@ export default function LoginScreen() {
       if (token) handleOAuthLogin("google", () => loginWithGoogle(token));
     } else if (googleResponse?.type === "error") {
       setOauthLoading(null);
-      Alert.alert("Google Sign-In Failed", googleResponse.error?.message ?? "Try again.");
+      Alert.alert(
+        "Google Sign-In Failed",
+        googleResponse.error?.message ?? "Try again.",
+      );
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [googleResponse]);
 
   // ── Apple Sign-In (iOS only) ──────────────────────────────────
   const [_appleRequest, appleResponse, promptAppleAsync] =
-    Apple.useAuthRequest();
+    AppleAuthentication.useAuthRequest({
+      clientId: process.env.EXPO_PUBLIC_APPLE_CLIENT_ID,
+      iosClientId: process.env.EXPO_PUBLIC_APPLE_IOS_CLIENT_ID,
+      androidClientId: process.env.EXPO_PUBLIC_APPLE_ANDROID_CLIENT_ID,
+      scopes: ["email", "fullName"],
+    });
 
   useEffect(() => {
     if (appleResponse?.type === "success") {
@@ -91,19 +104,25 @@ export default function LoginScreen() {
       const firstName = appleResponse.params?.given_name;
       const lastName = appleResponse.params?.family_name;
       const fullName =
-        firstName || lastName ? `${firstName ?? ""} ${lastName ?? ""}`.trim() : undefined;
-      if (idToken) handleOAuthLogin("apple", () => loginWithApple(idToken, fullName));
+        firstName || lastName
+          ? `${firstName ?? ""} ${lastName ?? ""}`.trim()
+          : undefined;
+      if (idToken)
+        handleOAuthLogin("apple", () => loginWithApple(idToken, fullName));
     } else if (appleResponse?.type === "error") {
       setOauthLoading(null);
-      Alert.alert("Apple Sign-In Failed", appleResponse.error?.message ?? "Try again.");
+      Alert.alert(
+        "Apple Sign-In Failed",
+        appleResponse.error?.message ?? "Try again.",
+      );
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appleResponse]);
 
   // ── Shared OAuth success handler ──────────────────────────────
   const handleOAuthLogin = async (
     provider: "google" | "apple",
-    loginFn: () => Promise<void>
+    loginFn: () => Promise<void>,
   ) => {
     try {
       setOauthLoading(provider);
@@ -121,9 +140,10 @@ export default function LoginScreen() {
 
   // ── Navigate to correct stack based on role ───────────────────
   const navigateAfterLogin = async () => {
-    const role = Platform.OS === "web"
-      ? await AsyncStorage.getItem(SECURE_STORE_KEYS.USER_ROLE)
-      : await SecureStore.getItemAsync(SECURE_STORE_KEYS.USER_ROLE);
+    const role =
+      Platform.OS === "web"
+        ? await AsyncStorage.getItem(SECURE_STORE_KEYS.USER_ROLE)
+        : await SecureStore.getItemAsync(SECURE_STORE_KEYS.USER_ROLE);
     const dest = role === "customer" ? "/(customer)/home" : "/(tabs)/home";
     router.replace(dest);
   };
@@ -136,7 +156,10 @@ export default function LoginScreen() {
         const savedPassword = await AsyncStorage.getItem("@rememberedPassword");
         const savedUseBiometrics = await AsyncStorage.getItem("@useBiometrics");
 
-        if (savedEmail) { setEmail(savedEmail); setRememberMe(true); }
+        if (savedEmail) {
+          setEmail(savedEmail);
+          setRememberMe(true);
+        }
         if (savedPassword) setPassword(savedPassword);
         setHasStoredCredentials(!!(savedEmail && savedPassword));
         if (savedUseBiometrics === "true") setBiometricEnabled(true);
@@ -159,7 +182,10 @@ export default function LoginScreen() {
   }, [isNative]);
 
   // ── Email/password login ──────────────────────────────────────
-  const handleLogin = async (overrideEmail?: string, overridePassword?: string) => {
+  const handleLogin = async (
+    overrideEmail?: string,
+    overridePassword?: string,
+  ) => {
     const loginEmail = overrideEmail ?? email;
     const loginPassword = overridePassword ?? password;
 
@@ -201,11 +227,17 @@ export default function LoginScreen() {
   const handleBiometricLogin = async () => {
     if (!isNative) return;
     if (!biometricEnabled) {
-      Alert.alert("Biometric login not enabled", "Turn on biometric login in Settings first.");
+      Alert.alert(
+        "Biometric login not enabled",
+        "Turn on biometric login in Settings first.",
+      );
       return;
     }
     if (!biometricAvailable) {
-      Alert.alert("Biometrics not available", "This device does not support biometric authentication.");
+      Alert.alert(
+        "Biometrics not available",
+        "This device does not support biometric authentication.",
+      );
       return;
     }
     try {
@@ -215,13 +247,14 @@ export default function LoginScreen() {
         setHasStoredCredentials(false);
         Alert.alert(
           "Biometric login not ready",
-          "Please log in once with your email and password first."
+          "Please log in once with your email and password first.",
         );
         return;
       }
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Login with biometrics",
-        fallbackLabel: Platform.OS === "ios" ? "Use passcode" : "Use device PIN",
+        fallbackLabel:
+          Platform.OS === "ios" ? "Use passcode" : "Use device PIN",
         cancelLabel: "Cancel",
         disableDeviceFallback: false,
       });
@@ -231,7 +264,10 @@ export default function LoginScreen() {
         await handleLogin(savedEmail, savedPassword);
       }
     } catch {
-      Alert.alert("Biometric error", "We couldn't complete biometric authentication.");
+      Alert.alert(
+        "Biometric error",
+        "We couldn't complete biometric authentication.",
+      );
     }
   };
 
@@ -240,12 +276,23 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       {isNative && (
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" translucent={false} hidden={false} />
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#ffffff"
+          translucent={false}
+          hidden={false}
+        />
       )}
 
       <KeyboardAvoidingView
         style={{ flex: 1, backgroundColor: "#fff" }}
-        behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : Platform.OS === "android"
+              ? "height"
+              : undefined
+        }
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
         <TouchableWithoutFeedback
@@ -256,7 +303,8 @@ export default function LoginScreen() {
               styles.scrollContent,
               isNative && {
                 paddingTop: isSmallScreen ? 24 : 40,
-                paddingBottom: (insets.bottom || 16) + (isSmallScreen ? 24 : 40),
+                paddingBottom:
+                  (insets.bottom || 16) + (isSmallScreen ? 24 : 40),
               },
             ]}
             keyboardShouldPersistTaps="handled"
@@ -275,13 +323,19 @@ export default function LoginScreen() {
               </Text>
 
               {/* Email */}
-              <Animatable.View ref={emailRef} animation={emailError ? "shake" : undefined}>
+              <Animatable.View
+                ref={emailRef}
+                animation={emailError ? "shake" : undefined}
+              >
                 <TextInput
                   style={[styles.input, emailError && styles.errorInput]}
                   placeholder="Email Address"
                   placeholderTextColor="#999"
                   value={email}
-                  onChangeText={(t) => { setEmail(t); if (emailError && t) setEmailError(false); }}
+                  onChangeText={(t) => {
+                    setEmail(t);
+                    if (emailError && t) setEmailError(false);
+                  }}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
@@ -298,12 +352,18 @@ export default function LoginScreen() {
                 style={styles.passwordContainer}
               >
                 <TextInput
-                  style={[styles.passwordInput, passwordError && styles.errorInput]}
+                  style={[
+                    styles.passwordInput,
+                    passwordError && styles.errorInput,
+                  ]}
                   placeholder="Password"
                   placeholderTextColor="#999"
                   secureTextEntry={hidePassword}
                   value={password}
-                  onChangeText={(t) => { setPassword(t); if (passwordError && t) setPasswordError(false); }}
+                  onChangeText={(t) => {
+                    setPassword(t);
+                    if (passwordError && t) setPasswordError(false);
+                  }}
                   autoCapitalize="none"
                   autoCorrect={false}
                   textContentType="password"
@@ -315,7 +375,11 @@ export default function LoginScreen() {
                   accessibilityLabel="Toggle password visibility"
                   hitSlop={8}
                 >
-                  <Ionicons name={hidePassword ? "eye-outline" : "eye"} size={22} color="#555" />
+                  <Ionicons
+                    name={hidePassword ? "eye-outline" : "eye"}
+                    size={22}
+                    color="#555"
+                  />
                 </Pressable>
               </Animatable.View>
 
@@ -357,8 +421,14 @@ export default function LoginScreen() {
                     <ActivityIndicator color="#6a0dad" />
                   ) : (
                     <View style={styles.biometricBtnContent}>
-                      <Ionicons name="finger-print-outline" size={20} color="#6a0dad" />
-                      <Text style={styles.biometricBtnText}>Login with Biometrics</Text>
+                      <Ionicons
+                        name="finger-print-outline"
+                        size={20}
+                        color="#6a0dad"
+                      />
+                      <Text style={styles.biometricBtnText}>
+                        Login with Biometrics
+                      </Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -396,7 +466,9 @@ export default function LoginScreen() {
                   <View style={styles.oauthBtnContent}>
                     {/* Google "G" icon via Ionicons is unavailable — use text placeholder */}
                     <Text style={styles.oauthIcon}>G</Text>
-                    <Text style={styles.oauthBtnText}>Continue with Google</Text>
+                    <Text style={styles.oauthBtnText}>
+                      Continue with Google
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -404,7 +476,11 @@ export default function LoginScreen() {
               {/* Apple Sign-In — iOS only */}
               {Platform.OS === "ios" && (
                 <TouchableOpacity
-                  style={[styles.oauthBtn, styles.appleBtn, anyLoading && styles.disabled]}
+                  style={[
+                    styles.oauthBtn,
+                    styles.appleBtn,
+                    anyLoading && styles.disabled,
+                  ]}
                   onPress={() => {
                     setOauthLoading("apple");
                     promptAppleAsync();
@@ -456,7 +532,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: "#0d1321",
   },
-  subtext: { fontSize: 14, color: "#555", textAlign: "center", marginBottom: 24 },
+  subtext: {
+    fontSize: 14,
+    color: "#555",
+    textAlign: "center",
+    marginBottom: 24,
+  },
   input: {
     backgroundColor: "#f3f3f3",
     padding: 14,

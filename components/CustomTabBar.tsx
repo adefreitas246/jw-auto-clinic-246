@@ -26,10 +26,11 @@ Animatable.initializeRegistryWithDefinitions({
 });
 
 const TAB_ICONS: Record<string, { icon: string; label: string; animation: string }> = {
-  home: { icon: 'home', label: 'Home', animation: 'wiggle' },
-  transactions: { icon: 'add-circle', label: 'Add', animation: 'pulse' },
-  workers: { icon: 'person', label: 'Workers', animation: 'rubberBand' },
-  settings: { icon: 'settings', label: 'Settings', animation: 'flipInY' },
+  home:         { icon: 'home',        label: 'Home',     animation: 'wiggle'    },
+  transactions: { icon: 'add-circle',  label: 'Add',      animation: 'pulse'     },
+  jobs:         { icon: 'briefcase',   label: 'Jobs',     animation: 'pulse'     },
+  workers:      { icon: 'person',      label: 'Workers',  animation: 'rubberBand'},
+  settings:     { icon: 'settings',    label: 'Settings', animation: 'flipInY'   },
 };
 
 const activeColor = '#6a0dad';

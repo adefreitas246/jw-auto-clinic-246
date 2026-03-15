@@ -18,11 +18,12 @@ const authMiddleware = (req, res, next) => {
 
     // include type + keep both id and userId for downstream code
     req.user = {
-      id: decoded.userId,
-      userId: decoded.userId,
-      role: decoded.role || 'user',
-      name: decoded.name || '',
-      type: decoded.type || 'User',   // <-- IMPORTANT
+      id:         decoded.userId,
+      userId:     decoded.userId,
+      role:       decoded.role       || 'user',
+      name:       decoded.name       || '',
+      type:       decoded.type       || 'User',   // <-- IMPORTANT
+      businessId: decoded.businessId || null,     // multi-tenant claim
     };
 
     next();

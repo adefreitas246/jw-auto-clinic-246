@@ -14,11 +14,13 @@ const CustomerSchema = new mongoose.Schema(
     // New fields
     discount: { type: Number, default: 0 },
     specials: { type: String, trim: true },
+
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', required: true, index: true },
   },
   { timestamps: true }
 );
 
-// Ensure uniqueness: prevent duplicate name+vehicle combinations
-CustomerSchema.index({ name: 1, vehicleDetails: 1 }, { unique: true });
+// Uniqueness scoped per business
+CustomerSchema.index({ businessId: 1, name: 1, vehicleDetails: 1 }, { unique: true });
 
 module.exports = mongoose.model('Customer', CustomerSchema);

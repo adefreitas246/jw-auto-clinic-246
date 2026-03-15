@@ -39,10 +39,26 @@ export default function TabLayout() {
     >
       <Tabs.Screen name="home" />
       <Tabs.Screen name="transactions" />
+      <Tabs.Screen name="jobs" />
       <Tabs.Protected guard={user?.role === "admin"}>
         <Tabs.Screen name="workers" />
       </Tabs.Protected>
       <Tabs.Screen name="settings" />
+      {/* Staff + admin screens — routable but not tab bar items */}
+      <Tabs.Screen name="services"  options={{ href: null }} />
+      <Tabs.Screen name="packages"  options={{ href: null }} />
+      <Tabs.Screen name="fleet"     options={{ href: null }} />
+      <Tabs.Screen name="tracking"  options={{ href: null }} />
+      <Tabs.Screen name="scanner"   options={{ href: null }} />
+      <Tabs.Screen name="kiosk"     options={{ href: null }} />
+      <Tabs.Screen name="walkin"    options={{ href: null }} />
+      <Tabs.Screen name="queue"     options={{ href: null }} />
+      <Tabs.Screen name="reports"   options={{ href: null }} />
+      <Tabs.Screen name="inventory"           options={{ href: null }} />
+      <Tabs.Screen name="reviews"             options={{ href: null }} />
+      <Tabs.Screen name="subscription-plans" options={{ href: null }} />
+      <Tabs.Screen name="marketing"          options={{ href: null }} />
+      <Tabs.Screen name="ai"                 options={{ href: null }} />
     </Tabs>
   );
 }

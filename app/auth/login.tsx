@@ -1,8 +1,14 @@
-// login.tsx
+// app/auth/login.tsx
+import { SECURE_STORE_KEYS } from "@/constants/secureStoreKeys";
+import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Apple from "expo-auth-session/providers/apple";
+import * as Google from "expo-auth-session/providers/google";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -20,17 +26,18 @@ import {
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  useWindowDimensions,
   View,
+  useWindowDimensions,
 } from "react-native";
 import * as Animatable from "react-native-animatable";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useAuth } from "@/context/AuthContext";
+// Required for expo-auth-session on native
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuth();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
 
@@ -38,62 +45,109 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
 
   // Biometrics state
-  const [biometricEnabled, setBiometricEnabled] = useState(false); // from Settings
-  const [biometricAvailable, setBiometricAvailable] = useState(false); // device supports + enrolled
-  const [hasStoredCredentials, setHasStoredCredentials] = useState(false); // has remembered email & password
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [hasStoredCredentials, setHasStoredCredentials] = useState(false);
 
   const emailRef = useRef<any>(null);
   const passwordRef = useRef<any>(null);
 
-  const allowedAdmins = [
-    "admin@jwautoclinic246.com",
-    "jwautoclinic246@gmail.com",
-  ];
-
-  const isAdminEmail = allowedAdmins.includes(email.trim().toLowerCase());
   const isNative = Platform.OS === "ios" || Platform.OS === "android";
   const isSmallScreen = height < 700;
 
+  // ── Google OAuth ─────────────────────────────────────────────
+  const [_googleRequest, googleResponse, promptGoogleAsync] =
+    Google.useAuthRequest({
+      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+      scopes: ["profile", "email"],
+    });
+
   useEffect(() => {
-    const loadRemembered = async () => {
+    if (googleResponse?.type === "success") {
+      const token = googleResponse.authentication?.accessToken;
+      if (token) handleOAuthLogin("google", () => loginWithGoogle(token));
+    } else if (googleResponse?.type === "error") {
+      setOauthLoading(null);
+      Alert.alert("Google Sign-In Failed", googleResponse.error?.message ?? "Try again.");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [googleResponse]);
+
+  // ── Apple Sign-In (iOS only) ──────────────────────────────────
+  const [_appleRequest, appleResponse, promptAppleAsync] =
+    Apple.useAuthRequest();
+
+  useEffect(() => {
+    if (appleResponse?.type === "success") {
+      const idToken = appleResponse.params?.id_token;
+      const firstName = appleResponse.params?.given_name;
+      const lastName = appleResponse.params?.family_name;
+      const fullName =
+        firstName || lastName ? `${firstName ?? ""} ${lastName ?? ""}`.trim() : undefined;
+      if (idToken) handleOAuthLogin("apple", () => loginWithApple(idToken, fullName));
+    } else if (appleResponse?.type === "error") {
+      setOauthLoading(null);
+      Alert.alert("Apple Sign-In Failed", appleResponse.error?.message ?? "Try again.");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appleResponse]);
+
+  // ── Shared OAuth success handler ──────────────────────────────
+  const handleOAuthLogin = async (
+    provider: "google" | "apple",
+    loginFn: () => Promise<void>
+  ) => {
+    try {
+      setOauthLoading(provider);
+      await loginFn();
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      await navigateAfterLogin();
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.error ?? "Sign-in failed. Please try again.";
+      Alert.alert("Sign-In Failed", message);
+    } finally {
+      setOauthLoading(null);
+    }
+  };
+
+  // ── Navigate to correct stack based on role ───────────────────
+  const navigateAfterLogin = async () => {
+    const role = Platform.OS === "web"
+      ? await AsyncStorage.getItem(SECURE_STORE_KEYS.USER_ROLE)
+      : await SecureStore.getItemAsync(SECURE_STORE_KEYS.USER_ROLE);
+    const dest = role === "customer" ? "/(customer)/home" : "/(tabs)/home";
+    router.replace(dest);
+  };
+
+  // ── Load stored credentials ───────────────────────────────────
+  useEffect(() => {
+    (async () => {
       try {
         const savedEmail = await AsyncStorage.getItem("@rememberedEmail");
         const savedPassword = await AsyncStorage.getItem("@rememberedPassword");
         const savedUseBiometrics = await AsyncStorage.getItem("@useBiometrics");
 
-        if (savedEmail) {
-          setEmail(savedEmail);
-          setRememberMe(true);
-        }
-        if (savedPassword) {
-          setPassword(savedPassword);
-        }
-        if (savedEmail && savedPassword) {
-          setHasStoredCredentials(true);
-        } else {
-          setHasStoredCredentials(false);
-        }
-
-        if (savedUseBiometrics === "true") {
-          setBiometricEnabled(true);
-        }
-      } catch (e) {
-        // swallow – not critical
-      }
-    };
-    loadRemembered();
+        if (savedEmail) { setEmail(savedEmail); setRememberMe(true); }
+        if (savedPassword) setPassword(savedPassword);
+        setHasStoredCredentials(!!(savedEmail && savedPassword));
+        if (savedUseBiometrics === "true") setBiometricEnabled(true);
+      } catch {}
+    })();
   }, []);
 
-  // Check if device supports biometrics (hardware + enrolled)
+  // ── Check biometric hardware ──────────────────────────────────
   useEffect(() => {
     if (!isNative) return;
-
-    const checkBiometrics = async () => {
+    (async () => {
       try {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const enrolled = await LocalAuthentication.isEnrolledAsync();
@@ -101,21 +155,16 @@ export default function LoginScreen() {
       } catch {
         setBiometricAvailable(false);
       }
-    };
-
-    checkBiometrics();
+    })();
   }, [isNative]);
 
-  const handleLogin = async (
-    overrideEmail?: string,
-    overridePassword?: string
-  ) => {
+  // ── Email/password login ──────────────────────────────────────
+  const handleLogin = async (overrideEmail?: string, overridePassword?: string) => {
     const loginEmail = overrideEmail ?? email;
     const loginPassword = overridePassword ?? password;
 
     const emailMissing = !loginEmail;
     const passwordMissing = !loginPassword;
-
     setEmailError(emailMissing);
     setPasswordError(passwordMissing);
 
@@ -138,89 +187,65 @@ export default function LoginScreen() {
 
       await login(loginEmail, loginPassword);
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      router.replace("/(tabs)/home");
+      await navigateAfterLogin();
     } catch (error: any) {
       const message =
-        error?.response?.data?.error || "Invalid credentials or server error.";
+        error?.response?.data?.error ?? "Invalid credentials or server error.";
       Alert.alert("Login Failed", message);
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Biometric login ───────────────────────────────────────────
   const handleBiometricLogin = async () => {
     if (!isNative) return;
-
     if (!biometricEnabled) {
-      Alert.alert(
-        "Biometric login not enabled",
-        "Turn on biometric login in Settings first."
-      );
+      Alert.alert("Biometric login not enabled", "Turn on biometric login in Settings first.");
       return;
     }
-
     if (!biometricAvailable) {
-      Alert.alert(
-        "Biometrics not available",
-        "This device does not support biometric authentication or it is not set up."
-      );
+      Alert.alert("Biometrics not available", "This device does not support biometric authentication.");
       return;
     }
-
     try {
       const savedEmail = await AsyncStorage.getItem("@rememberedEmail");
       const savedPassword = await AsyncStorage.getItem("@rememberedPassword");
-
       if (!savedEmail || !savedPassword) {
         setHasStoredCredentials(false);
         Alert.alert(
           "Biometric login not ready",
-          "Please log in once with your email and password so we can securely save your credentials."
+          "Please log in once with your email and password first."
         );
         return;
       }
-
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Login with biometrics",
         fallbackLabel: Platform.OS === "ios" ? "Use passcode" : "Use device PIN",
         cancelLabel: "Cancel",
         disableDeviceFallback: false,
       });
-
       if (result.success) {
         setEmail(savedEmail);
         setPassword(savedPassword);
         await handleLogin(savedEmail, savedPassword);
       }
-    } catch (e) {
-      Alert.alert(
-        "Biometric error",
-        "We couldn’t complete biometric authentication."
-      );
+    } catch {
+      Alert.alert("Biometric error", "We couldn't complete biometric authentication.");
     }
   };
 
+  const anyLoading = loading || oauthLoading !== null;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-      {/* Ensure status bar is visible on phones, but do nothing on web */}
       {isNative && (
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor="#ffffff"
-          translucent={false}
-          hidden={false}
-        />
+        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" translucent={false} hidden={false} />
       )}
 
       <KeyboardAvoidingView
         style={{ flex: 1, backgroundColor: "#fff" }}
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : Platform.OS === "android"
-            ? "height"
-            : undefined
-        }
+        behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
         <TouchableWithoutFeedback
@@ -231,8 +256,7 @@ export default function LoginScreen() {
               styles.scrollContent,
               isNative && {
                 paddingTop: isSmallScreen ? 24 : 40,
-                paddingBottom:
-                  (insets.bottom || 16) + (isSmallScreen ? 24 : 40),
+                paddingBottom: (insets.bottom || 16) + (isSmallScreen ? 24 : 40),
               },
             ]}
             keyboardShouldPersistTaps="handled"
@@ -241,65 +265,45 @@ export default function LoginScreen() {
             <View style={styles.formContainer}>
               <Image
                 source={require("@/assets/images/icon.png")}
-                style={[
-                  styles.logo,
-                  isSmallScreen && styles.logoSmall,
-                  isNative && { marginBottom: isSmallScreen ? 16 : 24 },
-                ]}
+                style={[styles.logo, isSmallScreen && styles.logoSmall]}
                 resizeMode="contain"
               />
 
               <Text style={styles.heading}>Sign In to Your Account</Text>
               <Text style={styles.subtext}>
-                Enter your email and password to access your dashboard
+                Enter your email and password to continue
               </Text>
 
-              {/* Email input */}
-              <Animatable.View
-                ref={emailRef}
-                animation={emailError ? "shake" : undefined}
-              >
+              {/* Email */}
+              <Animatable.View ref={emailRef} animation={emailError ? "shake" : undefined}>
                 <TextInput
                   style={[styles.input, emailError && styles.errorInput]}
                   placeholder="Email Address"
                   placeholderTextColor="#999"
                   value={email}
-                  onChangeText={(text) => {
-                    setEmail(text);
-                    if (emailError && text) setEmailError(false);
-                  }}
+                  onChangeText={(t) => { setEmail(t); if (emailError && t) setEmailError(false); }}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
                   textContentType="emailAddress"
                   importantForAutofill="yes"
                   returnKeyType="next"
-                  onSubmitEditing={() => {
-                    // move focus to password on native; web behaves normally
-                    (passwordRef.current as any)?.fadeIn?.(200);
-                  }}
                 />
               </Animatable.View>
 
-              {/* Password input */}
+              {/* Password */}
               <Animatable.View
                 ref={passwordRef}
                 animation={passwordError ? "shake" : undefined}
                 style={styles.passwordContainer}
               >
                 <TextInput
-                  style={[
-                    styles.passwordInput,
-                    passwordError && styles.errorInput,
-                  ]}
+                  style={[styles.passwordInput, passwordError && styles.errorInput]}
                   placeholder="Password"
                   placeholderTextColor="#999"
                   secureTextEntry={hidePassword}
                   value={password}
-                  onChangeText={(text) => {
-                    setPassword(text);
-                    if (passwordError && text) setPasswordError(false);
-                  }}
+                  onChangeText={(t) => { setPassword(t); if (passwordError && t) setPasswordError(false); }}
                   autoCapitalize="none"
                   autoCorrect={false}
                   textContentType="password"
@@ -307,24 +311,17 @@ export default function LoginScreen() {
                   onSubmitEditing={() => handleLogin()}
                 />
                 <Pressable
-                  onPress={() => setHidePassword((prev) => !prev)}
+                  onPress={() => setHidePassword((p) => !p)}
                   accessibilityLabel="Toggle password visibility"
                   hitSlop={8}
                 >
-                  <Ionicons
-                    name={hidePassword ? "eye-outline" : "eye"}
-                    size={22}
-                    color="#555"
-                  />
+                  <Ionicons name={hidePassword ? "eye-outline" : "eye"} size={22} color="#555" />
                 </Pressable>
               </Animatable.View>
 
               {/* Remember Me */}
               <View style={styles.rememberRow}>
-                <Pressable
-                  onPress={() => setRememberMe((prev) => !prev)}
-                  hitSlop={8}
-                >
+                <Pressable onPress={() => setRememberMe((p) => !p)} hitSlop={8}>
                   <Ionicons
                     name={rememberMe ? "checkbox" : "square-outline"}
                     size={22}
@@ -336,9 +333,9 @@ export default function LoginScreen() {
 
               {/* Login Button */}
               <TouchableOpacity
-                style={[styles.loginBtn, loading && { opacity: 0.7 }]}
+                style={[styles.loginBtn, anyLoading && styles.disabled]}
                 onPress={() => handleLogin()}
-                disabled={loading}
+                disabled={anyLoading}
                 activeOpacity={0.8}
               >
                 {loading ? (
@@ -348,38 +345,83 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* Biometric Login Button (shows when enabled in Settings & supported on device) */}
+              {/* Biometric */}
               {isNative && biometricEnabled && biometricAvailable && (
                 <TouchableOpacity
-                  style={[styles.biometricBtn, loading && { opacity: 0.7 }]}
+                  style={[styles.biometricBtn, anyLoading && styles.disabled]}
                   onPress={handleBiometricLogin}
-                  disabled={loading}
+                  disabled={anyLoading}
                   activeOpacity={0.8}
                 >
                   {loading ? (
                     <ActivityIndicator color="#6a0dad" />
                   ) : (
                     <View style={styles.biometricBtnContent}>
-                      <Ionicons
-                        name="finger-print-outline"
-                        size={20}
-                        color="#6a0dad"
-                      />
-                      <Text style={styles.biometricBtnText}>
-                        Login with Biometrics
-                      </Text>
+                      <Ionicons name="finger-print-outline" size={20} color="#6a0dad" />
+                      <Text style={styles.biometricBtnText}>Login with Biometrics</Text>
                     </View>
                   )}
                 </TouchableOpacity>
               )}
 
-              {/* Show forgot password if email is admin */}
-              {isAdminEmail && (
+              {/* Forgot Password — visible to all */}
+              <TouchableOpacity
+                accessibilityLabel="Forgot your password?"
+                onPress={() => router.push("/auth/forgot")}
+                disabled={anyLoading}
+              >
+                <Text style={styles.forgotText}>Forgot Password?</Text>
+              </TouchableOpacity>
+
+              {/* ── OAuth divider ─────────────────────────── */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>or continue with</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Google Sign-In */}
+              <TouchableOpacity
+                style={[styles.oauthBtn, anyLoading && styles.disabled]}
+                onPress={() => {
+                  setOauthLoading("google");
+                  promptGoogleAsync();
+                }}
+                disabled={anyLoading}
+                activeOpacity={0.8}
+              >
+                {oauthLoading === "google" ? (
+                  <ActivityIndicator color="#444" />
+                ) : (
+                  <View style={styles.oauthBtnContent}>
+                    {/* Google "G" icon via Ionicons is unavailable — use text placeholder */}
+                    <Text style={styles.oauthIcon}>G</Text>
+                    <Text style={styles.oauthBtnText}>Continue with Google</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Apple Sign-In — iOS only */}
+              {Platform.OS === "ios" && (
                 <TouchableOpacity
-                  accessibilityLabel="Forgot your password?"
-                  onPress={() => router.push("/auth/forgot")}
+                  style={[styles.oauthBtn, styles.appleBtn, anyLoading && styles.disabled]}
+                  onPress={() => {
+                    setOauthLoading("apple");
+                    promptAppleAsync();
+                  }}
+                  disabled={anyLoading}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.forgotText}>Forgot Password?</Text>
+                  {oauthLoading === "apple" ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <View style={styles.oauthBtnContent}>
+                      <Ionicons name="logo-apple" size={20} color="#fff" />
+                      <Text style={[styles.oauthBtnText, { color: "#fff" }]}>
+                        Continue with Apple
+                      </Text>
+                    </View>
+                  )}
                 </TouchableOpacity>
               )}
             </View>
@@ -391,21 +433,14 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  safeArea: { flex: 1, backgroundColor: "#fff" },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
     flexGrow: 1,
     justifyContent: "center",
   },
-  formContainer: {
-    width: "100%",
-    maxWidth: 420,
-    alignSelf: "center",
-  },
+  formContainer: { width: "100%", maxWidth: 420, alignSelf: "center" },
   logo: {
     width: 350,
     height: 200,
@@ -413,11 +448,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: 20,
   },
-  logoSmall: {
-    width: 260,
-    height: 150,
-    borderRadius: 60,
-  },
+  logoSmall: { width: 260, height: 150, borderRadius: 60 },
   heading: {
     fontSize: 22,
     fontWeight: "600",
@@ -425,12 +456,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: "#0d1321",
   },
-  subtext: {
-    fontSize: 14,
-    color: "#555",
-    textAlign: "center",
-    marginBottom: 24,
-  },
+  subtext: { fontSize: 14, color: "#555", textAlign: "center", marginBottom: 24 },
   input: {
     backgroundColor: "#f3f3f3",
     padding: 14,
@@ -442,10 +468,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  errorInput: {
-    borderColor: "red",
-    borderWidth: 1,
-  },
+  errorInput: { borderColor: "red", borderWidth: 1 },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -458,20 +481,9 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: 16,
-  },
-  rememberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  rememberLabel: {
-    marginLeft: 8,
-    color: "#333",
-  },
+  passwordInput: { flex: 1, paddingVertical: 14, fontSize: 16 },
+  rememberRow: { flexDirection: "row", alignItems: "center", marginBottom: 24 },
+  rememberLabel: { marginLeft: 8, color: "#333" },
   loginBtn: {
     backgroundColor: "#6a0dad",
     paddingVertical: 14,
@@ -506,5 +518,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6a0dad",
     textAlign: "center",
+    marginBottom: 24,
+  },
+  disabled: { opacity: 0.6 },
+  // ── OAuth ──────────────────────────────────
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#e0e0e0" },
+  dividerText: { marginHorizontal: 12, fontSize: 13, color: "#888" },
+  oauthBtn: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    paddingVertical: 13,
+    borderRadius: 10,
+    marginBottom: 12,
+    backgroundColor: "#fff",
+  },
+  appleBtn: { backgroundColor: "#000", borderColor: "#000" },
+  oauthBtnContent: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
+  },
+  oauthIcon: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#4285F4",
+    width: 20,
+    textAlign: "center",
+  },
+  oauthBtnText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
   },
 });

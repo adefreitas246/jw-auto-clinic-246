@@ -1,16 +1,15 @@
 // models/index.js
-const User = require('./Users');
-const Transaction = require('./Transaction');
-const Worker = require('./Workers');
-const Customer = require('./Customer');
-const Shift = require('./Shift');
-const Services = require('./Services');
-const Specials = require('./Specials');
+const User               = require('./Users');
+const Transaction        = require('./Transaction');
+const Worker             = require('./Workers');
+const Customer           = require('./Customer');
+const Shift              = require('./Shift');
+const Services           = require('./Services');
+const Specials           = require('./Specials');
 const PasswordResetToken = require('./PasswordResetToken');
-
-// Add more models here as needed, e.g.:
-// const Appointment = require('./Appointment');
-// const ShiftLog = require('./ShiftLog');
+const Business           = require('./Business');
+const Package            = require('./Package');
+const Booking            = require('./Booking');
 
 module.exports = {
   User,
@@ -21,6 +20,7 @@ module.exports = {
   Services,
   Specials,
   PasswordResetToken,
-  // Appointment,
-  // ShiftLog,
+  Business,
+  Package,
+  Booking,
 };

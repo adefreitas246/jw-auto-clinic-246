@@ -3,18 +3,23 @@ const express = require('express');
 const router = express.Router();
 const Customer = require('../models/Customer');
 const authMiddleware = require('../middleware/authMiddleware');
+const resolveBusiness = require('../middleware/resolveBusiness');
 
 const norm = (s = '') => String(s || '').trim();
-const normLower = (s = '') => norm(s).toLowerCase();
 
-/* ========================= NEW: find by email ========================= */
-router.get('/by-email', authMiddleware, async (req, res) => {
+// Convenience: auth + tenant on every request
+const protect = [authMiddleware, resolveBusiness];
+
+/* ── GET by email ───────────────────────────────────────────────── */
+router.get('/by-email', protect, async (req, res) => {
   try {
     const email = norm(req.query.email);
     if (!email) return res.status(400).json({ error: 'Missing email' });
 
-    // case-insensitive exact match
-    const customer = await Customer.findOne({ email: new RegExp(`^${email}$`, 'i') });
+    const customer = await Customer.findOne({
+      businessId: req.businessId,
+      email: new RegExp(`^${email}$`, 'i'),
+    });
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
 
     res.json(customer);
@@ -23,14 +28,8 @@ router.get('/by-email', authMiddleware, async (req, res) => {
   }
 });
 
-/* ===================== NEW: find-or-create (ensure) ==================== */
-/**
- * Accepts: { name, email, phone, vehicleDetails, discount, specials, customerCode? }
- * - identity: (name, vehicleDetails) pair (your unique index)
- * - If email is present, we also try an exact email match first.
- * Returns the customer doc (200 if found/updated; 201 if created)
- */
-router.post('/ensure', authMiddleware, async (req, res) => {
+/* ── Find-or-create (ensure) ────────────────────────────────────── */
+router.post('/ensure', protect, async (req, res) => {
   try {
     const {
       name,
@@ -39,65 +38,67 @@ router.post('/ensure', authMiddleware, async (req, res) => {
       vehicleDetails,
       discount,
       specials,
-      customerCode, // optional
+      customerCode,
       ...rest
     } = req.body || {};
 
-    const cleanName = norm(name);
+    const cleanName    = norm(name);
     const cleanVehicle = norm(vehicleDetails);
-    const cleanEmail = norm(email);
+    const cleanEmail   = norm(email);
 
-    // Required by your schema on CREATE
-    if (!cleanName) return res.status(400).json({ error: 'Name is required' });
+    if (!cleanName)    return res.status(400).json({ error: 'Name is required' });
     if (!cleanVehicle) return res.status(400).json({ error: 'Vehicle details are required' });
 
-    // 1) Try by email (best identifier if provided)
+    const bid = req.businessId;
+
+    // 1) Try by email within this business
     let found = null;
     if (cleanEmail) {
-      found = await Customer.findOne({ email: new RegExp(`^${cleanEmail}$`, 'i') });
+      found = await Customer.findOne({
+        businessId: bid,
+        email: new RegExp(`^${cleanEmail}$`, 'i'),
+      });
     }
 
-    // 2) Fallback: identity is (name, vehicleDetails), case-insensitive exact match
+    // 2) Fallback: (name, vehicleDetails) within this business
     if (!found) {
       found = await Customer.findOne({
+        businessId: bid,
         name: new RegExp(`^${cleanName}$`, 'i'),
         vehicleDetails: new RegExp(`^${cleanVehicle}$`, 'i'),
       });
     }
 
     if (found) {
-      // Update non-destructively
-      if (cleanName && found.name !== cleanName) found.name = cleanName;
+      if (cleanName    && found.name           !== cleanName)    found.name           = cleanName;
       if (cleanVehicle && found.vehicleDetails !== cleanVehicle) found.vehicleDetails = cleanVehicle;
-      if (cleanEmail) found.email = cleanEmail;
-      if (phone != null) found.phone = phone;
+      if (cleanEmail)      found.email    = cleanEmail;
+      if (phone != null)   found.phone    = phone;
       if (discount != null) found.discount = discount;
       if (specials != null) found.specials = specials;
       Object.assign(found, rest);
-
       await found.save();
       return res.json(found);
     }
 
-    // 3) Not found: create a new one
-    const toCreate = {
-      name: cleanName,
-      vehicleDetails: cleanVehicle,
-      ...(cleanEmail ? { email: cleanEmail } : {}),
-      ...(phone ? { phone } : {}),
-      ...(discount != null ? { discount } : {}),
-      ...(specials != null ? { specials } : {}),
-      ...(customerCode ? { customerCode } : {}),
-      ...rest,
-    };
-
+    // 3) Create
     try {
-      const created = await Customer.create(toCreate);
+      const created = await Customer.create({
+        name: cleanName,
+        vehicleDetails: cleanVehicle,
+        ...(cleanEmail      ? { email: cleanEmail } : {}),
+        ...(phone           ? { phone }             : {}),
+        ...(discount != null ? { discount }          : {}),
+        ...(specials != null ? { specials }          : {}),
+        ...(customerCode    ? { customerCode }       : {}),
+        ...rest,
+        businessId: bid,
+      });
       return res.status(201).json(created);
     } catch (e) {
-      // Handle duplicate key race on (name, vehicleDetails)
-      if (e && e.code === 11000) {
+      if (e?.code === 11000) {
         const again = await Customer.findOne({
+          businessId: bid,
           name: new RegExp(`^${cleanName}$`, 'i'),
           vehicleDetails: new RegExp(`^${cleanVehicle}$`, 'i'),
         });
@@ -110,30 +111,29 @@ router.post('/ensure', authMiddleware, async (req, res) => {
   }
 });
 
-/* ==================== EXISTING ROUTES (keep as-is) ==================== */
-
-// GET all customers
-router.get('/', authMiddleware, async (req, res) => {
+/* ── GET all ────────────────────────────────────────────────────── */
+router.get('/', protect, async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ name: 1 });
+    const customers = await Customer.find({ businessId: req.businessId }).sort({ name: 1 });
     res.json(customers);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch customers' });
   }
 });
 
-// SEARCH customer by name + vehicle (extend to email too)
-router.get('/search', authMiddleware, async (req, res) => {
+/* ── SEARCH ─────────────────────────────────────────────────────── */
+router.get('/search', protect, async (req, res) => {
   const { name } = req.query;
   if (!name) return res.status(400).json({ error: 'Missing name' });
 
   try {
     const q = String(name).trim();
     const matches = await Customer.find({
+      businessId: req.businessId,
       $or: [
-        { name: { $regex: new RegExp(q, 'i') } },
+        { name:           { $regex: new RegExp(q, 'i') } },
         { vehicleDetails: { $regex: new RegExp(q, 'i') } },
-        { email: { $regex: new RegExp(q, 'i') } },
+        { email:          { $regex: new RegExp(q, 'i') } },
       ],
     })
       .limit(6)
@@ -145,10 +145,10 @@ router.get('/search', authMiddleware, async (req, res) => {
   }
 });
 
-// GET by id
-router.get('/:id', authMiddleware, async (req, res) => {
+/* ── GET by id ──────────────────────────────────────────────────── */
+router.get('/:id', protect, async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({ _id: req.params.id, businessId: req.businessId });
     if (!customer) return res.status(404).json({ error: 'Customer not found' });
     res.json(customer);
   } catch (err) {
@@ -156,10 +156,10 @@ router.get('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// CREATE
-router.post('/', authMiddleware, async (req, res) => {
+/* ── CREATE ─────────────────────────────────────────────────────── */
+router.post('/', protect, async (req, res) => {
   try {
-    const newCustomer = new Customer(req.body);
+    const newCustomer = new Customer({ ...req.body, businessId: req.businessId });
     await newCustomer.save();
     res.status(201).json(newCustomer);
   } catch (err) {
@@ -167,10 +167,14 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// UPDATE
-router.put('/:id', authMiddleware, async (req, res) => {
+/* ── UPDATE ─────────────────────────────────────────────────────── */
+router.put('/:id', protect, async (req, res) => {
   try {
-    const updated = await Customer.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Customer.findOneAndUpdate(
+      { _id: req.params.id, businessId: req.businessId },
+      req.body,
+      { new: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Customer not found' });
     res.json(updated);
   } catch (err) {
@@ -178,10 +182,10 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// DELETE
-router.delete('/:id', authMiddleware, async (req, res) => {
+/* ── DELETE ─────────────────────────────────────────────────────── */
+router.delete('/:id', protect, async (req, res) => {
   try {
-    const deleted = await Customer.findByIdAndDelete(req.params.id);
+    const deleted = await Customer.findOneAndDelete({ _id: req.params.id, businessId: req.businessId });
     if (!deleted) return res.status(404).json({ error: 'Customer not found' });
     res.json({ message: 'Customer deleted' });
   } catch (err) {

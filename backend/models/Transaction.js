@@ -92,6 +92,12 @@ const TransactionSchema = new mongoose.Schema({
     ref: 'User',
     required: [true, 'Created by is required'],
   },
+  businessId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    required: [true, 'Business is required'],
+    index: true,
+  },
 
 
   // Optional: store the exact PDF you send in email so the app can re-share

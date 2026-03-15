@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
@@ -269,8 +270,9 @@ const ExportFabMenu: React.FC<{
 
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [selectedTab, setSelectedTab] = useState<
-    "Transactions" | "Workers" | "Shifts" | "Reports"
+    "Transactions" | "Workers" | "Shifts" | "Reports" | "Manage"
   >("Transactions");
   const [chartMode, setChartMode] = useState<"monthly" | "trend" | "methods"
   >("monthly");  
@@ -295,9 +297,9 @@ export default function HomeScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const allTabs = ["Transactions", "Workers", "Shifts", "Reports"];
+  const allTabs = ["Transactions", "Workers", "Shifts", "Reports", "Manage"];
   const visibleTabs = allTabs.filter((tab) =>
-    ["Workers", "Shifts", "Reports"].includes(tab)
+    ["Workers", "Shifts", "Reports", "Manage"].includes(tab)
       ? user?.role === "admin"
       : true
   );
@@ -4569,6 +4571,47 @@ const earningsChartConfig = {
           })()}
         </BottomSheet>
 
+        {/* ── Manage tab (admin only) ── */}
+        {selectedTab === "Manage" && (
+          <View style={styles.manageContainer}>
+            <Text style={styles.manageSectionTitle}>Catalog</Text>
+
+            <TouchableOpacity
+              style={styles.manageCard}
+              activeOpacity={0.82}
+              onPress={() => router.push("/(tabs)/services")}
+            >
+              <View style={[styles.manageCardIcon, { backgroundColor: "#f3eafd" }]}>
+                <Ionicons name="construct" size={26} color="#6a0dad" />
+              </View>
+              <View style={styles.manageCardBody}>
+                <Text style={styles.manageCardTitle}>Manage Services</Text>
+                <Text style={styles.manageCardSub}>
+                  Add, edit, or disable individual wash services
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.manageCard}
+              activeOpacity={0.82}
+              onPress={() => router.push("/(tabs)/packages")}
+            >
+              <View style={[styles.manageCardIcon, { backgroundColor: "#e8f4fd" }]}>
+                <Ionicons name="albums" size={26} color="#0077cc" />
+              </View>
+              <View style={styles.manageCardBody}>
+                <Text style={styles.manageCardTitle}>Manage Packages</Text>
+                <Text style={styles.manageCardSub}>
+                  Bundle services into named packages with a combined price
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+            </TouchableOpacity>
+          </View>
+        )}
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -5227,5 +5270,57 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingBottom: 16,
     rowGap: 4,
+  },
+
+  // ── Manage tab ────────────────────────────────────────────────────────────
+  manageContainer: {
+    padding: 16,
+    paddingBottom: 110,
+  },
+  manageSectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#888",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  manageCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 2 },
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  manageCardIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 14,
+  },
+  manageCardBody: { flex: 1 },
+  manageCardTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1f1f1f",
+    marginBottom: 2,
+  },
+  manageCardSub: {
+    fontSize: 12,
+    color: "#888",
+    lineHeight: 17,
   },
 });

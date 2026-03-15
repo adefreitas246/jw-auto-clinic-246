@@ -30,7 +30,7 @@ router.post("/report", auth, async (req, res) => {
 
     await sendEmail({
       to: supportInbox,
-      subject: `[JW Auto Clinic] ${subject}`,
+      subject: `[Wash Hub] ${subject}`,
       text: `Name: ${name || "-"}\nEmail: ${email || "-"}\nPhone: ${
         phone || "-"
       }\n\n${message}`,

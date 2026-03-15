@@ -1,4 +1,10 @@
 // _layout.tsx
+// Background task definitions must be registered at the top level before any
+// component mounts. Importing this file is enough — the defineTask call
+// executes at module load time.
+import '@/tasks/jobTrackingTask';
+import '@/tasks/locationTask';
+
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,6 +21,12 @@ import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 const ONBOARDING_ROUTE = "/onboarding-screen";
+
+/** Returns the correct home route for the current user's role. */
+function homeForRole(role?: string): string {
+  if (role === "customer") return "/(customer)/home";
+  return "/(tabs)/home";
+}
 
 function AuthGate() {
   const { user, loading } = useAuth();
@@ -37,13 +49,10 @@ function AuthGate() {
         if (mounted) setCheckingOnboarding(false);
       }
     })();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
-  // Re-check the flag when leaving onboarding or landing on auth,
-  // but DON'T toggle a loading spinner to avoid flicker
+  // Re-check flag when leaving onboarding or landing on auth
   useEffect(() => {
     const isOnboarding = pathname === ONBOARDING_ROUTE;
     const isAuthRoute =
@@ -62,7 +71,7 @@ function AuthGate() {
     }
   }, [pathname]);
 
-  // Decide where to go (idempotent) — RE-READ STORAGE before forcing onboarding
+  // Navigation guard
   useEffect(() => {
     if (loading) return;
     if (navigatingRef.current) return;
@@ -74,18 +83,14 @@ function AuthGate() {
         pathname.startsWith("/auth/forgot") ||
         pathname.startsWith("/auth/reset-password");
 
-      // ✔ Re-check the flag right now to avoid stale `shouldOnboard`
+      // Re-read onboarding flag to avoid stale state
       let pending = shouldOnboard;
       if (!isOnboarding) {
         const v = await AsyncStorage.getItem("hasOnboarded");
         pending = v !== "true";
-        if (pending !== shouldOnboard) {
-          // keep state in sync for next cycles
-          setShouldOnboard(pending);
-        }
+        if (pending !== shouldOnboard) setShouldOnboard(pending);
       }
 
-      // STRICT: if still pending after the fresh read, force onboarding
       if (pending && !isOnboarding) {
         if (pathname !== ONBOARDING_ROUTE) {
           navigatingRef.current = true;
@@ -95,7 +100,6 @@ function AuthGate() {
         return;
       }
 
-      // Not authenticated? only allow auth routes or onboarding
       if (!user && !isOnboarding && !isPublicAuth) {
         if (pathname !== "/auth/login") {
           navigatingRef.current = true;
@@ -104,10 +108,18 @@ function AuthGate() {
         }
         return;
       }
+
+      // Redirect authenticated user away from auth screens to their home
+      if (user && isPublicAuth) {
+        const dest = homeForRole(user.role);
+        navigatingRef.current = true;
+        router.replace(dest);
+        setTimeout(() => (navigatingRef.current = false), 0);
+      }
     })();
   }, [user, loading, pathname, shouldOnboard, router]);
 
-  // Remount subtree when auth/role/onboarding state changes (guards against hook-order issues on logout)
+  // Remount subtree on auth/role/onboarding state changes
   const slotKey = useMemo(
     () =>
       `${Boolean(user)}-${user?.role ?? "guest"}-${shouldOnboard ? "onb" : "done"}`,
@@ -117,7 +129,7 @@ function AuthGate() {
   if (loading || checkingOnboarding) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#6a0dad" />
       </View>
     );
   }
@@ -125,7 +137,7 @@ function AuthGate() {
   if (shouldOnboard && !pathname.startsWith(ONBOARDING_ROUTE)) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color="#6a0dad" />
       </View>
     );
   }

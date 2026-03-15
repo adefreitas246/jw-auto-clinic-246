@@ -6,14 +6,27 @@ const cors = require("cors");
 
 const customersRouter = require('./routes/customers');
 const transactionsRouter = require('./routes/transactions');
-const authRouter = require('./routes/auth');
+const authRouter  = require('./routes/auth');
+const oauthRouter = require('./routes/oauth');
 const employeesRouter = require('./routes/workers');
 const shiftsRouter = require('./routes/shifts');
 const profileRouter = require('./routes/profile');
 const reportRoutes = require('./routes/reports');
 const serviceRoutes = require('./routes/services');
 const specialRoutes = require('./routes/specials');
-const supportRoutes = require('./routes/support');
+const supportRoutes  = require('./routes/support');
+const vehicleRoutes  = require('./routes/vehicles');
+const packageRoutes  = require('./routes/packages');
+const bookingRoutes  = require('./routes/bookings');
+const jobRoutes      = require('./routes/jobs');
+const staffRoutes    = require('./routes/staff');
+const queueRoutes    = require('./routes/queue');
+const inventoryRoutes     = require('./routes/inventory');
+const loyaltyRoutes       = require('./routes/loyalty');
+const subscriptionRoutes  = require('./routes/subscriptions');
+const reviewRoutes        = require('./routes/reviews');
+const marketingRoutes     = require('./routes/marketing');
+const aiRoutes            = require('./routes/ai');
 
 const app = express();
 app.use(cors());
@@ -38,7 +51,7 @@ app.get("/auth/reset-password", (req, res) => {
   const token = (req.query.token || "").toString();
   const userAgent = (req.headers["user-agent"] || "").toLowerCase();
 
-  const scheme = process.env.CLIENT_SCHEME || "jwautoclinic246";
+  const scheme = process.env.CLIENT_SCHEME || "washhub";
   const deepLink = `${scheme}://auth/reset-password?token=${encodeURIComponent(token)}`;
   const isMobile = /iphone|ipad|ipod|android/.test(userAgent);
 
@@ -47,7 +60,7 @@ app.get("/auth/reset-password", (req, res) => {
     <html>
     <head>
       <meta charset="utf-8" />
-      <title>Reset Password - JW Auto Clinic</title>
+      <title>Reset Password - Wash Hub</title>
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <style>
         body {
@@ -116,7 +129,7 @@ app.get("/auth/reset-password", (req, res) => {
         ${
           token
             ? `<p class="muted">
-                If you have the JW Auto Clinic app installed, we'll try to open it automatically.
+                If you have the Wash Hub app installed, we'll try to open it automatically.
               </p>`
             : `<p class="muted">Your reset link is missing a token. Please request a new reset email.</p>`
         }
@@ -249,6 +262,7 @@ app.get("/auth/reset-password", (req, res) => {
 app.use('/api/customers', customersRouter);
 app.use('/api/transactions', transactionsRouter); 
 app.use('/api/auth', authRouter);
+app.use('/api/auth', oauthRouter);  // Google + Apple OAuth
 app.use('/api/workers', employeesRouter);
 app.use('/api/shifts', shiftsRouter);
 app.use('/api/profile', profileRouter);
@@ -256,12 +270,24 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/specials', specialRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/packages', packageRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/jobs',    jobRoutes);
+app.use('/api/staff',   staffRoutes);
+app.use('/api/queue',     queueRoutes);
+app.use('/api/inventory',     inventoryRoutes);
+app.use('/api/loyalty',       loyaltyRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/reviews',       reviewRoutes);
+app.use('/api/marketing',    marketingRoutes);
+app.use('/ai',               aiRoutes);          // Claude AI proxy
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error(err));
 
-app.get("/", (req, res) => res.send("JW Auto Clinic API Running"));
+app.get("/", (req, res) => res.send("Wash Hub API Running"));
 
 const PORT = process.env.PORT || 8081;
 app.listen(PORT, "0.0.0.0", () => console.log(`Server running on ${PORT}`));

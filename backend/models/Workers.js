@@ -12,7 +12,8 @@ const employeeSchema = new mongoose.Schema(
     hourlyRate: { type: Number, default: 0 },
     clockedIn: { type: Boolean, default: false },
     password: { type: String },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    createdBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', default: null },
   },
   { timestamps: true }
 );

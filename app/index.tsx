@@ -1,7 +1,20 @@
-// index.tsx
-import { Redirect } from "expo-router";
+// index.tsx — root redirect based on auth state + role
+import { useAuth } from '@/context/AuthContext';
+import { Redirect } from 'expo-router';
+import { ActivityIndicator, View } from 'react-native';
 
 export default function Index() {
-  const isLoggedIn = false; // Change to true after login
-  return <Redirect href={isLoggedIn ? "/(tabs)/home" : "/auth/login"} />;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#6a0dad" />
+      </View>
+    );
+  }
+
+  if (!user) return <Redirect href="/auth/login" />;
+  if (user.role === 'customer') return <Redirect href="/(customer)/home" />;
+  return <Redirect href="/(tabs)/home" />;
 }

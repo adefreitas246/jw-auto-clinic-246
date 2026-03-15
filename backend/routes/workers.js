@@ -3,32 +3,32 @@ const express = require('express');
 const router = express.Router();
 const Worker = require('../models/Workers');
 const authMiddleware = require('../middleware/authMiddleware');
+const resolveBusiness = require('../middleware/resolveBusiness');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
 
+const protect = [authMiddleware, resolveBusiness];
 
-// simple role guard in-file to match your current approach
 const ensureAdmin = (req, res, next) => {
   if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
   next();
 };
 
-// GET all workers (sorted by creation)
-router.get('/', authMiddleware, async (req, res) => {
+// GET all workers (scoped to business)
+router.get('/', protect, async (req, res) => {
   try {
-    const workers = await Worker.find().sort({ createdAt: -1 });
+    const workers = await Worker.find({ businessId: req.businessId }).sort({ createdAt: -1 });
     res.json(workers);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch workers' });
   }
 });
 
-// GET a single worker
-router.get('/:id', authMiddleware, async (req, res) => {
+// GET a single worker (scoped to business)
+router.get('/:id', protect, async (req, res) => {
   try {
-    const worker = await Worker.findById(req.params.id);
+    const worker = await Worker.findOne({ _id: req.params.id, businessId: req.businessId });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
-
     res.json(worker);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -36,7 +36,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
 });
 
 // POST create new worker
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', protect, async (req, res) => {
   try {
     const { name, email, phone, role, hourlyRate } = req.body;
     if (!name) return res.status(400).json({ error: 'Name is required' });
@@ -48,8 +48,9 @@ router.post('/', authMiddleware, async (req, res) => {
       role: role || 'staff',
       hourlyRate: hourlyRate || 0,
       createdBy: req.user.id,
+      businessId: req.businessId,
       clockedIn: false,
-      password: '', // triggers default in model
+      password: '',
     });
 
     await newEmployee.save();
@@ -60,11 +61,10 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-
-// PATCH toggle clock in/out
-router.patch('/:id/clock', authMiddleware, async (req, res) => {
+// PATCH toggle clock in/out (scoped to business)
+router.patch('/:id/clock', protect, async (req, res) => {
   try {
-    const worker = await Worker.findById(req.params.id);
+    const worker = await Worker.findOne({ _id: req.params.id, businessId: req.businessId });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
 
     worker.clockedIn = !worker.clockedIn;
@@ -75,20 +75,18 @@ router.patch('/:id/clock', authMiddleware, async (req, res) => {
   }
 });
 
-
+// POST reset worker password (admin only, scoped to business)
 const generateTempPassword = () => crypto.randomBytes(8).toString('base64url');
 
-router.post('/:id/reset-password', authMiddleware, ensureAdmin, async (req, res) => {
+router.post('/:id/reset-password', protect, ensureAdmin, async (req, res) => {
   try {
     const { notify = false } = req.body || {};
-    const worker = await Worker.findById(req.params.id);
+    const worker = await Worker.findOne({ _id: req.params.id, businessId: req.businessId });
     if (!worker) return res.status(404).json({ error: 'Worker not found' });
 
-    // ✅ Just set plaintext; your schema will hash it on save
     const temporaryPassword = generateTempPassword();
     worker.password = temporaryPassword;
-
-    await worker.save(); // triggers employeeSchema.pre('save') to hash
+    await worker.save();
 
     let emailed = false;
     if (notify && worker.email) {
@@ -117,24 +115,26 @@ router.post('/:id/reset-password', authMiddleware, ensureAdmin, async (req, res)
   }
 });
 
-// PUT update an worker
-router.put('/:id', authMiddleware, async (req, res) => {
+// PUT update a worker (scoped to business)
+router.put('/:id', protect, async (req, res) => {
   try {
-    const updated = await Worker.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Worker.findOneAndUpdate(
+      { _id: req.params.id, businessId: req.businessId },
+      req.body,
+      { new: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Worker not found' });
-
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// DELETE worker
-router.delete('/:id', authMiddleware, async (req, res) => {
+// DELETE worker (scoped to business)
+router.delete('/:id', protect, async (req, res) => {
   try {
-    const deleted = await Worker.findByIdAndDelete(req.params.id);
+    const deleted = await Worker.findOneAndDelete({ _id: req.params.id, businessId: req.businessId });
     if (!deleted) return res.status(404).json({ error: 'Worker not found' });
-
     res.json({ message: 'Worker deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });

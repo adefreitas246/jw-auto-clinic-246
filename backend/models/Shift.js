@@ -15,7 +15,8 @@ const shiftSchema = new mongoose.Schema({
 
   status: { type: String, enum: ['Active', 'Completed'], default: 'Active' },
   deletedAt: { type: Date, default: null },
-  deletedBy: { type: String, default: null },
+  deletedBy:  { type: String, default: null },
+  businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', default: null, index: true },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Shift', shiftSchema);

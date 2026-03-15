@@ -10,6 +10,23 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String },
   notificationsEnabled: { type: Boolean, default: true },
   role: { type: String },
+  businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', default: null },
+
+  // OAuth provider IDs — sparse so null values don't collide on the unique index
+  googleId: { type: String, default: null },
+  appleId:  { type: String, default: null },
+  // 'local' | 'google' | 'apple'  (accounts may have multiple — stored as first provider used)
+  provider: { type: String, enum: ['local', 'google', 'apple'], default: 'local' },
+
+  // Expo push token for this device — updated on each login / booking confirmation
+  expoPushToken: { type: String, default: '' },
+
+  // ── Live GPS tracking (mobile wash technicians) ───────────────────────────
+  isTracking:        { type: Boolean, default: false },
+  currentLat:        { type: Number,  default: null  },
+  currentLng:        { type: Number,  default: null  },
+  locationAccuracy:  { type: Number,  default: null  }, // metres
+  locationUpdatedAt: { type: Date,    default: null  },
 }, { timestamps: true });
 
 async function hashIfNeeded(doc) {
@@ -42,5 +59,9 @@ UserSchema.pre('findOneAndUpdate', async function (next) {
 UserSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+// Sparse so documents where googleId/appleId is null don't conflict
+UserSchema.index({ googleId: 1 }, { sparse: true });
+UserSchema.index({ appleId: 1 },  { sparse: true });
 
 module.exports = mongoose.model('User', UserSchema);

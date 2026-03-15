@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "JW Auto Clinic",
-    "slug": "jw-auto-clinic",
+    "name": "Wash Hub",
+    "slug": "wash-hub",
     "platforms": ["ios", "android", "web"],
     "version": "1.4.0",
     "orientation": "default",
     "icon": "./assets/images/splash-icon-light.png",
-    "scheme": "jwautoclinic246",
+    "scheme": "washhub",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "runtimeVersion": "1.4.0",
@@ -33,7 +33,7 @@
           "category": ["BROWSABLE", "DEFAULT"],
           "data": [
             {
-              "scheme": "jwautoclinic246"
+              "scheme": "washhub"
             }
           ]
         }
@@ -135,7 +135,26 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "isIOS": true,
+          "NSLocationAlwaysUsageDescription": "Wash Hub uses your location for background GPS tracking.",
+          "NSLocationWhenInUseUsageDescription": "Wash Hub uses your location to find nearby car washes.",
+          "isAndroid": true,
+          "locationGranularity": "fine"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for QR scanning and photos.",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-barcode-scanner",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to scan QR codes."
         }
       ],
       [
@@ -252,7 +271,7 @@
           }
         ]
       },
-      "deeplinks": ["jwautoclinic246://"]
+      "deeplinks": ["washhub://"]
     },
     "owner": "adefreitas"
   }

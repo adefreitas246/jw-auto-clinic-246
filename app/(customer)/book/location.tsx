@@ -33,6 +33,10 @@ export default function BookLocationStep() {
   }, []);
 
   const useMyLocation = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('Not supported', 'GPS location is not available on web. Please type your address.');
+      return;
+    }
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -138,17 +142,19 @@ export default function BookLocationStep() {
               numberOfLines={2}
               textAlignVertical="top"
             />
-            <Pressable
-              style={[s.gpsBtn, locating && { opacity: 0.6 }]}
-              onPress={useMyLocation}
-              disabled={locating}
-            >
-              {locating
-                ? <ActivityIndicator color="#6a0dad" size="small" />
-                : <Ionicons name="navigate" size={16} color="#6a0dad" />
-              }
-              <Text style={s.gpsBtnText}>Use my current location</Text>
-            </Pressable>
+            {Platform.OS !== 'web' && (
+              <Pressable
+                style={[s.gpsBtn, locating && { opacity: 0.6 }]}
+                onPress={useMyLocation}
+                disabled={locating}
+              >
+                {locating
+                  ? <ActivityIndicator color="#6a0dad" size="small" />
+                  : <Ionicons name="navigate" size={16} color="#6a0dad" />
+                }
+                <Text style={s.gpsBtnText}>Use my current location</Text>
+              </Pressable>
+            )}
           </View>
         )}
       </ScrollView>

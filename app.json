@@ -1,18 +1,13 @@
 {
   "expo": {
     "name": "Wash Hub",
-    "slug": "jw-auto-clinic",
-    "platforms": [
-      "ios",
-      "android",
-      "web"
-    ],
+    "slug": "wash-hub",
+    "platforms": ["ios", "android", "web"],
     "version": "1.4.0",
     "orientation": "default",
     "icon": "./assets/images/splash-icon-light.png",
     "scheme": "washhub",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "runtimeVersion": "1.4.0",
     "updates": {
       "enabled": true,
@@ -21,9 +16,20 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/icons/ios-light.png",
-      "bundleIdentifier": "com.adefreitas.jwautoclinic",
+      "bundleIdentifier": "com.adefreitas.washhub",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Wash Hub uses your camera for QR scanning and profile photos.",
+        "NSMicrophoneUsageDescription": "Wash Hub uses your microphone for audio features.",
+        "NSPhotoLibraryUsageDescription": "Wash Hub accesses your photo library to let you upload images.",
+        "NSPhotoLibraryAddUsageDescription": "Wash Hub saves photos to your library.",
+        "NSLocationWhenInUseUsageDescription": "Wash Hub uses your location to find nearby service bays.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Wash Hub uses your location for background GPS tracking while on shift.",
+        "NSLocationAlwaysUsageDescription": "Wash Hub uses your location in the background to broadcast your position during an active shift.",
+        "NSFaceIDUsageDescription": "Wash Hub uses Face ID for fast, secure login.",
+        "NSMotionUsageDescription": "Wash Hub uses motion sensors to enhance the app experience.",
+        "NSContactsUsageDescription": "Wash Hub accesses your contacts to help you find customers.",
+        "NSCalendarsUsageDescription": "Wash Hub accesses your calendar to schedule appointments."
       }
     },
     "android": {
@@ -34,10 +40,7 @@
       "intentFilters": [
         {
           "action": "VIEW",
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ],
+          "category": ["BROWSABLE", "DEFAULT"],
           "data": [
             {
               "scheme": "washhub"
@@ -45,9 +48,8 @@
           ]
         }
       ],
-      "edgeToEdgeEnabled": true,
       "versionCode": 12,
-      "package": "com.adefreitas.jwautoclinic",
+      "package": "com.adefreitas.washhub",
       "permissions": [
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS",
@@ -67,7 +69,10 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT"
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED"
       ]
     },
     "web": {
@@ -86,23 +91,6 @@
         }
       ],
       [
-        "expo-widgets",
-        {
-          "widgets": [
-            {
-              "name": "WashHubWidget",
-              "displayName": "WashHub",
-              "description": "A sample home screen car wash widget",
-              "supportedFamilies": [
-                "systemSmall",
-                "systemMedium",
-                "systemLarge"
-              ]
-            }
-          ]
-        }
-      ],
-      [
         "expo-contacts",
         {
           "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts."
@@ -114,10 +102,7 @@
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
           "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
           "isAccessMediaLocationEnabled": true,
-          "granularPermissions": [
-            "audio",
-            "photo"
-          ]
+          "granularPermissions": ["audio", "photo"]
         }
       ],
       [
@@ -166,12 +151,9 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
-          "isIOS": true,
-          "NSLocationAlwaysUsageDescription": "Wash Hub uses your location for background GPS tracking.",
-          "NSLocationWhenInUseUsageDescription": "Wash Hub uses your location to find nearby car washes.",
-          "isAndroid": true,
-          "locationGranularity": "fine"
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location for GPS tracking on shift.",
+          "locationAlwaysPermission": "Wash Hub uses your location in the background to broadcast your position during an active shift.",
+          "locationWhenInUsePermission": "Wash Hub uses your location to find nearby service bays and for mobile job dispatch."
         }
       ],
       [
@@ -204,13 +186,9 @@
       "expo-local-authentication",
       "@react-native-community/datetimepicker",
       "expo-build-properties",
-      "expo-image",
       "expo-sharing",
-      "expo-widgets",
-      "expo-audio",
-      "expo-sqlite",
-      "expo-video",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
@@ -297,9 +275,7 @@
           }
         ]
       },
-      "deeplinks": [
-        "washhub://"
-      ]
+      "deeplinks": ["washhub://"]
     },
     "owner": "adefreitas"
   }

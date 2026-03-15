@@ -37,19 +37,21 @@ export default function TabLayout() {
         header: () => <TransparentHeader />,
       }}
     >
-      <Tabs.Screen name="home" />
+      {/* Primary tabs — visible in CustomTabBar per role */}
+      <Tabs.Screen name="home"         />
       <Tabs.Screen name="transactions" />
-      <Tabs.Screen name="jobs" />
+      <Tabs.Screen name="jobs"         />
       <Tabs.Protected guard={user?.role === "admin"}>
         <Tabs.Screen name="workers" />
       </Tabs.Protected>
-      <Tabs.Screen name="settings" />
-      {/* Staff + admin screens — routable but not tab bar items */}
+      {/* Staff tabs — visible for staff role in CustomTabBar */}
+      <Tabs.Screen name="scanner"  options={{ href: null }} />
+      <Tabs.Screen name="tracking" options={{ href: null }} />
+      {/* Overflow (More menu) + all other routable screens */}
+      <Tabs.Screen name="settings"  options={{ href: null }} />
       <Tabs.Screen name="services"  options={{ href: null }} />
       <Tabs.Screen name="packages"  options={{ href: null }} />
       <Tabs.Screen name="fleet"     options={{ href: null }} />
-      <Tabs.Screen name="tracking"  options={{ href: null }} />
-      <Tabs.Screen name="scanner"   options={{ href: null }} />
       <Tabs.Screen name="kiosk"     options={{ href: null }} />
       <Tabs.Screen name="walkin"    options={{ href: null }} />
       <Tabs.Screen name="queue"     options={{ href: null }} />

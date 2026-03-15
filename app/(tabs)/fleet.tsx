@@ -264,6 +264,20 @@ export default function FleetScreen() {
     );
   }
 
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={fl.safe} edges={['top']}>
+        <View style={fl.centered}>
+          <Ionicons name="map-outline" size={48} color="#6a0dad" />
+          <Text style={[fl.emptyText, { marginTop: 12 }]}>Fleet Map</Text>
+          <Text style={[fl.emptyText, { fontSize: 14, color: '#6b7280', marginTop: 4 }]}>
+            Live map view is available on the mobile app.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <View style={{ flex: 1 }}>
       {/* ── Map (full screen) ── */}

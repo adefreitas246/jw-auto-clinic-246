@@ -2,6 +2,7 @@
 // Polls GET /api/jobs/:id every 30 s in the foreground;
 // expo-background-fetch handles polling when the app is backgrounded.
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -15,10 +16,15 @@ import axios from 'axios';
 import {
   JOB_STEPS, JOB_STATUS_LABELS, JobStatus, JobTracking,
 } from '@/types/job';
-import {
-  registerJobTracking, unregisterJobTracking,
-} from '@/tasks/jobTrackingTask';
 import { useSpeechStatus } from '@/hooks/useSpeechStatus';
+
+// jobTrackingTask imports expo-notifications (for background status pushes) and
+// expo-background-fetch. Both crash in Expo Go at module-load time.
+// We require() the task file lazily inside !isExpoGo guards so the module is
+// never evaluated in Expo Go.
+function getJobTrackingTask() {
+  return require('@/tasks/jobTrackingTask') as typeof import('@/tasks/jobTrackingTask');
+}
 
 // Human-readable speech phrases per status (more natural than the label text)
 const SPEECH_PHRASES: Record<string, string> = {
@@ -29,6 +35,7 @@ const SPEECH_PHRASES: Record<string, string> = {
   finished:      'Your vehicle is ready for pickup!',
 };
 
+const isExpoGo = Constants.appOwnership === 'expo';
 const FOREGROUND_POLL_MS = 30_000;
 
 // ─── Animated step dot ────────────────────────────────────────────────────────
@@ -179,7 +186,7 @@ export default function TrackJobScreen() {
       // Stop polling when done
       if (data.jobStatus === 'finished') {
         if (pollRef.current) clearInterval(pollRef.current);
-        await unregisterJobTracking();
+        if (!isExpoGo) await getJobTrackingTask().unregisterJobTracking();
         taskRegistered.current = false;
       }
     } catch {
@@ -201,9 +208,9 @@ export default function TrackJobScreen() {
 
   // Register background task once we have the job's initial status
   useEffect(() => {
-    if (job && !taskRegistered.current) {
+    if (job && !taskRegistered.current && !isExpoGo) {
       taskRegistered.current = true;
-      registerJobTracking(job._id, job.jobStatus);
+      getJobTrackingTask().registerJobTracking(job._id, job.jobStatus);
     }
   }, [job?._id, job?.jobStatus]);
 
@@ -317,8 +324,8 @@ export default function TrackJobScreen() {
           </View>
         )}
 
-        {/* ── Map (mobile jobs only) ── */}
-        {isMobile && job.mobileLat != null && job.mobileLng != null && (
+        {/* ── Map (mobile jobs only, native platforms) ── */}
+        {isMobile && job.mobileLat != null && job.mobileLng != null && Platform.OS !== 'web' && (
           <View style={st.mapCard}>
             <MapView
               style={st.map}

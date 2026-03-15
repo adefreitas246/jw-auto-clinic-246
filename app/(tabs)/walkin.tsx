@@ -181,8 +181,9 @@ export default function WalkinKioskScreen() {
   const [countdown, setCountdown] = useState(CONFIRM_RESET_SEC);
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // ── Keep awake + orientation ──────────────────────────────────────────────
+  // ── Keep awake + orientation (native only) ────────────────────────────────
   useEffect(() => {
+    if (Platform.OS === 'web') return;
     KeepAwake.activateKeepAwakeAsync();
     ScreenOrientation.unlockAsync(); // allow portrait + landscape
     return () => {

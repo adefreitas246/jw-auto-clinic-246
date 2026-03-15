@@ -42,17 +42,15 @@ export default function CustomerLayout() {
         header: () => <TransparentHeader />,
       }}
     >
+      {/* Primary tabs — visible in CustomerTabBar */}
       <Tabs.Screen name="home"     />
       <Tabs.Screen name="catalog"  />
       <Tabs.Screen name="vehicles" />
-      {/* Booking wizard — routable but not a tab bar item */}
+      <Tabs.Screen name="loyalty"  />
+      {/* Overflow (More menu) + all other routable screens */}
       <Tabs.Screen name="book"    options={{ href: null }} />
-      {/* Live job tracking — routable but not a tab bar item */}
       <Tabs.Screen name="track"   options={{ href: null }} />
-      {/* Booking detail + QR — routable but not a tab bar item */}
-      <Tabs.Screen name="booking"       options={{ href: null }} />
-      {/* Loyalty rewards */}
-      <Tabs.Screen name="loyalty"       options={{ href: null }} />
+      <Tabs.Screen name="booking" options={{ href: null }} />
       {/* Subscription plans */}
       <Tabs.Screen name="subscriptions" options={{ href: null }} />
       {/* Rate / review screen (deep-linked from push) */}

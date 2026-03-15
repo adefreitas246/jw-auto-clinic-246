@@ -249,6 +249,20 @@ export default function TrackingScreen() {
   const isCharging    = batteryState === Battery.BatteryState.CHARGING ||
                         batteryState === Battery.BatteryState.FULL;
 
+  if (Platform.OS === 'web') {
+    return (
+      <SafeAreaView style={tr.safe} edges={['top']}>
+        <View style={tr.centered}>
+          <Ionicons name="navigate-outline" size={48} color="#6a0dad" />
+          <Text style={[tr.headerTitle, { marginTop: 12 }]}>Location Tracking</Text>
+          <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4, textAlign: 'center', paddingHorizontal: 32 }}>
+            GPS tracking is only available on the mobile app.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (loading) {
     return (
       <View style={tr.centered}>

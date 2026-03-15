@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-import { Colors } from '@/constants/Colors';
   ActivityIndicator,
   Platform,
   Pressable,
@@ -16,6 +15,7 @@ import { Colors } from '@/constants/Colors';
   Text,
   View,
 } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

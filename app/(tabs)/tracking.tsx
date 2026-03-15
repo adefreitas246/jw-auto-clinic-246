@@ -16,12 +16,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth }         from '@/context/AuthContext';
 import {
-import { Colors } from '@/constants/Colors';
   TECHNICIAN_LOCATION_TASK,
   isLocationTaskRunning,
   startLocationTracking,
   stopLocationTracking,
 } from '@/tasks/locationTask';
+import { Colors } from '@/constants/Colors';
 
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL || 'https://jw-auto-clinic-246.onrender.com';

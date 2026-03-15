@@ -15,7 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 
 import {
-import { Colors } from '@/constants/Colors';
   ADVANCE_BUTTON_LABELS,
   JobStatus,
   JobSummary,
@@ -24,6 +23,7 @@ import { Colors } from '@/constants/Colors';
   STAFF_STATUS_COLORS,
   STAFF_STATUS_LABELS,
 } from '@/types/job';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Worker {

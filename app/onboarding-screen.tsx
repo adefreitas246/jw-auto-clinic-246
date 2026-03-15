@@ -14,7 +14,6 @@ import {
   View,
 } from "react-native";
 import Animated, {
-import { Colors } from '@/constants/Colors';
   Extrapolate,
   interpolate,
   useAnimatedScrollHandler,
@@ -22,6 +21,7 @@ import { Colors } from '@/constants/Colors';
   useSharedValue,
   type SharedValue,
 } from "react-native-reanimated";
+import { Colors } from '@/constants/Colors';
 
 const { width, height } = Dimensions.get("window");
 

@@ -547,7 +547,7 @@ export default function TransactionsScreen() {
             style={styles.iconBtn}
             accessibilityLabel="Remove item"
           >
-            <Ionicons name="trash-outline" size={20} color=Colors.error />
+            <Ionicons name="trash-outline" size={20} color={Colors.error} />
           </TouchableOpacity>
         </View>
       </View>

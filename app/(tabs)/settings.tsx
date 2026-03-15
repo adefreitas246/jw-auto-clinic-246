@@ -289,14 +289,14 @@ function Row({
           <Ionicons
             name="open-outline"
             size={18}
-            color=Colors.textMuted
+            color={Colors.textMuted}
             style={{ marginLeft: 8 }}
           />
         ) : navigates ? (
           <Ionicons
             name={isIOS ? "chevron-forward" : "chevron-forward-outline"}
             size={18}
-            color=Colors.textMuted
+            color={Colors.textMuted}
             style={{ marginLeft: 8 }}
           />
         ) : null}

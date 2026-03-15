@@ -2,10 +2,17 @@
 // Background task definitions must be registered at the top level before any
 // component mounts. Importing this file is enough — the defineTask call
 // executes at module load time.
-import '@/tasks/jobTrackingTask';
-import '@/tasks/locationTask';
+// Skip background tasks in Expo Go — they are unsupported and will crash.
+import Constants from 'expo-constants';
+
+const isExpoGo = Constants.appOwnership === 'expo';
+if (!isExpoGo) {
+  require('@/tasks/jobTrackingTask');
+  require('@/tasks/locationTask');
+}
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -153,13 +160,15 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <ThemeProvider value={colorScheme === "light" ? DefaultTheme : DarkTheme}>
-          <AuthGate />
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <ThemeProvider value={colorScheme === "light" ? DefaultTheme : DarkTheme}>
+            <AuthGate />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

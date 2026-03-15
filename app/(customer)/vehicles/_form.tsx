@@ -27,7 +27,6 @@ import {
   VehicleForm,
   VehicleSize,
 } from "@/types/vehicle";
-import { Colors } from '@/constants/Colors';
 
 // ─── Camera modal ─────────────────────────────────────────────────────────────
 function PlateCamera({

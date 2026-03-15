@@ -35,7 +35,6 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Colors } from '@/constants/Colors';
 
 // Required for expo-auth-session on native
 WebBrowser.maybeCompleteAuthSession();

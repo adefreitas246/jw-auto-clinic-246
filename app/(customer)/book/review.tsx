@@ -1,4 +1,4 @@
-// app/(customer)/book/review.tsx — Step 5: Review summary + choose payment method
+﻿// app/(customer)/book/review.tsx — Step 5: Review summary + choose payment method
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -12,6 +12,7 @@ import { BookingProgressBar } from './_layout';
 import { useBooking } from '@/context/BookingContext';
 import { PaymentMethod } from '@/types/booking';
 import axios from 'axios';
+import { Colors } from '@/constants/Colors';
 
 const fmt = (n: number) => `$${n.toFixed(2)}`;
 const fmtMins = (m: number) =>
@@ -114,7 +115,7 @@ export default function BookReviewStep() {
           {rows.map((row, i) => (
             <View key={row.label} style={[s.row, i < rows.length - 1 && s.rowBorder]}>
               <View style={s.rowIcon}>
-                <Ionicons name={row.icon} size={17} color="#6a0dad" />
+                <Ionicons name={row.icon} size={17} color={Colors.accent} />
               </View>
               <Text style={s.rowLabel}>{row.label}</Text>
               <Text style={s.rowValue} numberOfLines={2}>{row.value}</Text>
@@ -135,7 +136,7 @@ export default function BookReviewStep() {
           />
           {draft.couponValid ? (
             <Pressable style={s.couponRemoveBtn} onPress={handleRemoveCoupon}>
-              <Ionicons name="close-circle" size={18} color="#ef4444" />
+              <Ionicons name="close-circle" size={18} color={Colors.error} />
               <Text style={s.couponRemoveText}>Remove</Text>
             </Pressable>
           ) : (
@@ -145,7 +146,7 @@ export default function BookReviewStep() {
               disabled={!couponInput.trim() || couponChecking}
             >
               {couponChecking
-                ? <ActivityIndicator size="small" color="#fff" />
+                ? <ActivityIndicator size="small" color={Colors.white} />
                 : <Text style={s.couponApplyText}>Apply</Text>
               }
             </Pressable>
@@ -186,7 +187,7 @@ export default function BookReviewStep() {
                 style={[s.payBtn, active && s.payBtnActive]}
                 onPress={() => setPaymentMethod(opt.id)}
               >
-                <Ionicons name={opt.icon} size={20} color={active ? '#6a0dad' : '#888'} />
+                <Ionicons name={opt.icon} size={20} color={active ? Colors.accent : Colors.textMuted} />
                 <Text style={[s.payBtnText, active && s.payBtnTextActive]}>{opt.label}</Text>
               </Pressable>
             );
@@ -217,12 +218,12 @@ export default function BookReviewStep() {
           disabled={submitting}
         >
           {submitting
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color={Colors.white} />
             : <>
                 <Text style={s.bookBtnText}>
                   {draft.paymentMethod === 'cash' ? 'Confirm Booking' : 'Proceed to Payment'}
                 </Text>
-                <Ionicons name="arrow-forward" size={17} color="#fff" />
+                <Ionicons name="arrow-forward" size={17} color={Colors.white} />
               </>
           }
         </Pressable>
@@ -234,47 +235,47 @@ export default function BookReviewStep() {
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: '#f7f7fb' },
   content: { padding: 20, paddingBottom: 120 },
-  heading: { fontSize: 20, fontWeight: '800', color: '#1f1f1f', marginBottom: 16 },
+  heading: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 16 },
 
-  card: { backgroundColor: '#fff', borderRadius: 14, overflow: 'hidden', marginBottom: 16, ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }) },
+  card: { backgroundColor: Colors.white, borderRadius: 14, overflow: 'hidden', marginBottom: 16, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }) },
   row:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12 },
-  rowBorder:  { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#f0f0f0' },
+  rowBorder:  { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.background },
   rowIcon:    { width: 30 },
-  rowLabel:   { fontSize: 13, color: '#888', width: 72 },
-  rowValue:   { flex: 1, fontSize: 14, fontWeight: '600', color: '#1f1f1f', textAlign: 'right' },
+  rowLabel:   { fontSize: 13, color: Colors.textMuted, width: 72 },
+  rowValue:   { flex: 1, fontSize: 14, fontWeight: '600', color: Colors.textPrimary, textAlign: 'right' },
 
   priceCard:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f3eafd', borderRadius: 12, padding: 16, marginBottom: 20 },
-  priceLabel:  { fontSize: 14, fontWeight: '700', color: '#6a0dad' },
-  priceAmount: { fontSize: 24, fontWeight: '800', color: '#6a0dad' },
+  priceLabel:  { fontSize: 14, fontWeight: '700', color: Colors.accent },
+  priceAmount: { fontSize: 24, fontWeight: '800', color: Colors.accent },
 
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: '#444', marginBottom: 10, marginTop: 4 },
+  sectionTitle: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10, marginTop: 4 },
   paymentRow:  { flexDirection: 'row', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
-  payBtn:      { flex: 1, minWidth: 90, flexDirection: 'column', alignItems: 'center', gap: 4, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 12, borderWidth: 2, borderColor: '#eee' },
-  payBtnActive:{ borderColor: '#6a0dad', backgroundColor: '#fdf8ff' },
-  payBtnText:  { fontSize: 12, fontWeight: '600', color: '#888' },
-  payBtnTextActive: { color: '#6a0dad' },
+  payBtn:      { flex: 1, minWidth: 90, flexDirection: 'column', alignItems: 'center', gap: 4, backgroundColor: Colors.white, borderRadius: 12, paddingVertical: 12, borderWidth: 2, borderColor: Colors.border },
+  payBtnActive:{ borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
+  payBtnText:  { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  payBtnTextActive: { color: Colors.accent },
 
-  notesInput: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e0e0e0', padding: 12, fontSize: 14, minHeight: 80, color: '#1f1f1f' },
+  notesInput: { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 12, fontSize: 14, minHeight: 80, color: Colors.textPrimary },
 
   couponRow:        { flexDirection: 'row', gap: 8, marginBottom: 6 },
-  couponInput:      { flex: 1, backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e0e0e0', paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontWeight: '600', letterSpacing: 1, color: '#1f1f1f' },
-  couponInputValid: { borderColor: '#10b981', backgroundColor: '#f0fdf4' },
-  couponApplyBtn:   { backgroundColor: '#6a0dad', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center' },
-  couponApplyText:  { color: '#fff', fontWeight: '700', fontSize: 13 },
+  couponInput:      { flex: 1, backgroundColor: Colors.white, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontWeight: '600', letterSpacing: 1, color: Colors.textPrimary },
+  couponInputValid: { borderColor: Colors.success, backgroundColor: '#f0fdf4' },
+  couponApplyBtn:   { backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center' },
+  couponApplyText:  { color: Colors.white, fontWeight: '700', fontSize: 13 },
   couponRemoveBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, backgroundColor: '#fef2f2', borderRadius: 10, borderWidth: 1, borderColor: '#fca5a5' },
-  couponRemoveText: { color: '#ef4444', fontWeight: '600', fontSize: 12 },
+  couponRemoveText: { color: Colors.error, fontWeight: '600', fontSize: 12 },
   couponMsg:        { fontSize: 12, marginBottom: 12, fontWeight: '600' },
-  couponMsgOk:      { color: '#10b981' },
-  couponMsgErr:     { color: '#ef4444' },
+  couponMsgOk:      { color: Colors.success },
+  couponMsgErr:     { color: Colors.error },
 
   discountRow:      { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  discountLabel:    { fontSize: 12, color: '#6a0dad', fontWeight: '600' },
-  discountOriginal: { fontSize: 12, color: '#6a0dad', textDecorationLine: 'line-through' },
-  discountSaving:   { fontSize: 12, color: '#10b981', fontWeight: '700' },
+  discountLabel:    { fontSize: 12, color: Colors.accent, fontWeight: '600' },
+  discountOriginal: { fontSize: 12, color: Colors.accent, textDecorationLine: 'line-through' },
+  discountSaving:   { fontSize: 12, color: Colors.success, fontWeight: '700' },
 
-  footer:       { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: '#f0f0f0', ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
-  footerTotal:  { fontSize: 20, fontWeight: '800', color: '#1f1f1f' },
-  footerMethod: { fontSize: 11, color: '#888', marginTop: 1 },
-  bookBtn:      { flex: 1, backgroundColor: '#6a0dad', borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  bookBtnText:  { color: '#fff', fontWeight: '700', fontSize: 14 },
+  footer:       { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.white, paddingHorizontal: 20, paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: Colors.background, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
+  footerTotal:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  footerMethod: { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
+  bookBtn:      { flex: 1, backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  bookBtnText:  { color: Colors.white, fontWeight: '700', fontSize: 14 },
 });

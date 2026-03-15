@@ -1,4 +1,4 @@
-// app/(customer)/catalog/index.tsx
+﻿// app/(customer)/catalog/index.tsx
 // Customer-facing service catalog with offline support.
 // Packages are shown first; remaining à-la-carte services as add-ons.
 // A sticky footer shows the running price total.
@@ -18,6 +18,7 @@ import { useBooking } from '@/context/BookingContext';
 
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
 import { Package, packageDuration, packagePrice, Service } from '@/types/catalog';
+import { Colors } from '@/constants/Colors';
 
 // ─── Format helpers ───────────────────────────────────────────────────────────
 const fmt = (n: number) => `$${n.toFixed(2)}`;
@@ -79,12 +80,12 @@ function PackageCard({
       </View>
 
       <View style={s.pkgFooter}>
-        <Ionicons name="time-outline" size={13} color="#888" />
+        <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
         <Text style={s.pkgFooterText}>{fmtMins(duration)}</Text>
         <View style={{ flex: 1 }} />
         {selected && (
           <>
-            <Ionicons name="checkmark-circle" size={18} color="#6a0dad" />
+            <Ionicons name="checkmark-circle" size={18} color={Colors.accent} />
             <Text style={s.selectedLabel}>Selected</Text>
           </>
         )}
@@ -119,11 +120,11 @@ function AddOnRow({
           onPress={onDecrease}
           disabled={qty === 0}
         >
-          <Ionicons name="remove" size={16} color={qty === 0 ? '#ccc' : '#6a0dad'} />
+          <Ionicons name="remove" size={16} color={qty === 0 ? Colors.border : Colors.accent} />
         </Pressable>
         <Text style={s.qtyText}>{qty}</Text>
         <Pressable style={s.qtyBtn} onPress={onIncrease}>
-          <Ionicons name="add" size={16} color="#6a0dad" />
+          <Ionicons name="add" size={16} color={Colors.accent} />
         </Pressable>
       </View>
     </View>
@@ -200,7 +201,7 @@ export default function CatalogScreen() {
   if (loading) {
     return (
       <View style={s.center}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -208,7 +209,7 @@ export default function CatalogScreen() {
   if (error && services.length === 0 && packages.length === 0) {
     return (
       <View style={s.center}>
-        <Ionicons name="cloud-offline-outline" size={48} color="#ccc" />
+        <Ionicons name="cloud-offline-outline" size={48} color={Colors.border} />
         <Text style={s.emptyTitle}>No services available</Text>
         <Text style={s.emptySubtitle}>{error}</Text>
         <Pressable style={s.retryBtn} onPress={refresh}>
@@ -349,42 +350,42 @@ const s = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  segmentActive:     { backgroundColor: '#fff', ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }, android: { elevation: 2 } }) },
-  segmentText:       { fontSize: 14, color: '#888', fontWeight: '500' },
-  segmentTextActive: { color: '#6a0dad', fontWeight: '700' },
+  segmentActive:     { backgroundColor: Colors.white, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }, android: { elevation: 2 } }) },
+  segmentText:       { fontSize: 14, color: Colors.textMuted, fontWeight: '500' },
+  segmentTextActive: { color: Colors.accent, fontWeight: '700' },
 
   // Package cards
   pkgCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderWidth: 2,
     borderColor: 'transparent',
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
       android: { elevation: 2 },
     }),
   },
-  pkgCardSelected: { borderColor: '#6a0dad', backgroundColor: '#fdf8ff' },
+  pkgCardSelected: { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
   pkgHeader:       { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  pkgName:         { fontSize: 16, fontWeight: '700', color: '#1f1f1f', flex: 1 },
-  pkgNameSelected: { color: '#6a0dad' },
+  pkgName:         { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
+  pkgNameSelected: { color: Colors.accent },
   pkgPriceBadge:   { backgroundColor: '#f3eafd', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  pkgPrice:        { fontSize: 14, fontWeight: '700', color: '#6a0dad' },
-  pkgDesc:         { fontSize: 13, color: '#666', marginBottom: 8 },
+  pkgPrice:        { fontSize: 14, fontWeight: '700', color: Colors.accent },
+  pkgDesc:         { fontSize: 13, color: Colors.textSecondary, marginBottom: 8 },
   pkgServices:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  pkgServicePill:  { backgroundColor: '#f0f0f0', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  pkgServiceText:  { fontSize: 12, color: '#444' },
+  pkgServicePill:  { backgroundColor: Colors.background, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  pkgServiceText:  { fontSize: 12, color: Colors.textPrimary },
   pkgFooter:       { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  pkgFooterText:   { fontSize: 12, color: '#888', marginRight: 4 },
-  selectedLabel:   { fontSize: 13, color: '#6a0dad', fontWeight: '600', marginLeft: 2 },
+  pkgFooterText:   { fontSize: 12, color: Colors.textMuted, marginRight: 4 },
+  selectedLabel:   { fontSize: 13, color: Colors.accent, fontWeight: '600', marginLeft: 2 },
 
   // Add-on rows
   sectionHeader: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#888',
+    color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 12,
@@ -394,22 +395,22 @@ const s = StyleSheet.create({
   addonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } },
       android: { elevation: 1 },
     }),
   },
   addonInfo:   { flex: 1 },
-  addonName:   { fontSize: 15, color: '#1f1f1f', fontWeight: '500' },
-  addonMeta:   { fontSize: 12, color: '#888', marginTop: 2 },
+  addonName:   { fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
+  addonMeta:   { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   qtyControl:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  qtyBtn:      { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: '#6a0dad', alignItems: 'center', justifyContent: 'center' },
-  qtyBtnDisabled: { borderColor: '#ddd' },
-  qtyText:     { fontSize: 15, fontWeight: '600', color: '#1f1f1f', minWidth: 20, textAlign: 'center' },
+  qtyBtn:      { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
+  qtyBtnDisabled: { borderColor: Colors.border },
+  qtyText:     { fontSize: 15, fontWeight: '600', color: Colors.textPrimary, minWidth: 20, textAlign: 'center' },
 
   // Footer
   footer: {
@@ -421,24 +422,24 @@ const s = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 14,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#eee',
+    borderTopColor: Colors.border,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },
       android: { elevation: 8 },
     }),
     paddingBottom: Platform.OS === 'ios' ? 28 : 14,
   },
-  footerLabel:    { fontSize: 11, color: '#888' },
-  footerDuration: { fontSize: 12, color: '#6a0dad', marginTop: 1 },
-  footerTotal:    { fontSize: 22, fontWeight: '800', color: '#1f1f1f', marginHorizontal: 12 },
-  bookBtn:        { backgroundColor: '#6a0dad', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12, marginLeft: 'auto' },
-  bookBtnText:    { color: '#fff', fontWeight: '700', fontSize: 15 },
+  footerLabel:    { fontSize: 11, color: Colors.textMuted },
+  footerDuration: { fontSize: 12, color: Colors.accent, marginTop: 1 },
+  footerTotal:    { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginHorizontal: 12 },
+  bookBtn:        { backgroundColor: Colors.accent, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12, marginLeft: 'auto' },
+  bookBtnText:    { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Empty / error
-  emptyTitle:    { fontSize: 17, fontWeight: '600', color: '#333', marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: '#888', textAlign: 'center', marginTop: 6 },
-  retryBtn:      { marginTop: 16, backgroundColor: '#6a0dad', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryBtnText:  { color: '#fff', fontWeight: '600' },
+  emptyTitle:    { fontSize: 17, fontWeight: '600', color: Colors.textPrimary, marginTop: 12 },
+  emptySubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 6 },
+  retryBtn:      { marginTop: 16, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryBtnText:  { color: Colors.white, fontWeight: '600' },
 });

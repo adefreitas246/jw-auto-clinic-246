@@ -1,4 +1,4 @@
-// app/(customer)/book/datetime.tsx — Step 3: Pick date + available time slot
+﻿// app/(customer)/book/datetime.tsx — Step 3: Pick date + available time slot
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { router } from 'expo-router';
@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookingProgressBar } from './_layout';
 import { useBooking } from '@/context/BookingContext';
 import { TimeSlot } from '@/types/booking';
+import { Colors } from '@/constants/Colors';
 
 // ─── Calendar helpers ─────────────────────────────────────────────────────────
 
@@ -108,11 +109,11 @@ export default function BookDateTimeStep() {
           {/* Month nav */}
           <View style={s.calHeader}>
             <Pressable onPress={prevMonth} style={s.calNavBtn} hitSlop={8}>
-              <Ionicons name="chevron-back" size={20} color="#6a0dad" />
+              <Ionicons name="chevron-back" size={20} color={Colors.accent} />
             </Pressable>
             <Text style={s.calTitle}>{MONTH_NAMES[calMonth]} {calYear}</Text>
             <Pressable onPress={nextMonth} style={s.calNavBtn} hitSlop={8}>
-              <Ionicons name="chevron-forward" size={20} color="#6a0dad" />
+              <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
             </Pressable>
           </View>
 
@@ -149,11 +150,11 @@ export default function BookDateTimeStep() {
           <View style={s.slotsWrap}>
             <Text style={s.slotsTitle}>
               Available times for{' '}
-              <Text style={{ color: '#6a0dad' }}>{formatDate(selectedDate)}</Text>
+              <Text style={{ color: Colors.accent }}>{formatDate(selectedDate)}</Text>
             </Text>
 
             {loading ? (
-              <ActivityIndicator color="#6a0dad" style={{ marginTop: 12 }} />
+              <ActivityIndicator color={Colors.accent} style={{ marginTop: 12 }} />
             ) : slots.length === 0 ? (
               <Text style={s.noSlots}>No availability data. Please try again.</Text>
             ) : (
@@ -198,7 +199,7 @@ export default function BookDateTimeStep() {
           disabled={!canContinue}
         >
           <Text style={s.nextBtnText}>Next — Location</Text>
-          <Ionicons name="arrow-forward" size={17} color="#fff" />
+          <Ionicons name="arrow-forward" size={17} color={Colors.white} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -211,36 +212,36 @@ const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: '#f7f7fb' },
   content: { padding: 16, paddingBottom: 120 },
 
-  calCard:   { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 20, ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }) },
+  calCard:   { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginBottom: 20, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }) },
   calHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
   calNavBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  calTitle:  { fontSize: 16, fontWeight: '700', color: '#1f1f1f' },
+  calTitle:  { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   calDOW:    { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 6 },
-  calDOWText:{ width: CELL, textAlign: 'center', fontSize: 11, fontWeight: '700', color: '#aaa' },
+  calDOWText:{ width: CELL, textAlign: 'center', fontSize: 11, fontWeight: '700', color: Colors.textMuted },
   calGrid:   { flexDirection: 'row', flexWrap: 'wrap' },
   calDayCell:{ width: CELL, height: CELL, alignItems: 'center', justifyContent: 'center', borderRadius: CELL / 2 },
-  calDaySel: { backgroundColor: '#6a0dad' },
+  calDaySel: { backgroundColor: Colors.accent },
   calDayPast:{ opacity: 0.3 },
-  calDayText:{ fontSize: 14, color: '#1f1f1f' },
-  calDayTextSel:  { color: '#fff', fontWeight: '700' },
-  calDayTextPast: { color: '#aaa' },
+  calDayText:{ fontSize: 14, color: Colors.textPrimary },
+  calDayTextSel:  { color: Colors.white, fontWeight: '700' },
+  calDayTextPast: { color: Colors.textMuted },
 
   slotsWrap:  { marginBottom: 20 },
-  slotsTitle: { fontSize: 14, fontWeight: '600', color: '#1f1f1f', marginBottom: 12 },
-  noSlots:    { fontSize: 13, color: '#aaa', textAlign: 'center', marginTop: 12 },
+  slotsTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 12 },
+  noSlots:    { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 12 },
   slotsGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  slotBtn:         { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1.5, borderColor: '#ddd' },
-  slotBtnSel:      { backgroundColor: '#6a0dad', borderColor: '#6a0dad' },
-  slotBtnUnavail:  { backgroundColor: '#f0f0f0', borderColor: '#f0f0f0' },
-  slotText:        { fontSize: 13, fontWeight: '600', color: '#333' },
-  slotTextSel:     { color: '#fff' },
-  slotTextUnavail: { color: '#ccc' },
+  slotBtn:         { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: Colors.white, borderWidth: 1.5, borderColor: Colors.border },
+  slotBtnSel:      { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  slotBtnUnavail:  { backgroundColor: Colors.background, borderColor: Colors.background },
+  slotText:        { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  slotTextSel:     { color: Colors.white },
+  slotTextUnavail: { color: Colors.border },
 
-  pickDateHint: { textAlign: 'center', color: '#aaa', marginTop: 20, fontSize: 13 },
+  pickDateHint: { textAlign: 'center', color: Colors.textMuted, marginTop: 20, fontSize: 13 },
 
-  footer:      { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', paddingHorizontal: 20, paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: '#f0f0f0', ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
-  footerSummary:{ fontSize: 12, color: '#6a0dad', fontWeight: '600', marginBottom: 8 },
-  nextBtn:      { backgroundColor: '#6a0dad', borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  footer:      { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.white, paddingHorizontal: 20, paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: Colors.background, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
+  footerSummary:{ fontSize: 12, color: Colors.accent, fontWeight: '600', marginBottom: 8 },
+  nextBtn:      { backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   nextBtnOff:   { opacity: 0.4 },
-  nextBtnText:  { color: '#fff', fontWeight: '700', fontSize: 15 },
+  nextBtnText:  { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

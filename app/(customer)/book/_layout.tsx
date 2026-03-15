@@ -1,8 +1,9 @@
-// app/(customer)/book/_layout.tsx
+﻿// app/(customer)/book/_layout.tsx
 // Provides BookingContext to all booking screens and a Stack navigator.
 import { BookingProvider } from '@/context/BookingContext';
 import { Stack } from 'expo-router';
 import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 const STEPS = ['Vehicle', 'Services', 'Date & Time', 'Location', 'Review', 'Payment', 'Done'];
 
@@ -20,10 +21,10 @@ export function BookingProgressBar({ step }: { step: number }) {
 }
 
 const pb = StyleSheet.create({
-  container: { backgroundColor: '#fff', paddingHorizontal: 20, paddingBottom: 8 },
+  container: { backgroundColor: Colors.white, paddingHorizontal: 20, paddingBottom: 8 },
   track:     { height: 3, backgroundColor: '#ede0f7', borderRadius: 99, overflow: 'hidden' },
-  fill:      { height: 3, backgroundColor: '#6a0dad', borderRadius: 99 },
-  label:     { fontSize: 11, color: '#888', marginTop: 5 },
+  fill:      { height: 3, backgroundColor: Colors.accent, borderRadius: 99 },
+  label:     { fontSize: 11, color: Colors.textMuted, marginTop: 5 },
 });
 
 export default function BookLayout() {
@@ -31,9 +32,9 @@ export default function BookLayout() {
     <BookingProvider>
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: '#fff' },
-          headerTintColor: '#6a0dad',
-          headerTitleStyle: { fontWeight: '700', color: '#1f1f1f' },
+          headerStyle: { backgroundColor: Colors.white },
+          headerTintColor: Colors.accent,
+          headerTitleStyle: { fontWeight: '700', color: Colors.textPrimary },
           headerShadowVisible: false,
           contentStyle: { backgroundColor: '#f7f7fb' },
           ...Platform.select({ ios: {}, android: { animation: 'slide_from_right' } }),

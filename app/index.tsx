@@ -1,7 +1,8 @@
-// index.tsx — root redirect based on auth state + role
+﻿// index.tsx — root redirect based on auth state + role
 import { useAuth } from '@/context/AuthContext';
 import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -9,7 +10,7 @@ export default function Index() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }

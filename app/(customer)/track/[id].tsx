@@ -1,4 +1,4 @@
-// app/(customer)/track/[id].tsx — Live Job Tracking
+﻿// app/(customer)/track/[id].tsx — Live Job Tracking
 // Polls GET /api/jobs/:id every 30 s in the foreground;
 // expo-background-fetch handles polling when the app is backgrounded.
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ import {
   JOB_STEPS, JOB_STATUS_LABELS, JobStatus, JobTracking,
 } from '@/types/job';
 import { useSpeechStatus } from '@/hooks/useSpeechStatus';
+import { Colors } from '@/constants/Colors';
 
 // jobTrackingTask imports expo-notifications (for background status pushes) and
 // expo-background-fetch. Both crash in Expo Go at module-load time.
@@ -49,12 +50,12 @@ function StepDot({ active, done }: { active: boolean; done: boolean }) {
     }).start();
   }, [active, done]);
 
-  const bg = done || active ? '#6a0dad' : '#e0e0e0';
+  const bg = done || active ? Colors.accent : Colors.border;
 
   return (
     <Animated.View style={[st.dot, { backgroundColor: bg, transform: [{ scale }] }]}>
       {done
-        ? <Ionicons name="checkmark" size={13} color="#fff" />
+        ? <Ionicons name="checkmark" size={13} color={Colors.white} />
         : active
         ? <View style={st.dotPulse} />
         : null
@@ -88,7 +89,7 @@ function JobStepper({ status }: { status: JobStatus }) {
                 <Ionicons
                   name={step.icon as any}
                   size={18}
-                  color={active ? '#6a0dad' : '#bbb'}
+                  color={active ? Colors.accent : Colors.border}
                 />
               )}
             </View>
@@ -224,7 +225,7 @@ export default function TrackJobScreen() {
   if (loading && !job) {
     return (
       <View style={st.centered}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -232,7 +233,7 @@ export default function TrackJobScreen() {
   if (!job) {
     return (
       <View style={st.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color="#e25555" />
+        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
         <Text style={st.errText}>Could not load job details.</Text>
         <Pressable style={st.retryBtn} onPress={() => fetchJob()}>
           <Text style={st.retryText}>Retry</Text>
@@ -261,7 +262,7 @@ export default function TrackJobScreen() {
             { opacity: bannerAnim, transform: [{ translateY: bannerTranslate }] },
           ]}
         >
-          <Ionicons name="information-circle" size={16} color="#fff" />
+          <Ionicons name="information-circle" size={16} color={Colors.white} />
           <Text style={st.bannerText}>{banner}</Text>
         </Animated.View>
       )}
@@ -271,13 +272,13 @@ export default function TrackJobScreen() {
         contentContainerStyle={st.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6a0dad" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
         }
       >
         {/* ── Header ── */}
         <View style={st.header}>
           <Pressable style={st.backBtn} onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={st.headerTitle}>Track Job</Text>
           {/* Voice readout toggle */}
@@ -289,7 +290,7 @@ export default function TrackJobScreen() {
             <Ionicons
               name={voiceEnabled ? 'volume-high' : 'volume-mute-outline'}
               size={18}
-              color={voiceEnabled ? '#6a0dad' : '#9ca3af'}
+              color={voiceEnabled ? Colors.accent : Colors.textMuted}
             />
           </Pressable>
         </View>
@@ -302,7 +303,7 @@ export default function TrackJobScreen() {
           </Text>
           {job.technicianName ? (
             <View style={st.techRow}>
-              <Ionicons name="person-circle-outline" size={16} color="#6a0dad" />
+              <Ionicons name="person-circle-outline" size={16} color={Colors.accent} />
               <Text style={st.techName}>{job.technicianName}</Text>
             </View>
           ) : null}
@@ -316,7 +317,7 @@ export default function TrackJobScreen() {
         {/* ── ETA chip (mobile jobs with tech location) ── */}
         {isMobile && hasTechLoc && etaMin !== null && !isDone && (
           <View style={st.etaRow}>
-            <Ionicons name="time-outline" size={15} color="#6a0dad" />
+            <Ionicons name="time-outline" size={15} color={Colors.accent} />
             <Text style={st.etaText}>
               Technician ETA:{' '}
               <Text style={st.etaBold}>{etaMin} min</Text>
@@ -342,7 +343,7 @@ export default function TrackJobScreen() {
               <Marker
                 coordinate={{ latitude: job.mobileLat, longitude: job.mobileLng }}
                 title="Your Location"
-                pinColor="#0077cc"
+                pinColor={Colors.accent}
               />
 
               {/* Technician's current position */}
@@ -355,7 +356,7 @@ export default function TrackJobScreen() {
                   title={job.technicianName || 'Technician'}
                 >
                   <View style={st.techMarker}>
-                    <Ionicons name="car" size={17} color="#fff" />
+                    <Ionicons name="car" size={17} color={Colors.white} />
                   </View>
                 </Marker>
               )}
@@ -371,7 +372,7 @@ export default function TrackJobScreen() {
         {/* ── Bay location card (bay jobs) ── */}
         {!isMobile && job.bayLabel ? (
           <View style={[st.card, st.locationRow]}>
-            <Ionicons name="location" size={18} color="#6a0dad" />
+            <Ionicons name="location" size={18} color={Colors.accent} />
             <View style={{ flex: 1 }}>
               <Text style={st.locationLabel}>{job.bayLabel}</Text>
               {job.bayAddress ? (
@@ -387,7 +388,7 @@ export default function TrackJobScreen() {
             style={st.doneBtn}
             onPress={() => router.replace('/(customer)/home')}
           >
-            <Ionicons name="home" size={18} color="#fff" />
+            <Ionicons name="home" size={18} color={Colors.white} />
             <Text style={st.doneBtnText}>Back to Home</Text>
           </Pressable>
         )}
@@ -398,7 +399,7 @@ export default function TrackJobScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -407,18 +408,18 @@ const st = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  errText: { fontSize: 15, color: '#555', marginTop: 12, textAlign: 'center' },
-  retryBtn:{ marginTop: 16, backgroundColor: '#6a0dad', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText:{ color: '#fff', fontWeight: '700' },
+  errText: { fontSize: 15, color: Colors.textSecondary, marginTop: 12, textAlign: 'center' },
+  retryBtn:{ marginTop: 16, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryText:{ color: Colors.white, fontWeight: '700' },
 
   // Banner
   banner: {
     position: 'absolute', top: 0, left: 0, right: 0, zIndex: 99,
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     paddingHorizontal: 16, paddingVertical: 12,
   },
-  bannerText: { color: '#fff', fontWeight: '700', fontSize: 14, flex: 1 },
+  bannerText: { color: Colors.white, fontWeight: '700', fontSize: 14, flex: 1 },
 
   // Header
   header: {
@@ -426,13 +427,13 @@ const st = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#1f1f1f' },
-  voiceBtn:    { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6' },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
+  voiceBtn:    { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
   voiceBtnOn:  { backgroundColor: '#f3eafd' },
 
   // Shared card
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     marginHorizontal: 16,
     borderRadius: 16,
     padding: 18,
@@ -441,20 +442,20 @@ const st = StyleSheet.create({
   },
 
   // Service summary
-  serviceName: { fontSize: 18, fontWeight: '800', color: '#1f1f1f', marginBottom: 4 },
-  serviceDate: { fontSize: 13, color: '#888' },
+  serviceName: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
+  serviceDate: { fontSize: 13, color: Colors.textMuted },
   techRow:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  techName:    { fontSize: 13, color: '#6a0dad', fontWeight: '600' },
+  techName:    { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
   // Stepper
   stepRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 2 },
   dot:         { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  dotPulse:    { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' },
-  stepLabel:   { fontSize: 14, fontWeight: '600', color: '#bbb' },
-  stepLabelOn: { color: '#1f1f1f' },
-  stepSub:     { fontSize: 12, color: '#6a0dad', marginTop: 1 },
-  connector:   { width: 2, height: 20, backgroundColor: '#e0e0e0', marginLeft: 13, marginVertical: 2 },
-  connectorDone: { backgroundColor: '#6a0dad' },
+  dotPulse:    { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.white },
+  stepLabel:   { fontSize: 14, fontWeight: '600', color: Colors.border },
+  stepLabelOn: { color: Colors.textPrimary },
+  stepSub:     { fontSize: 12, color: Colors.accent, marginTop: 1 },
+  connector:   { width: 2, height: 20, backgroundColor: Colors.border, marginLeft: 13, marginVertical: 2 },
+  connectorDone: { backgroundColor: Colors.accent },
 
   // ETA
   etaRow: {
@@ -463,8 +464,8 @@ const st = StyleSheet.create({
     backgroundColor: '#f3eafd', borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start',
   },
-  etaText: { fontSize: 13, color: '#555' },
-  etaBold: { fontWeight: '700', color: '#6a0dad' },
+  etaText: { fontSize: 13, color: Colors.textSecondary },
+  etaBold: { fontWeight: '700', color: Colors.accent },
 
   // Map
   mapCard: {
@@ -473,24 +474,24 @@ const st = StyleSheet.create({
     ...SHADOW,
   },
   map:        { height: 230 },
-  mapCaption: { backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 8, fontSize: 12, color: '#888' },
+  mapCaption: { backgroundColor: Colors.white, paddingHorizontal: 14, paddingVertical: 8, fontSize: 12, color: Colors.textMuted },
   techMarker: {
-    backgroundColor: '#6a0dad', borderRadius: 20,
+    backgroundColor: Colors.accent, borderRadius: 20,
     width: 36, height: 36,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#fff',
+    borderWidth: 2, borderColor: Colors.white,
   },
 
   // Location card (bay jobs)
   locationRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  locationLabel:{ fontSize: 14, fontWeight: '700', color: '#1f1f1f' },
-  locationAddr: { fontSize: 13, color: '#888', marginTop: 2 },
+  locationLabel:{ fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  locationAddr: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
 
   // Done button
   doneBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#6a0dad', borderRadius: 14, paddingVertical: 15,
+    backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15,
     marginHorizontal: 16,
   },
-  doneBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  doneBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

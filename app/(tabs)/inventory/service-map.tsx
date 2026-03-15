@@ -1,4 +1,4 @@
-// app/(tabs)/inventory/service-map.tsx — Service → Inventory Consumption Mapping
+﻿// app/(tabs)/inventory/service-map.tsx — Service → Inventory Consumption Mapping
 //
 // Lets admins define how much of each inventory item a service consumes per job.
 // When a job is marked finished, call POST /api/inventory/deduct-for-booking/:id
@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import { Colors } from '@/constants/Colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -116,7 +117,7 @@ function AddMappingModal({
                   <Text style={am.optName}>{item.name}</Text>
                   <Text style={am.optSub}>{item.currentStock} {item.unit} in stock</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color="#ccc" />
+                <Ionicons name="chevron-forward" size={16} color={Colors.border} />
               </Pressable>
             )}
             ListEmptyComponent={
@@ -134,7 +135,7 @@ function AddMappingModal({
               onChangeText={setAmount}
               keyboardType="decimal-pad"
               placeholder="e.g. 50"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={Colors.textMuted}
               autoFocus
             />
             <View style={am.btnRow}>
@@ -147,7 +148,7 @@ function AddMappingModal({
                 disabled={saving}
               >
                 {saving
-                  ? <ActivityIndicator size="small" color="#fff" />
+                  ? <ActivityIndicator size="small" color={Colors.white} />
                   : <Text style={am.saveBtnText}>Add Mapping</Text>
                 }
               </Pressable>
@@ -162,30 +163,30 @@ function AddMappingModal({
 const am = StyleSheet.create({
   overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20,
     paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20,
   },
   handle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb',
+    width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border,
     alignSelf: 'center', marginVertical: 12,
   },
-  title:      { fontSize: 16, fontWeight: '700', color: '#1f1f1f', marginBottom: 14 },
-  optionRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  optName:    { fontSize: 15, color: '#1f1f1f', fontWeight: '600' },
-  optSub:     { fontSize: 11, color: '#9ca3af', marginTop: 2 },
-  empty:      { textAlign: 'center', color: '#9ca3af', paddingVertical: 20 },
+  title:      { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
+  optionRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  optName:    { fontSize: 15, color: Colors.textPrimary, fontWeight: '600' },
+  optSub:     { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  empty:      { textAlign: 'center', color: Colors.textMuted, paddingVertical: 20 },
   amountSection: { paddingVertical: 8 },
-  amountLabel: { fontSize: 14, color: '#555', marginBottom: 10 },
+  amountLabel: { fontSize: 14, color: Colors.textSecondary, marginBottom: 10 },
   amountInput: {
-    borderWidth: 1.5, borderColor: '#e5e7eb', borderRadius: 10,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 12, fontSize: 22,
-    fontWeight: '700', color: '#1f1f1f', marginBottom: 16, textAlign: 'center',
+    fontWeight: '700', color: Colors.textPrimary, marginBottom: 16, textAlign: 'center',
   },
   btnRow:      { flexDirection: 'row', gap: 12 },
-  cancelBtn:   { flex: 1, borderRadius: 10, borderWidth: 1.5, borderColor: '#e5e7eb', alignItems: 'center', paddingVertical: 12 },
-  cancelBtnText:{ fontSize: 14, fontWeight: '700', color: '#555' },
-  saveBtn:     { flex: 2, backgroundColor: '#6a0dad', borderRadius: 10, alignItems: 'center', paddingVertical: 12 },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  cancelBtn:   { flex: 1, borderRadius: 10, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center', paddingVertical: 12 },
+  cancelBtnText:{ fontSize: 14, fontWeight: '700', color: Colors.textSecondary },
+  saveBtn:     { flex: 2, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center', paddingVertical: 12 },
+  saveBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -254,7 +255,7 @@ export default function ServiceMapScreen() {
   if (loading) {
     return (
       <SafeAreaView style={sm.safe} edges={['top']}>
-        <View style={sm.centered}><ActivityIndicator size="large" color="#6a0dad" /></View>
+        <View style={sm.centered}><ActivityIndicator size="large" color={Colors.accent} /></View>
       </SafeAreaView>
     );
   }
@@ -264,20 +265,20 @@ export default function ServiceMapScreen() {
       {/* Header */}
       <View style={sm.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={sm.title}>Service Mappings</Text>
           <Text style={sm.sub}>Define inventory consumed per service</Text>
         </View>
         <Pressable onPress={load} hitSlop={8}>
-          <Ionicons name="refresh" size={20} color="#6a0dad" />
+          <Ionicons name="refresh" size={20} color={Colors.accent} />
         </Pressable>
       </View>
 
       {/* Info box */}
       <View style={sm.infoBox}>
-        <Ionicons name="information-circle-outline" size={16} color="#1a56db" />
+        <Ionicons name="information-circle-outline" size={16} color={Colors.accent} />
         <Text style={sm.infoText}>
           After marking a job finished, call{' '}
           <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
@@ -306,7 +307,7 @@ export default function ServiceMapScreen() {
                   style={sm.addBtn}
                   onPress={() => setModalSvc(svc)}
                 >
-                  <Ionicons name="add" size={16} color="#6a0dad" />
+                  <Ionicons name="add" size={16} color={Colors.accent} />
                   <Text style={sm.addBtnText}>Add</Text>
                 </Pressable>
               </View>
@@ -318,19 +319,19 @@ export default function ServiceMapScreen() {
                 svcMappings.map(m => (
                   <View key={m._id} style={sm.mapRow}>
                     <View style={sm.mapIconWrap}>
-                      <Ionicons name="cube-outline" size={14} color="#6a0dad" />
+                      <Ionicons name="cube-outline" size={14} color={Colors.accent} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={sm.mapItemName}>{m.inventoryItemId?.name ?? '—'}</Text>
                       <Text style={sm.mapAmount}>
                         {m.amountPerUse} {m.inventoryItemId?.unit} per job
                         {(m.inventoryItemId?.currentStock ?? 0) < m.amountPerUse * 5 && (
-                          <Text style={{ color: '#ef4444' }}> ⚠ low</Text>
+                          <Text style={{ color: Colors.error }}> ⚠ low</Text>
                         )}
                       </Text>
                     </View>
                     <Pressable onPress={() => handleDeleteMapping(m._id)} hitSlop={8}>
-                      <Ionicons name="close-circle-outline" size={18} color="#dc2626" />
+                      <Ionicons name="close-circle-outline" size={18} color={Colors.error} />
                     </Pressable>
                   </View>
                 ))
@@ -340,8 +341,8 @@ export default function ServiceMapScreen() {
         }}
         ListEmptyComponent={
           <View style={sm.centered}>
-            <Ionicons name="construct-outline" size={48} color="#ccc" />
-            <Text style={{ fontSize: 15, color: '#888', marginTop: 12 }}>No services found.</Text>
+            <Ionicons name="construct-outline" size={48} color={Colors.border} />
+            <Text style={{ fontSize: 15, color: Colors.textMuted, marginTop: 12 }}>No services found.</Text>
           </View>
         }
       />
@@ -364,7 +365,7 @@ export default function ServiceMapScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -376,42 +377,42 @@ const sm = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
   },
-  title: { fontSize: 18, fontWeight: '800', color: '#1f1f1f' },
-  sub:   { fontSize: 11, color: '#888', marginTop: 1 },
+  title: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
+  sub:   { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 
   infoBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     backgroundColor: '#eff6ff', marginHorizontal: 16, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
   },
-  infoText: { fontSize: 12, color: '#1e40af', flex: 1, lineHeight: 17 },
+  infoText: { fontSize: 12, color: Colors.accent, flex: 1, lineHeight: 17 },
 
   list: { paddingHorizontal: 16, paddingBottom: 40 },
 
   card: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 14,
+    backgroundColor: Colors.white, borderRadius: 14, padding: 14,
     marginBottom: 12, ...SHADOW,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  svcName:    { fontSize: 15, fontWeight: '700', color: '#1f1f1f' },
-  svcCat:     { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  svcName:    { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  svcCat:     { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    borderRadius: 8, borderWidth: 1.5, borderColor: '#6a0dad',
+    borderRadius: 8, borderWidth: 1.5, borderColor: Colors.accent,
     paddingHorizontal: 10, paddingVertical: 5,
   },
-  addBtnText: { fontSize: 12, fontWeight: '700', color: '#6a0dad' },
+  addBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
-  noMappings: { fontSize: 12, color: '#9ca3af', fontStyle: 'italic', paddingLeft: 4 },
+  noMappings: { fontSize: 12, color: Colors.textMuted, fontStyle: 'italic', paddingLeft: 4 },
 
   mapRow: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: '#f9fafb', borderRadius: 8, padding: 8, marginTop: 6,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 8, padding: 8, marginTop: 6,
   },
   mapIconWrap: {
     width: 28, height: 28, borderRadius: 8, backgroundColor: '#f3eafd',
     alignItems: 'center', justifyContent: 'center',
   },
-  mapItemName: { fontSize: 13, fontWeight: '600', color: '#1f1f1f' },
-  mapAmount:   { fontSize: 11, color: '#9ca3af', marginTop: 1 },
+  mapItemName: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
+  mapAmount:   { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 });

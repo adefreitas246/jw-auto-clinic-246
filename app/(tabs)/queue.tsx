@@ -1,4 +1,4 @@
-// app/(tabs)/queue.tsx — Walk-in Queue Display & Admin Control Screen
+﻿// app/(tabs)/queue.tsx — Walk-in Queue Display & Admin Control Screen
 //
 // Two modes toggled by the TV button (top-right):
 //   • Staff Mode  — admin controls visible (Call Next FAB, per-entry action chips)
@@ -25,6 +25,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import { Colors } from '@/constants/Colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -60,12 +61,12 @@ interface QueueEntry {
 const REFRESH_INTERVAL = 20; // seconds
 
 const STATUS_CONFIG: Record<QStatus, { label: string; bg: string; text: string; dot: string }> = {
-  waiting:    { label: 'Waiting',     bg: '#e8f0fe', text: '#1a56db', dot: '#1a56db' },
-  called:     { label: 'Called',      bg: '#fef3c7', text: '#d97706', dot: '#f59e0b' },
-  in_service: { label: 'In Service',  bg: '#d1fae5', text: '#059669', dot: '#10b981' },
-  completed:  { label: 'Completed',   bg: '#f3f4f6', text: '#6b7280', dot: '#9ca3af' },
+  waiting:    { label: 'Waiting',     bg: '#e8f0fe', text: Colors.accent, dot: Colors.accent },
+  called:     { label: 'Called',      bg: Colors.warningBg, text: Colors.warning, dot: Colors.warning },
+  in_service: { label: 'In Service',  bg: '#d1fae5', text: Colors.success, dot: Colors.success },
+  completed:  { label: 'Completed',   bg: Colors.surfaceAlt, text: Colors.textSecondary, dot: Colors.textMuted },
   skipped:    { label: 'Skipped',     bg: '#fce7f3', text: '#be185d', dot: '#ec4899' },
-  cancelled:  { label: 'Cancelled',   bg: '#fee2e2', text: '#dc2626', dot: '#ef4444' },
+  cancelled:  { label: 'Cancelled',   bg: Colors.errorBg, text: Colors.error, dot: Colors.error },
 };
 
 const PAYMENT_ICONS: Record<string, string> = {
@@ -158,23 +159,23 @@ function QueueCard({
       <View style={qd.infoRow}>
         {active && entry.position != null && (
           <View style={qd.infoPill}>
-            <Ionicons name="people-outline" size={11} color="#6a0dad" />
+            <Ionicons name="people-outline" size={11} color={Colors.accent} />
             <Text style={qd.infoPillText}>Pos {entry.position}</Text>
           </View>
         )}
         {active && entry.estimatedWait != null && (
           <View style={qd.infoPill}>
-            <Ionicons name="time-outline" size={11} color="#6a0dad" />
+            <Ionicons name="time-outline" size={11} color={Colors.accent} />
             <Text style={qd.infoPillText}>{fmtWait(entry.estimatedWait)}</Text>
           </View>
         )}
         <View style={qd.infoPill}>
-          <Ionicons name={(PAYMENT_ICONS[entry.paymentMethod] ?? 'card-outline') as any} size={11} color="#888" />
-          <Text style={[qd.infoPillText, { color: '#888' }]}>{entry.paymentMethod}</Text>
+          <Ionicons name={(PAYMENT_ICONS[entry.paymentMethod] ?? 'card-outline') as any} size={11} color={Colors.textMuted} />
+          <Text style={[qd.infoPillText, { color: Colors.textMuted }]}>{entry.paymentMethod}</Text>
         </View>
         <View style={qd.infoPill}>
-          <Ionicons name="time-outline" size={11} color="#888" />
-          <Text style={[qd.infoPillText, { color: '#888' }]}>{fmtTime(entry.joinedAt)}</Text>
+          <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+          <Text style={[qd.infoPillText, { color: Colors.textMuted }]}>{fmtTime(entry.joinedAt)}</Text>
         </View>
         <Text style={qd.price}>${entry.price.toFixed(2)}</Text>
       </View>
@@ -184,7 +185,7 @@ function QueueCard({
         <View style={qd.chipRow}>
           {entry.status === 'waiting' && (
             <>
-              <ActionChip label="Call"   color="#d97706" icon="megaphone-outline"
+              <ActionChip label="Call"   color={Colors.warning} icon="megaphone-outline"
                 onPress={() => onAction(entry._id, 'called')} />
               <ActionChip label="Skip"   color="#be185d" icon="arrow-forward-outline"
                 onPress={() => onAction(entry._id, 'skipped')} />
@@ -192,20 +193,20 @@ function QueueCard({
           )}
           {entry.status === 'called' && (
             <>
-              <ActionChip label="Start"    color="#059669" icon="play-outline"
+              <ActionChip label="Start"    color={Colors.success} icon="play-outline"
                 onPress={() => onAction(entry._id, 'in_service')} />
-              <ActionChip label="Re-queue" color="#1a56db" icon="refresh-outline"
+              <ActionChip label="Re-queue" color={Colors.accent} icon="refresh-outline"
                 onPress={() => onAction(entry._id, 'waiting')} />
               <ActionChip label="Skip"     color="#be185d" icon="arrow-forward-outline"
                 onPress={() => onAction(entry._id, 'skipped')} />
             </>
           )}
           {entry.status === 'in_service' && (
-            <ActionChip label="Complete" color="#059669" icon="checkmark-circle-outline"
+            <ActionChip label="Complete" color={Colors.success} icon="checkmark-circle-outline"
               onPress={() => onAction(entry._id, 'completed')} />
           )}
           {(entry.status === 'waiting' || entry.status === 'called' || entry.status === 'in_service') && (
-            <ActionChip label="Cancel" color="#dc2626" icon="close-circle-outline"
+            <ActionChip label="Cancel" color={Colors.error} icon="close-circle-outline"
               onPress={() => onAction(entry._id, 'cancelled')} />
           )}
         </View>
@@ -226,7 +227,7 @@ function CountdownRing({ seconds, total }: { seconds: number; total: number }) {
             qd.ringFill,
             {
               width: `${Math.round(pct * 100)}%`,
-              backgroundColor: pct > 0.3 ? '#6a0dad' : '#f59e0b',
+              backgroundColor: pct > 0.3 ? Colors.accent : Colors.warning,
             },
           ]}
         />
@@ -342,7 +343,7 @@ export default function QueueScreen() {
       {/* ── Header ── */}
       <View style={qd.header}>
         <Pressable onPress={() => router.back()} style={qd.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
 
         <View style={{ flex: 1, marginLeft: 12 }}>
@@ -358,7 +359,7 @@ export default function QueueScreen() {
           style={[qd.tvBtn, tvMode && qd.tvBtnActive]}
           hitSlop={8}
         >
-          <Ionicons name="tv-outline" size={17} color={tvMode ? '#fff' : '#6a0dad'} />
+          <Ionicons name="tv-outline" size={17} color={tvMode ? Colors.white : Colors.accent} />
         </Pressable>
 
         {/* Walkin kiosk shortcut */}
@@ -367,27 +368,27 @@ export default function QueueScreen() {
           style={qd.walkinBtn}
           hitSlop={8}
         >
-          <Ionicons name="add-circle-outline" size={17} color="#6a0dad" />
+          <Ionicons name="add-circle-outline" size={17} color={Colors.accent} />
           <Text style={qd.walkinBtnText}>Walk-in</Text>
         </Pressable>
       </View>
 
       {/* ── Stats strip ── */}
       <View style={qd.statsRow}>
-        <View style={[qd.statCard, { borderLeftColor: '#1a56db' }]}>
-          <Text style={[qd.statNum, { color: '#1a56db' }]}>{waiting}</Text>
+        <View style={[qd.statCard, { borderLeftColor: Colors.accent }]}>
+          <Text style={[qd.statNum, { color: Colors.accent }]}>{waiting}</Text>
           <Text style={qd.statLabel}>Waiting</Text>
         </View>
-        <View style={[qd.statCard, { borderLeftColor: '#f59e0b' }]}>
-          <Text style={[qd.statNum, { color: '#f59e0b' }]}>{called}</Text>
+        <View style={[qd.statCard, { borderLeftColor: Colors.warning }]}>
+          <Text style={[qd.statNum, { color: Colors.warning }]}>{called}</Text>
           <Text style={qd.statLabel}>Called</Text>
         </View>
-        <View style={[qd.statCard, { borderLeftColor: '#10b981' }]}>
-          <Text style={[qd.statNum, { color: '#10b981' }]}>{inService}</Text>
+        <View style={[qd.statCard, { borderLeftColor: Colors.success }]}>
+          <Text style={[qd.statNum, { color: Colors.success }]}>{inService}</Text>
           <Text style={qd.statLabel}>In Service</Text>
         </View>
-        <View style={[qd.statCard, { borderLeftColor: '#9ca3af' }]}>
-          <Text style={[qd.statNum, { color: '#9ca3af' }]}>{done}</Text>
+        <View style={[qd.statCard, { borderLeftColor: Colors.textMuted }]}>
+          <Text style={[qd.statNum, { color: Colors.textMuted }]}>{done}</Text>
           <Text style={qd.statLabel}>Done</Text>
         </View>
       </View>
@@ -395,7 +396,7 @@ export default function QueueScreen() {
       {/* ── List ── */}
       {loading ? (
         <View style={qd.centered}>
-          <ActivityIndicator size="large" color="#6a0dad" />
+          <ActivityIndicator size="large" color={Colors.accent} />
         </View>
       ) : (
         <FlatList
@@ -404,11 +405,11 @@ export default function QueueScreen() {
           contentContainerStyle={qd.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6a0dad" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
           ListEmptyComponent={
             <View style={qd.empty}>
-              <Ionicons name="people-outline" size={52} color="#ccc" />
+              <Ionicons name="people-outline" size={52} color={Colors.border} />
               <Text style={qd.emptyTitle}>Queue is empty</Text>
               <Text style={qd.emptyText}>No walk-ins today yet.</Text>
             </View>
@@ -430,7 +431,7 @@ export default function QueueScreen() {
           style={({ pressed }) => [qd.fab, pressed && { opacity: 0.85 }]}
           onPress={callNext}
         >
-          <Ionicons name="megaphone-outline" size={20} color="#fff" />
+          <Ionicons name="megaphone-outline" size={20} color={Colors.white} />
           <Text style={qd.fabText}>Call Next</Text>
         </Pressable>
       )}
@@ -441,7 +442,7 @@ export default function QueueScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -455,21 +456,21 @@ const qd = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
   },
   backBtn:  { padding: 4 },
-  title:    { fontSize: 20, fontWeight: '800', color: '#1f1f1f' },
-  sub:      { fontSize: 12, color: '#888', marginTop: 1 },
+  title:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  sub:      { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
   tvBtn: {
     width: 34, height: 34, borderRadius: 17,
-    borderWidth: 1.5, borderColor: '#6a0dad',
+    borderWidth: 1.5, borderColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
     marginLeft: 8,
   },
-  tvBtnActive: { backgroundColor: '#6a0dad' },
+  tvBtnActive: { backgroundColor: Colors.accent },
   walkinBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: '#f3eafd', borderRadius: 99,
     paddingHorizontal: 11, paddingVertical: 6, marginLeft: 8,
   },
-  walkinBtnText: { fontSize: 12, fontWeight: '700', color: '#6a0dad' },
+  walkinBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   // Countdown ring (actually a progress bar)
   ringWrap: {
@@ -477,10 +478,10 @@ const qd = StyleSheet.create({
   },
   ringTrack: {
     width: 44, height: 4, borderRadius: 2,
-    backgroundColor: '#e5e7eb', overflow: 'hidden',
+    backgroundColor: Colors.border, overflow: 'hidden',
   },
   ringFill:  { height: 4, borderRadius: 2 },
-  ringText:  { fontSize: 10, color: '#aaa', fontWeight: '600', minWidth: 22 },
+  ringText:  { fontSize: 10, color: Colors.textMuted, fontWeight: '600', minWidth: 22 },
 
   // Stats
   statsRow: {
@@ -488,18 +489,18 @@ const qd = StyleSheet.create({
     marginHorizontal: 16, marginBottom: 14,
   },
   statCard: {
-    flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 10,
+    flex: 1, backgroundColor: Colors.white, borderRadius: 12, padding: 10,
     borderLeftWidth: 3, ...SHADOW,
   },
   statNum:   { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 10, color: '#888', marginTop: 1 },
+  statLabel: { fontSize: 10, color: Colors.textMuted, marginTop: 1 },
 
   // List
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
 
   // Card
   card: {
-    backgroundColor: '#fff', borderRadius: 16,
+    backgroundColor: Colors.white, borderRadius: 16,
     padding: 14, marginBottom: 10, ...SHADOW,
   },
   cardDim: { opacity: 0.65 },
@@ -508,10 +509,10 @@ const qd = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: '#f3eafd', alignItems: 'center', justifyContent: 'center',
   },
-  numText:  { fontSize: 13, fontWeight: '800', color: '#6a0dad' },
-  name:     { fontSize: 15, fontWeight: '700', color: '#1f1f1f' },
-  service:  { fontSize: 12, color: '#888', marginTop: 1 },
-  price:    { fontSize: 13, fontWeight: '700', color: '#1f1f1f', marginLeft: 'auto' },
+  numText:  { fontSize: 13, fontWeight: '800', color: Colors.accent },
+  name:     { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  service:  { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  price:    { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginLeft: 'auto' },
 
   // Badge
   badge:    { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 99, paddingHorizontal: 8, paddingVertical: 4 },
@@ -525,9 +526,9 @@ const qd = StyleSheet.create({
   },
   infoPill: {
     flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: '#f9fafb', borderRadius: 99, paddingHorizontal: 7, paddingVertical: 3,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 99, paddingHorizontal: 7, paddingVertical: 3,
   },
-  infoPillText: { fontSize: 11, color: '#6a0dad', fontWeight: '600' },
+  infoPillText: { fontSize: 11, color: Colors.accent, fontWeight: '600' },
 
   // Action chips
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
@@ -542,17 +543,17 @@ const qd = StyleSheet.create({
   fab: {
     position: 'absolute', bottom: 28, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#6a0dad', borderRadius: 99,
+    backgroundColor: Colors.accent, borderRadius: 99,
     paddingHorizontal: 24, paddingVertical: 14,
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
     }),
   },
-  fabText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  fabText: { fontSize: 16, fontWeight: '800', color: Colors.white },
 
   // Empty
   empty:      { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1f1f1f', marginTop: 16, marginBottom: 6 },
-  emptyText:  { fontSize: 14, color: '#888' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginTop: 16, marginBottom: 6 },
+  emptyText:  { fontSize: 14, color: Colors.textMuted },
 });

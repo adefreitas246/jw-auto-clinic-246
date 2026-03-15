@@ -1,4 +1,4 @@
-// app/(tabs)/jobs/index.tsx — Staff Job Dashboard
+﻿// app/(tabs)/jobs/index.tsx — Staff Job Dashboard
 // Shows today's confirmed bookings for this business, sorted by appointment time.
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 
 import {
+import { Colors } from '@/constants/Colors';
   JobSummary,
   JobStatus,
   STAFF_STATUS_LABELS,
@@ -58,12 +59,12 @@ function JobCard({ job }: { job: JobSummary }) {
       {/* Time + location type */}
       <View style={jd.cardTop}>
         <View style={jd.timeRow}>
-          <Ionicons name="time-outline" size={13} color="#888" />
+          <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
           <Text style={jd.time}>{job.appointmentTime}</Text>
           <Ionicons
             name={job.locationType === 'mobile' ? 'navigate' : 'business'}
             size={13}
-            color="#888"
+            color={Colors.textMuted}
             style={{ marginLeft: 8 }}
           />
           <Text style={jd.locLabel}>
@@ -78,7 +79,7 @@ function JobCard({ job }: { job: JobSummary }) {
       {/* Service + vehicle */}
       <Text style={jd.service} numberOfLines={1}>{job.serviceLabel}</Text>
       <View style={jd.vehicleRow}>
-        <Ionicons name="car-outline" size={14} color="#888" />
+        <Ionicons name="car-outline" size={14} color={Colors.textMuted} />
         <Text style={jd.vehicle} numberOfLines={1}>{job.vehicleLabel || 'No vehicle'}</Text>
       </View>
 
@@ -86,7 +87,7 @@ function JobCard({ job }: { job: JobSummary }) {
       <View style={jd.cardFooter}>
         <Text style={jd.price}>${job.totalPrice.toFixed(2)}</Text>
         <Text style={jd.dur}>{job.durationMinutes} min</Text>
-        <Ionicons name="chevron-forward" size={16} color="#ccc" style={{ marginLeft: 'auto' }} />
+        <Ionicons name="chevron-forward" size={16} color={Colors.border} style={{ marginLeft: 'auto' }} />
       </View>
     </Pressable>
   );
@@ -153,7 +154,7 @@ export default function JobDashboard() {
             onPress={() => router.push('/(tabs)/scanner')}
             hitSlop={8}
           >
-            <Ionicons name="qr-code-outline" size={15} color="#6a0dad" />
+            <Ionicons name="qr-code-outline" size={15} color={Colors.accent} />
             <Text style={jd.adminBtnText}>Scan QR</Text>
           </Pressable>
           {user?.role === 'admin' && (
@@ -162,7 +163,7 @@ export default function JobDashboard() {
               onPress={() => router.push('/(tabs)/jobs/manage')}
               hitSlop={8}
             >
-              <Ionicons name="settings-outline" size={15} color="#6a0dad" />
+              <Ionicons name="settings-outline" size={15} color={Colors.accent} />
               <Text style={jd.adminBtnText}>Manage</Text>
             </Pressable>
           )}
@@ -172,20 +173,20 @@ export default function JobDashboard() {
       {/* ── Date navigation ── */}
       <View style={jd.datePicker}>
         <Pressable style={jd.dateBtn} onPress={() => shiftDate(-1)} hitSlop={8}>
-          <Ionicons name="chevron-back" size={20} color="#6a0dad" />
+          <Ionicons name="chevron-back" size={20} color={Colors.accent} />
         </Pressable>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={jd.dateText}>{formatDate(date)}</Text>
           {isToday && <Text style={jd.todayPill}>Today</Text>}
         </View>
         <Pressable style={jd.dateBtn} onPress={() => shiftDate(1)} hitSlop={8}>
-          <Ionicons name="chevron-forward" size={20} color="#6a0dad" />
+          <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
         </Pressable>
       </View>
 
       {loading ? (
         <View style={jd.centered}>
-          <ActivityIndicator size="large" color="#6a0dad" />
+          <ActivityIndicator size="large" color={Colors.accent} />
         </View>
       ) : (
         <FlatList
@@ -194,7 +195,7 @@ export default function JobDashboard() {
           contentContainerStyle={jd.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6a0dad" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
           ListHeaderComponent={
             jobs.length > 0 ? (
@@ -222,7 +223,7 @@ export default function JobDashboard() {
           }
           ListEmptyComponent={
             <View style={jd.empty}>
-              <Ionicons name="calendar-outline" size={52} color="#ccc" />
+              <Ionicons name="calendar-outline" size={52} color={Colors.border} />
               <Text style={jd.emptyTitle}>No jobs scheduled</Text>
               <Text style={jd.emptyText}>
                 There are no confirmed bookings for{'\n'}{formatDate(date)}.
@@ -238,7 +239,7 @@ export default function JobDashboard() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -251,38 +252,38 @@ const jd = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14,
   },
-  greeting: { fontSize: 22, fontWeight: '800', color: '#1f1f1f' },
-  sub:      { fontSize: 13, color: '#888', marginTop: 2 },
+  greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  sub:      { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   adminBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: '#f3eafd', borderRadius: 99,
     paddingHorizontal: 12, paddingVertical: 7,
   },
-  adminBtnText: { fontSize: 13, fontWeight: '700', color: '#6a0dad' },
+  adminBtnText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
 
   // Date picker strip
   datePicker: {
     flexDirection: 'row', alignItems: 'center',
     marginHorizontal: 16, marginBottom: 16,
-    backgroundColor: '#fff', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 8,
+    backgroundColor: Colors.white, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 8,
     ...SHADOW,
   },
   dateBtn:  { padding: 6 },
-  dateText: { fontSize: 15, fontWeight: '700', color: '#1f1f1f' },
-  todayPill:{ fontSize: 11, color: '#6a0dad', fontWeight: '700', marginTop: 2 },
+  dateText: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  todayPill:{ fontSize: 11, color: Colors.accent, fontWeight: '700', marginTop: 2 },
 
   // Stats
   statsRow:  { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statPill:  { flex: 1, backgroundColor: '#fff', borderRadius: 12, padding: 12, alignItems: 'center', ...SHADOW },
-  statNum:   { fontSize: 22, fontWeight: '800', color: '#6a0dad' },
-  statLabel: { fontSize: 11, color: '#888', marginTop: 2 },
+  statPill:  { flex: 1, backgroundColor: Colors.white, borderRadius: 12, padding: 12, alignItems: 'center', ...SHADOW },
+  statNum:   { fontSize: 22, fontWeight: '800', color: Colors.accent },
+  statLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 
   // List
   listContent: { paddingHorizontal: 16, paddingBottom: 110 },
 
   // Job card
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -290,14 +291,14 @@ const jd = StyleSheet.create({
   },
   cardTop:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   timeRow:    { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, flexWrap: 'wrap' },
-  time:       { fontSize: 13, color: '#888', fontWeight: '600' },
-  locLabel:   { fontSize: 12, color: '#888', flex: 1 },
-  service:    { fontSize: 16, fontWeight: '700', color: '#1f1f1f', marginBottom: 4 },
+  time:       { fontSize: 13, color: Colors.textMuted, fontWeight: '600' },
+  locLabel:   { fontSize: 12, color: Colors.textMuted, flex: 1 },
+  service:    { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
-  vehicle:    { fontSize: 13, color: '#888', flex: 1 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10 },
-  price:      { fontSize: 14, fontWeight: '700', color: '#1f1f1f' },
-  dur:        { fontSize: 12, color: '#aaa' },
+  vehicle:    { fontSize: 13, color: Colors.textMuted, flex: 1 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, borderTopColor: Colors.background, paddingTop: 10 },
+  price:      { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  dur:        { fontSize: 12, color: Colors.textMuted },
 
   // Status badge
   badge:     { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
@@ -305,6 +306,6 @@ const jd = StyleSheet.create({
 
   // Empty
   empty:      { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1f1f1f', marginTop: 16, marginBottom: 6 },
-  emptyText:  { fontSize: 14, color: '#888', textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginTop: 16, marginBottom: 6 },
+  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
 });

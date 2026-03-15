@@ -1,4 +1,4 @@
-// app/(tabs)/fleet.tsx — Admin Fleet Map
+﻿// app/(tabs)/fleet.tsx — Admin Fleet Map
 // Shows all currently-tracking staff members on a live map.
 // Polls GET /api/staff/fleet every 30 s. Admin only.
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/context/AuthContext';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -141,13 +142,13 @@ function DetailCard({
           </View>
         </View>
         <Pressable style={fl.closeBtn} onPress={onClose} hitSlop={10}>
-          <Ionicons name="close" size={20} color="#888" />
+          <Ionicons name="close" size={20} color={Colors.textMuted} />
         </Pressable>
       </View>
 
       {/* Coordinates row */}
       <View style={fl.detailInfoRow}>
-        <Ionicons name="location-outline" size={15} color="#6a0dad" />
+        <Ionicons name="location-outline" size={15} color={Colors.accent} />
         <Text style={fl.detailInfoText}>
           {member.currentLat.toFixed(5)}°, {member.currentLng.toFixed(5)}°
         </Text>
@@ -158,7 +159,7 @@ function DetailCard({
 
       {/* Last seen row */}
       <View style={fl.detailInfoRow}>
-        <Ionicons name="time-outline" size={15} color="#888" />
+        <Ionicons name="time-outline" size={15} color={Colors.textMuted} />
         <Text style={fl.detailInfoSub}>
           Last seen {formatAgo(member.locationUpdatedAt)}
         </Text>
@@ -257,7 +258,7 @@ export default function FleetScreen() {
     return (
       <SafeAreaView style={fl.safe} edges={['top']}>
         <View style={fl.centered}>
-          <Ionicons name="lock-closed-outline" size={40} color="#ccc" />
+          <Ionicons name="lock-closed-outline" size={40} color={Colors.border} />
           <Text style={fl.emptyText}>Admin access required</Text>
         </View>
       </SafeAreaView>
@@ -268,9 +269,9 @@ export default function FleetScreen() {
     return (
       <SafeAreaView style={fl.safe} edges={['top']}>
         <View style={fl.centered}>
-          <Ionicons name="map-outline" size={48} color="#6a0dad" />
+          <Ionicons name="map-outline" size={48} color={Colors.accent} />
           <Text style={[fl.emptyText, { marginTop: 12 }]}>Fleet Map</Text>
-          <Text style={[fl.emptyText, { fontSize: 14, color: '#6b7280', marginTop: 4 }]}>
+          <Text style={[fl.emptyText, { fontSize: 14, color: Colors.textSecondary, marginTop: 4 }]}>
             Live map view is available on the mobile app.
           </Text>
         </View>
@@ -283,7 +284,7 @@ export default function FleetScreen() {
       {/* ── Map (full screen) ── */}
       {loading ? (
         <View style={fl.mapPlaceholder}>
-          <ActivityIndicator size="large" color="#6a0dad" />
+          <ActivityIndicator size="large" color={Colors.accent} />
         </View>
       ) : (
         <MapView
@@ -312,7 +313,7 @@ export default function FleetScreen() {
         <View style={fl.header}>
           {/* Back */}
           <Pressable style={fl.headerBtn} onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
 
           {/* Title + count */}
@@ -333,12 +334,12 @@ export default function FleetScreen() {
               disabled={refreshing}
             >
               {refreshing
-                ? <ActivityIndicator size="small" color="#6a0dad" />
-                : <Ionicons name="refresh" size={20} color="#6a0dad" />
+                ? <ActivityIndicator size="small" color={Colors.accent} />
+                : <Ionicons name="refresh" size={20} color={Colors.accent} />
               }
             </Pressable>
             <Pressable style={fl.headerBtn} onPress={fitAll} hitSlop={8}>
-              <Ionicons name="expand-outline" size={20} color="#6a0dad" />
+              <Ionicons name="expand-outline" size={20} color={Colors.accent} />
             </Pressable>
           </View>
         </View>
@@ -356,7 +357,7 @@ export default function FleetScreen() {
       {/* ── Error toast ── */}
       {error && (
         <View style={fl.errorToast} pointerEvents="none">
-          <Ionicons name="warning-outline" size={15} color="#c62828" />
+          <Ionicons name="warning-outline" size={15} color={Colors.error} />
           <Text style={fl.errorText}>{error}</Text>
         </View>
       )}
@@ -365,7 +366,7 @@ export default function FleetScreen() {
       {!loading && !fleet.length && !error && (
         <View style={fl.emptyOverlay} pointerEvents="none">
           <View style={fl.emptyCard}>
-            <Ionicons name="navigate-circle-outline" size={36} color="#ccc" />
+            <Ionicons name="navigate-circle-outline" size={36} color={Colors.border} />
             <Text style={fl.emptyTitle}>No active technicians</Text>
             <Text style={fl.emptySub}>Staff members will appear here once they start their shift.</Text>
           </View>
@@ -385,7 +386,7 @@ export default function FleetScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
   android: { elevation: 6 },
 }) ?? {};
 
@@ -404,7 +405,7 @@ const fl = StyleSheet.create({
     justifyContent:  'space-between',
     marginHorizontal: 12,
     marginTop:        8,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius:    16,
     paddingVertical: 10,
     paddingHorizontal: 8,
@@ -416,7 +417,7 @@ const fl = StyleSheet.create({
     borderRadius: 20,
   },
   headerCenter: { flex: 1, alignItems: 'center', gap: 4 },
-  headerTitle:  { fontSize: 16, fontWeight: '800', color: '#1f1f1f' },
+  headerTitle:  { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
   headerActions:{ flexDirection: 'row', alignItems: 'center' },
 
   countChip: {
@@ -424,15 +425,15 @@ const fl = StyleSheet.create({
     backgroundColor: '#f0edf8', borderRadius: 999,
     paddingHorizontal: 10, paddingVertical: 3,
   },
-  chipDot:    { width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#2e7d32' },
-  countText:  { fontSize: 12, fontWeight: '700', color: '#6a0dad' },
+  chipDot:    { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.success },
+  countText:  { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   refreshedBadge: {
     alignSelf: 'center', marginTop: 8,
     backgroundColor: 'rgba(255,255,255,0.85)',
     borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
   },
-  refreshedText: { fontSize: 11, color: '#888' },
+  refreshedText: { fontSize: 11, color: Colors.textMuted },
 
   // ── Markers ──
   markerWrap: {
@@ -441,38 +442,38 @@ const fl = StyleSheet.create({
   markerWrapSel: {},
   markerAvatar: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#fff',
+    borderWidth: 2, borderColor: Colors.white,
     ...SHADOW,
   },
   markerAvatarSel: {
     width: 46, height: 46, borderRadius: 23,
     backgroundColor: '#4a0090',
-    borderWidth: 3, borderColor: '#fff',
+    borderWidth: 3, borderColor: Colors.white,
   },
-  markerInitials:    { fontSize: 13, fontWeight: '800', color: '#fff' },
+  markerInitials:    { fontSize: 13, fontWeight: '800', color: Colors.white },
   markerInitialsSel: { fontSize: 16 },
   markerName: {
-    fontSize: 11, fontWeight: '700', color: '#1f1f1f',
+    fontSize: 11, fontWeight: '700', color: Colors.textPrimary,
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1,
     marginTop: 2, maxWidth: 70,
     textAlign: 'center',
   },
-  markerNameSel: { color: '#6a0dad' },
+  markerNameSel: { color: Colors.accent },
   markerNib: {
     width: 0, height: 0,
     borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 7,
     borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderTopColor: '#6a0dad',
+    borderTopColor: Colors.accent,
   },
 
   // ── Detail card ──
   detailCard: {
     position:       'absolute',
     bottom:         0, left: 0, right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderTopLeftRadius:  24,
     borderTopRightRadius: 24,
     paddingHorizontal: 20,
@@ -482,39 +483,39 @@ const fl = StyleSheet.create({
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: Colors.border,
     alignSelf: 'center', marginBottom: 16,
   },
   detailRow:    { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
   detailAvatar: {
     width: 50, height: 50, borderRadius: 25,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
   },
-  detailInitials: { fontSize: 18, fontWeight: '800', color: '#fff' },
-  detailName:     { fontSize: 16, fontWeight: '800', color: '#1f1f1f' },
+  detailInitials: { fontSize: 18, fontWeight: '800', color: Colors.white },
+  detailName:     { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
   detailBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
-  onlineDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: '#2e7d32' },
-  onlineText:     { fontSize: 12, color: '#2e7d32', fontWeight: '600' },
+  onlineDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
+  onlineText:     { fontSize: 12, color: Colors.success, fontWeight: '600' },
   rolePill: {
-    fontSize: 11, color: '#6a0dad', fontWeight: '700',
+    fontSize: 11, color: Colors.accent, fontWeight: '700',
     backgroundColor: '#f0edf8', borderRadius: 999,
     paddingHorizontal: 8, paddingVertical: 2,
   },
   closeBtn: {
     width: 32, height: 32, borderRadius: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
     alignItems: 'center', justifyContent: 'center',
   },
   detailInfoRow: {
     flexDirection: 'row', alignItems: 'center',
     gap: 8, marginBottom: 8,
   },
-  detailInfoText: { fontSize: 13, fontWeight: '600', color: '#1f1f1f', flex: 1 },
-  detailInfoSub:  { fontSize: 13, color: '#888', flex: 1 },
+  detailInfoText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
+  detailInfoSub:  { fontSize: 13, color: Colors.textMuted, flex: 1 },
   accuracyChip: {
-    fontSize: 11, color: '#888',
-    backgroundColor: '#f5f5f5', borderRadius: 999,
+    fontSize: 11, color: Colors.textMuted,
+    backgroundColor: Colors.background, borderRadius: 999,
     paddingHorizontal: 8, paddingVertical: 2,
   },
 
@@ -524,10 +525,10 @@ const fl = StyleSheet.create({
     backgroundColor: '#fff3f3',
     borderRadius: 12, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderLeftWidth: 3, borderLeftColor: '#c62828',
+    borderLeftWidth: 3, borderLeftColor: Colors.error,
     ...SHADOW,
   },
-  errorText: { flex: 1, fontSize: 13, color: '#c62828', fontWeight: '600' },
+  errorText: { flex: 1, fontSize: 13, color: Colors.error, fontWeight: '600' },
 
   // ── Empty state overlay ──
   emptyOverlay: {
@@ -543,7 +544,7 @@ const fl = StyleSheet.create({
     marginHorizontal: 32,
     ...SHADOW,
   },
-  emptyTitle: { fontSize: 15, fontWeight: '800', color: '#1f1f1f' },
-  emptySub:   { fontSize: 13, color: '#888', textAlign: 'center', lineHeight: 18 },
-  emptyText:  { fontSize: 14, color: '#aaa', fontWeight: '600' },
+  emptyTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
+  emptySub:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
+  emptyText:  { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
 });

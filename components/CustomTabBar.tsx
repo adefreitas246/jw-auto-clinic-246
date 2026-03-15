@@ -1,4 +1,4 @@
-// components/CustomTabBar.tsx
+﻿// components/CustomTabBar.tsx
 // Role-based floating tab bar for staff (admin / staff roles).
 // Shows 4 role-specific tabs + a "More" button that opens MoreMenu.
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { MoreMenu, MoreMenuItem } from './MoreMenu';
+import { Colors } from '@/constants/Colors';
 
 Animatable.initializeRegistryWithDefinitions({
   wiggle: {
@@ -49,8 +50,8 @@ const ROLE_TABS: Record<string, string[]> = {
   staff: ['jobs', 'scanner', 'tracking', 'transactions'],
 };
 
-const activeColor   = '#6a0dad';
-const inactiveColor = '#444';
+const activeColor   = Colors.accent;
+const inactiveColor = Colors.textPrimary;
 
 // ─── More-menu items per role ─────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
             accessibilityLabel="Open navigation menu"
             style={styles.webHamburgerButton}
           >
-            <Ionicons name="menu" size={26} color="#6a0dad" />
+            <Ionicons name="menu" size={26} color={Colors.accent} />
           </TouchableOpacity>
         </View>
 
@@ -136,10 +137,10 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
                   <Ionicons
                     name={(isFocused ? cfg.activeIcon : cfg.icon) as IconName}
                     size={20}
-                    color={isFocused ? activeColor : '#222'}
+                    color={isFocused ? activeColor : Colors.primary}
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={[styles.webMenuItemLabel, { color: isFocused ? activeColor : '#222' }]}>
+                  <Text style={[styles.webMenuItemLabel, { color: isFocused ? activeColor : Colors.primary }]}>
                     {cfg.label}
                   </Text>
                 </TouchableOpacity>
@@ -163,10 +164,10 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
                 <Ionicons
                   name={item.icon as IconName}
                   size={20}
-                  color={item.danger ? '#e53935' : '#222'}
+                  color={item.danger ? Colors.error : Colors.primary}
                   style={{ marginRight: 8 }}
                 />
-                <Text style={[styles.webMenuItemLabel, item.danger && { color: '#e53935' }]}>
+                <Text style={[styles.webMenuItemLabel, item.danger && { color: Colors.error }]}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -327,7 +328,7 @@ const styles = StyleSheet.create({
   },
   androidShadow: {
     elevation: 18,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
     shadowRadius: 20,
@@ -359,7 +360,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 6,
     paddingHorizontal: 4,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
   webMenuItemLabel: { fontSize: 14, fontWeight: '500' },
   webDivider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: Colors.border,
     marginVertical: 4,
     marginHorizontal: 10,
   },

@@ -1,284 +1,304 @@
 {
-  "expo": {
-    "name": "Wash Hub",
-    "slug": "wash-hub",
-    "platforms": ["ios", "android", "web"],
-    "version": "1.4.0",
-    "orientation": "default",
-    "icon": "./assets/images/splash-icon-light.png",
-    "scheme": "washhub",
-    "userInterfaceStyle": "light",
-    "primaryColor": "#0F9B8E",
-    "backgroundColor": "#F5F7FA",
-    "runtimeVersion": "1.4.0",
-    "updates": {
-      "enabled": true,
-      "url": "https://u.expo.dev/565ab218-7160-484c-b79b-78b85ae9409b"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "icon": "./assets/icons/ios-light.png",
-      "bundleIdentifier": "com.adefreitas.washhub",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSCameraUsageDescription": "Wash Hub uses your camera for QR scanning and profile photos.",
-        "NSMicrophoneUsageDescription": "Wash Hub uses your microphone for audio features.",
-        "NSPhotoLibraryUsageDescription": "Wash Hub accesses your photo library to let you upload images.",
-        "NSPhotoLibraryAddUsageDescription": "Wash Hub saves photos to your library.",
-        "NSLocationWhenInUseUsageDescription": "Wash Hub uses your location to find nearby service bays.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Wash Hub uses your location for background GPS tracking while on shift.",
-        "NSLocationAlwaysUsageDescription": "Wash Hub uses your location in the background to broadcast your position during an active shift.",
-        "NSFaceIDUsageDescription": "Wash Hub uses Face ID for fast, secure login.",
-        "NSMotionUsageDescription": "Wash Hub uses motion sensors to enhance the app experience.",
-        "NSContactsUsageDescription": "Wash Hub accesses your contacts to help you find customers.",
-        "NSCalendarsUsageDescription": "Wash Hub accesses your calendar to schedule appointments."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "intentFilters": [
-        {
-          "action": "VIEW",
-          "category": ["BROWSABLE", "DEFAULT"],
-          "data": [
-            {
-              "scheme": "washhub"
-            }
-          ]
-        }
-      ],
-      "versionCode": 12,
-      "package": "com.adefreitas.washhub",
-      "permissions": [
-        "android.permission.READ_CONTACTS",
-        "android.permission.WRITE_CONTACTS",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-        "android.permission.ACCESS_MEDIA_LOCATION",
-        "android.permission.READ_MEDIA_AUDIO",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_CALENDAR",
-        "android.permission.WRITE_CALENDAR",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.CAMERA",
-        "android.permission.USE_BIOMETRIC",
-        "android.permission.USE_FINGERPRINT",
-        "android.permission.ACCESS_BACKGROUND_LOCATION",
-        "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED"
-      ]
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#ffffff",
-          "image": "./assets/icons/splash-icon-dark.png",
-          "resizeMode": "contain",
-          "imageWidth": 200
-        }
-      ],
-      [
-        "expo-contacts",
-        {
-          "contactsPermission": "Allow $(PRODUCT_NAME) to access your contacts."
-        }
-      ],
-      [
-        "expo-media-library",
-        {
-          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos.",
-          "savePhotosPermission": "Allow $(PRODUCT_NAME) to save photos.",
-          "isAccessMediaLocationEnabled": true,
-          "granularPermissions": ["audio", "photo"]
-        }
-      ],
-      [
-        "expo-calendar",
-        {
-          "calendarPermission": "The app needs to access your calendar."
-        }
-      ],
-      [
-        "expo-audio",
-        {
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
-          "enableBackgroundPlayback": true,
-          "enableBackgroundRecording": false
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./local/assets/notification_icon.png",
-          "color": "#ffffff",
-          "defaultChannel": "default",
-          "sounds": [
-            "./local/assets/notification_sound.wav",
-            "./local/assets/notification_sound_other.wav"
-          ],
-          "enableBackgroundRemoteNotifications": false
-        }
-      ],
-      [
-        "expo-sqlite",
-        {
-          "enableFTS": true,
-          "useSQLCipher": true,
-          "android": {
-            "enableFTS": false,
-            "useSQLCipher": false
-          },
-          "ios": {
-            "customBuildFlags": [
-              "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
-            ]
-          }
-        }
-      ],
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location for GPS tracking on shift.",
-          "locationAlwaysPermission": "Wash Hub uses your location in the background to broadcast your position during an active shift.",
-          "locationWhenInUsePermission": "Wash Hub uses your location to find nearby service bays and for mobile job dispatch."
-        }
-      ],
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for QR scanning and photos.",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
-          "recordAudioAndroid": true
-        }
-      ],
-      [
-        "expo-image",
-        {
-          "disableLibdav1d": true
-        }
-      ],
-      [
-        "expo-video",
-        {
-          "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": true
-        }
-      ],
-      "expo-mail-composer",
-      "expo-router",
-      "expo-updates",
-      "expo-font",
-      "expo-web-browser",
-      "react-native-bottom-tabs",
-      "expo-local-authentication",
-      "@react-native-community/datetimepicker",
-      "expo-build-properties",
-      "expo-sharing",
-      "expo-secure-store",
-      "expo-asset"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "565ab218-7160-484c-b79b-78b85ae9409b"
-      },
-      "changelog": {
-        "date": "2025-12-14",
-        "changes": [
-          {
-            "type": "New",
-            "text": "Biometric login added. A Face ID / Fingerprint option now appears on the login screen once enabled in Settings."
-          },
-          {
-            "type": "New",
-            "text": "New bottom sheet system introduced for smoother UI interactions across screens such as Services & Specials and Settings."
-          },
-          {
-            "type": "New",
-            "text": "Enhanced payment-method and earnings charts with tap-to-filter support and dynamic active-point display."
-          },
-          {
-            "type": "New",
-            "text": "Segment control upgraded so detail values reset and hide until a chart point is tapped."
-          },
-          {
-            "type": "Improved",
-            "text": "Tablet layout improvements across Workers, Transactions, and Settings for better portrait and landscape responsiveness."
-          },
-          {
-            "type": "Improved",
-            "text": "Sticky headers updated with better spacing, elevation, and full-width alignment."
-          },
-          {
-            "type": "Improved",
-            "text": "FAB buttons now appear correctly on Android in landscape mode and on tablets."
-          },
-          {
-            "type": "Improved",
-            "text": "Bottom sheets and modals now reposition properly with the keyboard and avoid hidden content."
-          },
-          {
-            "type": "Improved",
-            "text": "Login screen animations and layout polished; biometric button now appears contextually."
-          },
-          {
-            "type": "Improved",
-            "text": "Android app icon updated to use correct light-color version."
-          },
-          {
-            "type": "Improved",
-            "text": "Stronger password validation added to browser reset flow to match in-app complexity rules."
-          },
-          {
-            "type": "Improved",
-            "text": "Transaction detail fallback logic added so a missing API record loads gracefully from the cached list."
-          },
-          {
-            "type": "Improved",
-            "text": "Improved OSRM distance and matching logic on server with consistent fallback routing."
-          },
-          {
-            "type": "Fixed",
-            "text": "Fixed bottom sheet blank-space bug caused by keyboard closing."
-          },
-          {
-            "type": "Fixed",
-            "text": "Fixed landscape layout issues where some screens displayed misaligned or cut-off content."
-          },
-          {
-            "type": "Fixed",
-            "text": "Fixed issue where chart active-point values remained visible when switching segments."
-          },
-          {
-            "type": "Fixed",
-            "text": "Resolved custom tab bar hook error ('Rendered fewer hooks than expected')."
-          },
-          {
-            "type": "Fixed",
-            "text": "Fixed text overflow issues in service lists and transaction cards."
-          }
-        ]
-      },
-      "deeplinks": ["washhub://"]
-    },
-    "owner": "adefreitas"
-  }
+    "expo":  {
+                 "name":  "Wash Hub",
+                 "slug":  "wash-hub",
+                 "platforms":  [
+                                   "ios",
+                                   "android",
+                                   "web"
+                               ],
+                 "version":  "1.4.0",
+                 "orientation":  "default",
+                 "icon":  "./assets/images/splash-icon-light.png",
+                 "scheme":  "washhub",
+                 "userInterfaceStyle":  "light",
+                 "primaryColor":  "#2196F3",
+                 "backgroundColor":  "#F4F6F8",
+                 "runtimeVersion":  "1.4.0",
+                 "updates":  {
+                                 "enabled":  true,
+                                 "url":  "https://u.expo.dev/565ab218-7160-484c-b79b-78b85ae9409b"
+                             },
+                 "ios":  {
+                             "supportsTablet":  true,
+                             "icon":  "./assets/icons/ios-light.png",
+                             "bundleIdentifier":  "com.adefreitas.washhub",
+                             "infoPlist":  {
+                                               "ITSAppUsesNonExemptEncryption":  false,
+                                               "NSCameraUsageDescription":  "Wash Hub uses your camera for QR scanning and profile photos.",
+                                               "NSMicrophoneUsageDescription":  "Wash Hub uses your microphone for audio features.",
+                                               "NSPhotoLibraryUsageDescription":  "Wash Hub accesses your photo library to let you upload images.",
+                                               "NSPhotoLibraryAddUsageDescription":  "Wash Hub saves photos to your library.",
+                                               "NSLocationWhenInUseUsageDescription":  "Wash Hub uses your location to find nearby service bays.",
+                                               "NSLocationAlwaysAndWhenInUseUsageDescription":  "Wash Hub uses your location for background GPS tracking while on shift.",
+                                               "NSLocationAlwaysUsageDescription":  "Wash Hub uses your location in the background to broadcast your position during an active shift.",
+                                               "NSFaceIDUsageDescription":  "Wash Hub uses Face ID for fast, secure login.",
+                                               "NSMotionUsageDescription":  "Wash Hub uses motion sensors to enhance the app experience.",
+                                               "NSContactsUsageDescription":  "Wash Hub accesses your contacts to help you find customers.",
+                                               "NSCalendarsUsageDescription":  "Wash Hub accesses your calendar to schedule appointments."
+                                           },
+                             "userInterfaceStyle":  "light"
+                         },
+                 "android":  {
+                                 "adaptiveIcon":  {
+                                                      "foregroundImage":  "./assets/icons/adaptive-icon.png",
+                                                      "backgroundColor":  "#ffffff"
+                                                  },
+                                 "intentFilters":  [
+                                                       {
+                                                           "action":  "VIEW",
+                                                           "category":  [
+                                                                            "BROWSABLE",
+                                                                            "DEFAULT"
+                                                                        ],
+                                                           "data":  [
+                                                                        {
+                                                                            "scheme":  "washhub"
+                                                                        }
+                                                                    ]
+                                                       }
+                                                   ],
+                                 "versionCode":  12,
+                                 "package":  "com.adefreitas.washhub",
+                                 "permissions":  [
+                                                     "android.permission.READ_CONTACTS",
+                                                     "android.permission.WRITE_CONTACTS",
+                                                     "android.permission.READ_EXTERNAL_STORAGE",
+                                                     "android.permission.WRITE_EXTERNAL_STORAGE",
+                                                     "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+                                                     "android.permission.ACCESS_MEDIA_LOCATION",
+                                                     "android.permission.READ_MEDIA_AUDIO",
+                                                     "android.permission.READ_MEDIA_IMAGES",
+                                                     "android.permission.READ_CALENDAR",
+                                                     "android.permission.WRITE_CALENDAR",
+                                                     "android.permission.RECORD_AUDIO",
+                                                     "android.permission.MODIFY_AUDIO_SETTINGS",
+                                                     "android.permission.FOREGROUND_SERVICE",
+                                                     "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+                                                     "android.permission.ACCESS_COARSE_LOCATION",
+                                                     "android.permission.ACCESS_FINE_LOCATION",
+                                                     "android.permission.CAMERA",
+                                                     "android.permission.USE_BIOMETRIC",
+                                                     "android.permission.USE_FINGERPRINT",
+                                                     "android.permission.ACCESS_BACKGROUND_LOCATION",
+                                                     "android.permission.VIBRATE",
+                                                     "android.permission.RECEIVE_BOOT_COMPLETED"
+                                                 ],
+                                 "navigationBar":  {
+                                                       "backgroundColor":  "#1E2A3A",
+                                                       "barStyle":  "light-content"
+                                                   },
+                                 "softwareKeyboardLayoutMode":  "pan"
+                             },
+                 "web":  {
+                             "bundler":  "metro",
+                             "output":  "static",
+                             "favicon":  "./assets/images/favicon.png"
+                         },
+                 "plugins":  [
+                                 [
+                                     "expo-splash-screen",
+                                     {
+                                         "backgroundColor":  "#ffffff",
+                                         "image":  "./assets/icons/splash-icon-dark.png",
+                                         "resizeMode":  "contain",
+                                         "imageWidth":  200
+                                     }
+                                 ],
+                                 [
+                                     "expo-contacts",
+                                     {
+                                         "contactsPermission":  "Allow $(PRODUCT_NAME) to access your contacts."
+                                     }
+                                 ],
+                                 [
+                                     "expo-media-library",
+                                     {
+                                         "photosPermission":  "Allow $(PRODUCT_NAME) to access your photos.",
+                                         "savePhotosPermission":  "Allow $(PRODUCT_NAME) to save photos.",
+                                         "isAccessMediaLocationEnabled":  true,
+                                         "granularPermissions":  [
+                                                                     "audio",
+                                                                     "photo"
+                                                                 ]
+                                     }
+                                 ],
+                                 [
+                                     "expo-calendar",
+                                     {
+                                         "calendarPermission":  "The app needs to access your calendar."
+                                     }
+                                 ],
+                                 [
+                                     "expo-audio",
+                                     {
+                                         "microphonePermission":  "Allow $(PRODUCT_NAME) to access your microphone.",
+                                         "enableBackgroundPlayback":  true,
+                                         "enableBackgroundRecording":  false
+                                     }
+                                 ],
+                                 [
+                                     "expo-notifications",
+                                     {
+                                         "icon":  "./local/assets/notification_icon.png",
+                                         "color":  "#ffffff",
+                                         "defaultChannel":  "default",
+                                         "sounds":  [
+                                                        "./local/assets/notification_sound.wav",
+                                                        "./local/assets/notification_sound_other.wav"
+                                                    ],
+                                         "enableBackgroundRemoteNotifications":  false
+                                     }
+                                 ],
+                                 [
+                                     "expo-sqlite",
+                                     {
+                                         "enableFTS":  true,
+                                         "useSQLCipher":  true,
+                                         "android":  {
+                                                         "enableFTS":  false,
+                                                         "useSQLCipher":  false
+                                                     },
+                                         "ios":  {
+                                                     "customBuildFlags":  [
+                                                                              "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
+                                                                          ]
+                                                 }
+                                     }
+                                 ],
+                                 [
+                                     "expo-location",
+                                     {
+                                         "locationAlwaysAndWhenInUsePermission":  "Allow $(PRODUCT_NAME) to use your location for GPS tracking on shift.",
+                                         "locationAlwaysPermission":  "Wash Hub uses your location in the background to broadcast your position during an active shift.",
+                                         "locationWhenInUsePermission":  "Wash Hub uses your location to find nearby service bays and for mobile job dispatch."
+                                     }
+                                 ],
+                                 [
+                                     "expo-camera",
+                                     {
+                                         "cameraPermission":  "Allow $(PRODUCT_NAME) to access your camera for QR scanning and photos.",
+                                         "microphonePermission":  "Allow $(PRODUCT_NAME) to access your microphone.",
+                                         "recordAudioAndroid":  true
+                                     }
+                                 ],
+                                 [
+                                     "expo-image",
+                                     {
+                                         "disableLibdav1d":  true
+                                     }
+                                 ],
+                                 [
+                                     "expo-video",
+                                     {
+                                         "supportsBackgroundPlayback":  true,
+                                         "supportsPictureInPicture":  true
+                                     }
+                                 ],
+                                 "expo-mail-composer",
+                                 "expo-router",
+                                 "expo-updates",
+                                 "expo-font",
+                                 "expo-web-browser",
+                                 "react-native-bottom-tabs",
+                                 "expo-local-authentication",
+                                 "@react-native-community/datetimepicker",
+                                 "expo-build-properties",
+                                 "expo-sharing",
+                                 "expo-secure-store",
+                                 "expo-asset"
+                             ],
+                 "experiments":  {
+                                     "typedRoutes":  true
+                                 },
+                 "extra":  {
+                               "router":  {
+
+                                          },
+                               "eas":  {
+                                           "projectId":  "565ab218-7160-484c-b79b-78b85ae9409b"
+                                       },
+                               "changelog":  {
+                                                 "date":  "2025-12-14",
+                                                 "changes":  [
+                                                                 {
+                                                                     "type":  "New",
+                                                                     "text":  "Biometric login added. A Face ID / Fingerprint option now appears on the login screen once enabled in Settings."
+                                                                 },
+                                                                 {
+                                                                     "type":  "New",
+                                                                     "text":  "New bottom sheet system introduced for smoother UI interactions across screens such as Services \u0026 Specials and Settings."
+                                                                 },
+                                                                 {
+                                                                     "type":  "New",
+                                                                     "text":  "Enhanced payment-method and earnings charts with tap-to-filter support and dynamic active-point display."
+                                                                 },
+                                                                 {
+                                                                     "type":  "New",
+                                                                     "text":  "Segment control upgraded so detail values reset and hide until a chart point is tapped."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Tablet layout improvements across Workers, Transactions, and Settings for better portrait and landscape responsiveness."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Sticky headers updated with better spacing, elevation, and full-width alignment."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "FAB buttons now appear correctly on Android in landscape mode and on tablets."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Bottom sheets and modals now reposition properly with the keyboard and avoid hidden content."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Login screen animations and layout polished; biometric button now appears contextually."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Android app icon updated to use correct light-color version."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Stronger password validation added to browser reset flow to match in-app complexity rules."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Transaction detail fallback logic added so a missing API record loads gracefully from the cached list."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Improved",
+                                                                     "text":  "Improved OSRM distance and matching logic on server with consistent fallback routing."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Fixed",
+                                                                     "text":  "Fixed bottom sheet blank-space bug caused by keyboard closing."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Fixed",
+                                                                     "text":  "Fixed landscape layout issues where some screens displayed misaligned or cut-off content."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Fixed",
+                                                                     "text":  "Fixed issue where chart active-point values remained visible when switching segments."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Fixed",
+                                                                     "text":  "Resolved custom tab bar hook error (\u0027Rendered fewer hooks than expected\u0027)."
+                                                                 },
+                                                                 {
+                                                                     "type":  "Fixed",
+                                                                     "text":  "Fixed text overflow issues in service lists and transaction cards."
+                                                                 }
+                                                             ]
+                                             },
+                               "deeplinks":  [
+                                                 "washhub://"
+                                             ]
+                           },
+                 "owner":  "adefreitas"
+             }
 }

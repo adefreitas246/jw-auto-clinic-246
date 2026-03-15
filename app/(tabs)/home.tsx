@@ -1,4 +1,4 @@
-import { useAuth } from "@/context/AuthContext";
+﻿import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -38,6 +38,7 @@ import {
   registerTranslation,
 } from "react-native-paper-dates";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { Colors } from '@/constants/Colors';
 
 const { width: screenWidth } = Dimensions.get("window");
 const isTablet = screenWidth >= 600 && screenWidth < 1024;
@@ -257,7 +258,7 @@ const ExportFabMenu: React.FC<{
           }}
           activeOpacity={0.7}
         >
-          <Ionicons name={it.icon} size={18} color="#444" />
+          <Ionicons name={it.icon} size={18} color={Colors.textPrimary} />
           <Text style={{ fontWeight: "600" }}>{it.label}</Text>
         </TouchableOpacity>
       ))}
@@ -517,12 +518,12 @@ export default function HomeScreen() {
           height: size,
           borderRadius: size / 2,
           marginRight: 12,
-          backgroundColor: "#eee",
+          backgroundColor: Colors.border,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Text style={{ fontWeight: "700", color: "#6a0dad" }}>
+        <Text style={{ fontWeight: "700", color: Colors.accent }}>
           {getInitials(name)}
         </Text>
       </View>
@@ -793,13 +794,13 @@ export default function HomeScreen() {
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: active ? "#6a0dad" : "#eee",
+    backgroundColor: active ? Colors.accent : Colors.border,
     flexDirection: "row" as const,
     alignItems: "center" as const,
     gap: 6,
   });
   const chipText = (active: boolean) => ({
-    color: active ? "#fff" : "#444",
+    color: active ? Colors.white : Colors.textPrimary,
     fontWeight: "600" as const,
   });
 
@@ -936,13 +937,13 @@ export default function HomeScreen() {
           }),
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#e53935",
+          backgroundColor: Colors.error,
           borderTopRightRadius: 12,
           borderBottomRightRadius: 12,
         }}
         android_ripple={{ color: "#ffffff33" }}
       >
-        <Text style={{ color: "#fff", fontWeight: "700" }}>Delete</Text>
+        <Text style={{ color: Colors.white, fontWeight: "700" }}>Delete</Text>
       </Pressable>
     </View>
   );
@@ -2124,29 +2125,29 @@ filteredTransactions.forEach((tx) => {
 });
 
 // Colors for pie slices
-const PIE_COLORS = ["#6a0dad", "#fe811f", "#2d9cdb", "#27ae60", "#e74c3c"];
+const PIE_COLORS = [Colors.accent, "#fe811f", "#2d9cdb", "#27ae60", "#e74c3c"];
 
 const paymentMethodPieData = Object.entries(paymentMethodTotals).map(
   ([name, value], index) => ({
     name,
     value: Math.abs(value), // in case of refunds/negatives
     color: PIE_COLORS[index % PIE_COLORS.length],
-    legendFontColor: "#444",
+    legendFontColor: Colors.textPrimary,
     legendFontSize: 13,
   })
 );
 
 // Shared chart config
 const earningsChartConfig = {
-  backgroundColor: "#fff",
-  backgroundGradientFrom: "#fff",
-  backgroundGradientTo: "#fff",
+  backgroundColor: Colors.white,
+  backgroundGradientFrom: Colors.white,
+  backgroundGradientTo: Colors.white,
   decimalPlaces: 0,
   barPercentage: 0.4,
-  fillShadowGradient: "#6a0dad",
+  fillShadowGradient: Colors.accent,
   fillShadowGradientOpacity: 1,
   color: (opacity = 1) => `rgba(106, 13, 173, ${opacity})`,
-  labelColor: () => "#888",
+  labelColor: () => Colors.textMuted,
   propsForBackgroundLines: {
     stroke: "#e3e3e3",
     strokeDasharray: "6",
@@ -2156,7 +2157,7 @@ const earningsChartConfig = {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1, backgroundColor: Colors.white }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
@@ -2174,7 +2175,7 @@ const earningsChartConfig = {
             styles.stickyHeaderWrap,
             headerElevated && styles.stickyHeaderElevated,
             isWeb && headerElevated
-              ? { shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 4 } }
+              ? { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 4 } }
               : null,
           ]}
         >
@@ -2333,11 +2334,11 @@ const earningsChartConfig = {
                               paddingVertical: 6,
                               borderRadius: 16,
                               borderWidth: 1,
-                              borderColor: "#ddd",
+                              borderColor: Colors.border,
                               marginRight: 8,
                             }}
                           >
-                            <Text style={{ fontSize: 12, color: "#444" }}>
+                            <Text style={{ fontSize: 12, color: Colors.textPrimary }}>
                               {label} (${value.toFixed(2)})
                             </Text>
                           </TouchableOpacity>
@@ -2435,15 +2436,15 @@ const earningsChartConfig = {
                                 paddingVertical: 6,
                                 borderRadius: 16,
                                 borderWidth: 1,
-                                borderColor: isActive ? "#6a0dad" : "#ddd",
-                                backgroundColor: isActive ? "#f7f1ff" : "#fff",
+                                borderColor: isActive ? Colors.accent : Colors.border,
+                                backgroundColor: isActive ? "#f7f1ff" : Colors.white,
                                 marginRight: 8,
                               }}
                             >
                               <Text
                                 style={{
                                   fontSize: 12,
-                                  color: isActive ? "#6a0dad" : "#444",
+                                  color: isActive ? Colors.accent : Colors.textPrimary,
                                   fontWeight: isActive ? "700" : "500",
                                 }}
                               >
@@ -2497,7 +2498,7 @@ const earningsChartConfig = {
                             paddingHorizontal: 10,
                             borderRadius: 16,
                             borderWidth: 1,
-                            borderColor: "#ddd",
+                            borderColor: Colors.border,
                             marginRight: 8,
                           }}
                         >
@@ -2510,7 +2511,7 @@ const earningsChartConfig = {
                               marginRight: 6,
                             }}
                           />
-                          <Text style={{ fontSize: 12, color: "#444" }}>
+                          <Text style={{ fontSize: 12, color: Colors.textPrimary }}>
                             {item.name} (${item.value.toFixed(2)})
                           </Text>
                         </TouchableOpacity>
@@ -2520,7 +2521,7 @@ const earningsChartConfig = {
                 )}
 
                 {chartMode === "methods" && paymentMethodPieData.length === 0 && (
-                  <Text style={{ marginTop: 16, color: "#777" }}>
+                  <Text style={{ marginTop: 16, color: Colors.textSecondary }}>
                     Not enough data to show payment method breakdown yet.
                   </Text>
                 )}
@@ -2541,7 +2542,7 @@ const earningsChartConfig = {
                       style={{
                         fontSize: 13,
                         fontWeight: "600",
-                        color: "#6a0dad",
+                        color: Colors.accent,
                         marginBottom: 2,
                       }}
                     >
@@ -2551,7 +2552,7 @@ const earningsChartConfig = {
                       style={{
                         fontSize: 15,
                         fontWeight: "700",
-                        color: "#333",
+                        color: Colors.textPrimary,
                       }}
                     >
                       {activePoint.label}
@@ -2560,7 +2561,7 @@ const earningsChartConfig = {
                       style={{
                         fontSize: 14,
                         fontWeight: "600",
-                        color: "#333",
+                        color: Colors.textPrimary,
                         marginTop: 2,
                       }}
                     >
@@ -2585,7 +2586,7 @@ const earningsChartConfig = {
                     <Ionicons
                       name="cloud-upload-outline"
                       size={16}
-                      color="#6a0dad"
+                      color={Colors.accent}
                     />
                     <Text style={styles.headingButtonText}>Import CSV</Text>
                   </TouchableOpacity>
@@ -2594,7 +2595,7 @@ const earningsChartConfig = {
 
               <TextInput
                 placeholder="Search by worker or customer"
-                placeholderTextColor="#777"
+                placeholderTextColor={Colors.textSecondary}
                 value={transactionSearchText}
                 onChangeText={setTransactionSearchText}
                 style={styles.searchBox}
@@ -2612,7 +2613,7 @@ const earningsChartConfig = {
                     onPress={() => setFiltersModalVisible(true)}
                     style={styles.exportButton}
                   >
-                    <Ionicons name="filter" size={16} color="#6a0dad" />
+                    <Ionicons name="filter" size={16} color={Colors.accent} />
                     <Text style={styles.exportText}>Filters</Text>
                   </TouchableOpacity>
                   {user?.role === "admin" && (
@@ -2620,7 +2621,7 @@ const earningsChartConfig = {
                       onPress={() => setExportFabTransactionsOpen(true)}
                       style={styles.exportButton}
                     >
-                      <Ionicons name="download" size={16} color="#6a0dad" />
+                      <Ionicons name="download" size={16} color={Colors.accent} />
                       <Text style={styles.exportText}>Export</Text>
                     </TouchableOpacity>
                   )}
@@ -2642,7 +2643,7 @@ const earningsChartConfig = {
                   }
                   style={[styles.exportButton, { paddingVertical: 6 }]}
                 >
-                  <Ionicons name="swap-horizontal" size={16} color="#6a0dad" />
+                  <Ionicons name="swap-horizontal" size={16} color={Colors.accent} />
                   <Text style={styles.exportText}>
                     {viewMode === "card" ? "List View" : "Card View"}
                   </Text>
@@ -2676,7 +2677,7 @@ const earningsChartConfig = {
                       style={{
                         fontSize: 16,
                         fontWeight: "bold",
-                        color: "#444",
+                        color: Colors.textPrimary,
                         marginBottom: 10,
                       }}
                     >
@@ -2709,11 +2710,11 @@ const earningsChartConfig = {
                               flexDirection: "row",
                               justifyContent: "space-between",
                               alignItems: "flex-start", // allow multi-line
-                              backgroundColor: "#fff",
+                              backgroundColor: Colors.white,
                               padding: 14,
                               borderRadius: 12,
                               marginBottom: isTablet ? 0 : 8,
-                              shadowColor: "#000",
+                              shadowColor: Colors.black,
                               shadowOpacity: 0.05,
                               shadowOffset: { width: 0, height: 1 },
                               shadowRadius: 4,
@@ -2732,7 +2733,7 @@ const earningsChartConfig = {
                               <Ionicons
                                 name="document-text-outline"
                                 size={24}
-                                color="#aaa"
+                                color={Colors.textMuted}
                                 style={{ marginRight: 12 }}
                               />
                               <View style={{ flexShrink: 1 }}>
@@ -2740,14 +2741,14 @@ const earningsChartConfig = {
                                   style={{
                                     fontSize: Platform.OS === "ios" ? 15 : 14,
                                     fontWeight: "600",
-                                    color: "#333",
+                                    color: Colors.textPrimary,
                                   }}
                                   numberOfLines={2}         // wrap, but keep it tidy
                                 >
                                   {tx.serviceType}
                                 </Text>
                                 <Text
-                                  style={{ fontSize: 13, color: "#888" }}
+                                  style={{ fontSize: 13, color: Colors.textMuted }}
                                   numberOfLines={1}
                                 >
                                   {new Date(tx.serviceDate).toLocaleDateString("en-US", {
@@ -2849,7 +2850,7 @@ const earningsChartConfig = {
               title="Filter Transactions"
               maxHeight={520}
             >
-              <Text style={{ marginTop: 8, fontWeight: "600", color: "#333" }}>
+              <Text style={{ marginTop: 8, fontWeight: "600", color: Colors.textPrimary }}>
                 Date Range
               </Text>
               <TouchableOpacity
@@ -2860,7 +2861,7 @@ const earningsChartConfig = {
                   borderRadius: 10,
                   backgroundColor: "#f4f4f4",
                   borderWidth: 1,
-                  borderColor: "#ddd",
+                  borderColor: Colors.border,
                 }}
               >
                 <Text>
@@ -2870,7 +2871,7 @@ const earningsChartConfig = {
                 </Text>
               </TouchableOpacity>
 
-              <Text style={{ marginTop: 10, fontWeight: "600", color: "#333" }}>
+              <Text style={{ marginTop: 10, fontWeight: "600", color: Colors.textPrimary }}>
                 Payment Method
               </Text>
               <View
@@ -2891,12 +2892,12 @@ const earningsChartConfig = {
                         paddingVertical: 6,
                         paddingHorizontal: 14,
                         borderRadius: 20,
-                        backgroundColor: isActive ? "#6a0dad" : "#eee",
+                        backgroundColor: isActive ? Colors.accent : Colors.border,
                       }}
                     >
                       <Text
                         style={{
-                          color: isActive ? "#fff" : "#444",
+                          color: isActive ? Colors.white : Colors.textPrimary,
                           fontWeight: "600",
                         }}
                       >
@@ -2907,7 +2908,7 @@ const earningsChartConfig = {
                 })}
               </View>
 
-              <Text style={{ marginTop: 20, fontWeight: "600", color: "#333" }}>
+              <Text style={{ marginTop: 20, fontWeight: "600", color: Colors.textPrimary }}>
                 Service Type
               </Text>
               <View
@@ -2928,12 +2929,12 @@ const earningsChartConfig = {
                         paddingVertical: 6,
                         paddingHorizontal: 14,
                         borderRadius: 20,
-                        backgroundColor: isActive ? "#6a0dad" : "#eee",
+                        backgroundColor: isActive ? Colors.accent : Colors.border,
                       }}
                     >
                       <Text
                         style={{
-                          color: isActive ? "#fff" : "#444",
+                          color: isActive ? Colors.white : Colors.textPrimary,
                           fontWeight: "600",
                         }}
                       >
@@ -2954,7 +2955,7 @@ const earningsChartConfig = {
                 <TouchableOpacity
                   style={[
                     styles.modalButton,
-                    { backgroundColor: "#eee", flex: 1, marginRight: 6 },
+                    { backgroundColor: Colors.border, flex: 1, marginRight: 6 },
                   ]}
                   onPress={() => {
                     setPaymentFilter(null);
@@ -2962,7 +2963,7 @@ const earningsChartConfig = {
                     setRange({ startDate: undefined, endDate: undefined });
                   }}
                 >
-                  <Text style={{ color: "#444", fontWeight: "600" }}>Clear</Text>
+                  <Text style={{ color: Colors.textPrimary, fontWeight: "600" }}>Clear</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -3008,7 +3009,7 @@ const earningsChartConfig = {
                 <View
                   style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
                 >
-                  <Text style={{ color: "#666" }}>
+                  <Text style={{ color: Colors.textSecondary }}>
                     {sortedEmployees.length} result
                     {sortedEmployees.length === 1 ? "" : "s"}
                   </Text>
@@ -3025,7 +3026,7 @@ const earningsChartConfig = {
                       backgroundColor: "#f4e8ff",
                     }}
                   >
-                    <Text style={{ color: "#6a0dad", fontWeight: "700" }}>
+                    <Text style={{ color: Colors.accent, fontWeight: "700" }}>
                       Clear Filters
                     </Text>
                   </TouchableOpacity>
@@ -3075,7 +3076,7 @@ const earningsChartConfig = {
                           paddingVertical: 6,
                           paddingHorizontal: 14,
                           borderRadius: 20,
-                          backgroundColor: active ? "#6a0dad" : "#eee",
+                          backgroundColor: active ? Colors.accent : Colors.border,
                           flexDirection: "row",
                           alignItems: "center",
                           gap: 6,
@@ -3084,11 +3085,11 @@ const earningsChartConfig = {
                         <Ionicons
                           name={icon as any}
                           size={16}
-                          color={active ? "#fff" : "#444"}
+                          color={active ? Colors.white : Colors.textPrimary}
                         />
                         <Text
                           style={{
-                            color: active ? "#fff" : "#444",
+                            color: active ? Colors.white : Colors.textPrimary,
                             fontWeight: "600",
                           }}
                         >
@@ -3131,7 +3132,7 @@ const earningsChartConfig = {
                           paddingVertical: 6,
                           paddingHorizontal: 14,
                           borderRadius: 20,
-                          backgroundColor: active ? "#6a0dad" : "#eee",
+                          backgroundColor: active ? Colors.accent : Colors.border,
                           flexDirection: "row",
                           alignItems: "center",
                           gap: 6,
@@ -3140,11 +3141,11 @@ const earningsChartConfig = {
                         <Ionicons
                           name={icon as any}
                           size={16}
-                          color={active ? "#fff" : "#444"}
+                          color={active ? Colors.white : Colors.textPrimary}
                         />
                         <Text
                           style={{
-                            color: active ? "#fff" : "#444",
+                            color: active ? Colors.white : Colors.textPrimary,
                             fontWeight: "600",
                           }}
                         >
@@ -3159,7 +3160,7 @@ const earningsChartConfig = {
               {/* Search box */}
               <TextInput
                 placeholder="Search by name or email"
-                placeholderTextColor="#777"
+                placeholderTextColor={Colors.textSecondary}
                 value={searchText}
                 onChangeText={setSearchText}
                 style={styles.searchBox}
@@ -3181,14 +3182,14 @@ const earningsChartConfig = {
                     paddingVertical: 10,
                     paddingHorizontal: 14,
                     borderRadius: 10,
-                    backgroundColor: "#6a0dad",
+                    backgroundColor: Colors.accent,
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 8,
                   }}
                 >
-                  <Ionicons name="download" size={18} color="#fff" />
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Export</Text>
+                  <Ionicons name="download" size={18} color={Colors.white} />
+                  <Text style={{ color: Colors.white, fontWeight: "700" }}>Export</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -3249,7 +3250,7 @@ const earningsChartConfig = {
                             {
                               alignItems: "center",
                               paddingVertical: 12,
-                              borderBottomColor: "#eee",
+                              borderBottomColor: Colors.border,
                               borderBottomWidth: 1,
                             },
                           ]}
@@ -3281,7 +3282,7 @@ const earningsChartConfig = {
                               styles.cell,
                               {
                                 width: 100,
-                                color: emp.role === "admin" ? "#6a0dad" : "#555",
+                                color: emp.role === "admin" ? Colors.accent : Colors.textSecondary,
                                 fontWeight: "600",
                               },
                             ]}
@@ -3313,7 +3314,7 @@ const earningsChartConfig = {
                               <Ionicons
                                 name="create-outline"
                                 size={20}
-                                color="#6a0dad"
+                                color={Colors.accent}
                               />
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -3343,12 +3344,12 @@ const earningsChartConfig = {
                     key={emp._id}
                     entering={index < 20 ? FadeInUp.delay(index * 40) : undefined}
                     style={{
-                      backgroundColor: "#fff",
+                      backgroundColor: Colors.white,
                       borderRadius: 12,
                       padding: 12,
                       marginBottom: 12,
                       elevation: 1,
-                      shadowColor: "#000",
+                      shadowColor: Colors.black,
                       shadowOffset: { width: 0, height: 1 },
                       shadowOpacity: 0.1,
                       shadowRadius: 2,
@@ -3371,24 +3372,24 @@ const earningsChartConfig = {
                           <Text style={{ fontWeight: "600", fontSize: 16 }}>
                             {emp.name}
                           </Text>
-                          <Text style={{ color: "#666", fontSize: 14 }}>
+                          <Text style={{ color: Colors.textSecondary, fontSize: 14 }}>
                             {emp.email}
                           </Text>
                         </View>
                       </View>
 
-                      <Text style={{ fontSize: 14, color: "#444" }}>
+                      <Text style={{ fontSize: 14, color: Colors.textPrimary }}>
                         📞 {emp.phone || "N/A"}
                       </Text>
                       <Text
                         style={{
                           fontSize: 14,
-                          color: emp.role === "admin" ? "#6a0dad" : "#555",
+                          color: emp.role === "admin" ? Colors.accent : Colors.textSecondary,
                         }}
                       >
                         👤 Role: {emp.role}
                       </Text>
-                      <Text style={{ fontSize: 14, color: "#444" }}>
+                      <Text style={{ fontSize: 14, color: Colors.textPrimary }}>
                         💵 Rate:{" "}
                         {emp.hourlyRate ? `$${emp.hourlyRate.toFixed(2)}` : "—"}
                       </Text>
@@ -3416,7 +3417,7 @@ const earningsChartConfig = {
                           <Ionicons
                             name="key-outline"
                             size={20}
-                            color="#6a0dad"
+                            color={Colors.accent}
                           />
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -3426,7 +3427,7 @@ const earningsChartConfig = {
                           <Ionicons
                             name="create-outline"
                             size={20}
-                            color="#6a0dad"
+                            color={Colors.accent}
                           />
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -3457,7 +3458,7 @@ const earningsChartConfig = {
           <Text style={styles.modalLabel}>Name</Text>
           <TextInput
             placeholder="Name"
-            placeholderTextColor="#777"
+            placeholderTextColor={Colors.textSecondary}
             value={selectedEmployee?.name || ""}
             onChangeText={(text) =>
               setSelectedEmployee((prev) => (prev ? { ...prev, name: text } : prev))
@@ -3468,7 +3469,7 @@ const earningsChartConfig = {
           <Text style={styles.modalLabel}>Email</Text>
           <TextInput
             placeholder="Email"
-            placeholderTextColor="#777"
+            placeholderTextColor={Colors.textSecondary}
             value={selectedEmployee?.email || ""}
             onChangeText={(text) =>
               setSelectedEmployee((prev) => (prev ? { ...prev, email: text } : prev))
@@ -3479,7 +3480,7 @@ const earningsChartConfig = {
           <Text style={styles.modalLabel}>Phone Number</Text>
           <TextInput
             placeholder="Phone"
-            placeholderTextColor="#777"
+            placeholderTextColor={Colors.textSecondary}
             value={selectedEmployee?.phone || ""}
             onChangeText={(text) =>
               setSelectedEmployee((prev) => (prev ? { ...prev, phone: text } : prev))
@@ -3491,7 +3492,7 @@ const earningsChartConfig = {
           <Text style={styles.modalLabel}>Hourly Rate</Text>
           <TextInput
             placeholder="Rate"
-            placeholderTextColor="#777"
+            placeholderTextColor={Colors.textSecondary}
             value={
               selectedEmployee?.hourlyRate !== undefined
                 ? String(selectedEmployee.hourlyRate)
@@ -3551,7 +3552,7 @@ const earningsChartConfig = {
                 }
               }}
             >
-              <Text style={[styles.modalItem, { color: "#6a0dad" }]}>
+              <Text style={[styles.modalItem, { color: Colors.accent }]}>
                 Save Changes
               </Text>
             </TouchableOpacity>
@@ -3580,7 +3581,7 @@ const earningsChartConfig = {
                       marginTop: -8,
                     }}
                   >
-                    <Text style={{ color: "#666" }}>
+                    <Text style={{ color: Colors.textSecondary }}>
                       {visibleShifts.length} result
                       {visibleShifts.length === 1 ? "" : "s"}
                     </Text>
@@ -3593,7 +3594,7 @@ const earningsChartConfig = {
                         backgroundColor: "#f4e8ff",
                       }}
                     >
-                      <Text style={{ color: "#6a0dad", fontWeight: "700" }}>
+                      <Text style={{ color: Colors.accent, fontWeight: "700" }}>
                         {filtersOpen ? "Hide Filters" : "Show Filters"}
                       </Text>
                     </TouchableOpacity>
@@ -3645,7 +3646,7 @@ const earningsChartConfig = {
                                       : "layers"
                                 }
                                 size={16}
-                                color={isActive ? "#fff" : "#444"}
+                                color={isActive ? Colors.white : Colors.textPrimary}
                               />
                               <Text style={chipText(isActive)}>{status}</Text>
                             </TouchableOpacity>
@@ -3660,7 +3661,7 @@ const earningsChartConfig = {
                           <Ionicons
                             name="swap-vertical"
                             size={16}
-                            color={shiftSortBy ? "#fff" : "#444"}
+                            color={shiftSortBy ? Colors.white : Colors.textPrimary}
                           />
                           <Text style={chipText(Boolean(shiftSortBy))}>
                             {shiftSortBy ? `Sort: ${shiftSortBy}` : "Sort"}
@@ -3684,7 +3685,7 @@ const earningsChartConfig = {
                               <Ionicons
                                 name={icon as any}
                                 size={16}
-                                color={active ? "#fff" : "#444"}
+                                color={active ? Colors.white : Colors.textPrimary}
                               />
                               <Text style={chipText(active)}>{label}</Text>
                             </TouchableOpacity>
@@ -3702,7 +3703,7 @@ const earningsChartConfig = {
                           }}
                           style={chip(false)}
                         >
-                          <Ionicons name="close-circle" size={16} color="#444" />
+                          <Ionicons name="close-circle" size={16} color={Colors.textPrimary} />
                           <Text style={chipText(false)}>Clear All</Text>
                         </TouchableOpacity>
                       </View>
@@ -3711,7 +3712,7 @@ const earningsChartConfig = {
                     {/* Search Box */}
                     <TextInput
                       placeholder="Search by worker name"
-                      placeholderTextColor="#777"
+                      placeholderTextColor={Colors.textSecondary}
                       value={shiftSearchText}
                       onChangeText={setShiftSearchText}
                       style={{
@@ -3719,7 +3720,7 @@ const earningsChartConfig = {
                         padding: 10,
                         borderRadius: 8,
                         borderWidth: 1,
-                        borderColor: "#ddd",
+                        borderColor: Colors.border,
                         marginBottom: 12,
                       }}
                     />
@@ -3759,7 +3760,7 @@ const earningsChartConfig = {
                             padding: 10,
                             borderRadius: 8,
                             borderWidth: 1,
-                            borderColor: "#ddd",
+                            borderColor: Colors.border,
                             height: 40,
                             justifyContent: "center",
                           }}
@@ -3771,10 +3772,10 @@ const earningsChartConfig = {
                             <Ionicons
                               name="calendar"
                               size={16}
-                              color={dateFrom ? "#111" : "#777"}
+                              color={dateFrom ? Colors.black : Colors.textSecondary}
                               style={{ marginRight: 8 }}
                             />
-                            <Text style={{ color: dateFrom ? "#111" : "#777" }}>
+                            <Text style={{ color: dateFrom ? Colors.black : Colors.textSecondary }}>
                               {dateFrom || "From Date"}
                             </Text>
                           </View>
@@ -3808,7 +3809,7 @@ const earningsChartConfig = {
                             padding: 10,
                             borderRadius: 8,
                             borderWidth: 1,
-                            borderColor: "#ddd",
+                            borderColor: Colors.border,
                             height: 40,
                             justifyContent: "center",
                           }}
@@ -3820,10 +3821,10 @@ const earningsChartConfig = {
                             <Ionicons
                               name="calendar"
                               size={16}
-                              color={dateTo ? "#111" : "#777"}
+                              color={dateTo ? Colors.black : Colors.textSecondary}
                               style={{ marginRight: 8 }}
                             />
-                            <Text style={{ color: dateTo ? "#111" : "#777" }}>
+                            <Text style={{ color: dateTo ? Colors.black : Colors.textSecondary }}>
                               {dateTo || "To Date"}
                             </Text>
                           </View>
@@ -3837,11 +3838,11 @@ const earningsChartConfig = {
                           paddingHorizontal: 12,
                           height: 40,
                           borderRadius: 8,
-                          backgroundColor: "#eee",
+                          backgroundColor: Colors.border,
                           justifyContent: "center",
                         }}
                       >
-                        <Text style={{ color: "#444", fontWeight: "600" }}>
+                        <Text style={{ color: Colors.textPrimary, fontWeight: "600" }}>
                           Clear
                         </Text>
                       </TouchableOpacity>
@@ -3888,14 +3889,14 @@ const earningsChartConfig = {
                     paddingVertical: 10,
                     paddingHorizontal: 14,
                     borderRadius: 10,
-                    backgroundColor: "#6a0dad",
+                    backgroundColor: Colors.accent,
                     flexDirection: "row",
                     alignItems: "center",
                     gap: 8,
                   }}
                 >
-                  <Ionicons name="download" size={18} color="#fff" />
-                  <Text style={{ color: "#fff", fontWeight: "700" }}>Export</Text>
+                  <Ionicons name="download" size={18} color={Colors.white} />
+                  <Text style={{ color: Colors.white, fontWeight: "700" }}>Export</Text>
                 </TouchableOpacity>
               </View>
               <ExportFabMenu
@@ -3930,7 +3931,7 @@ const earningsChartConfig = {
                         paddingVertical: 10,
                         paddingHorizontal: 12,
                         borderRadius: 8,
-                        backgroundColor: active ? "#f4e8ff" : "#fff",
+                        backgroundColor: active ? "#f4e8ff" : Colors.white,
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 8,
@@ -3945,11 +3946,11 @@ const earningsChartConfig = {
                             : "funnel"
                         }
                         size={16}
-                        color={active ? "#6a0dad" : "#444"}
+                        color={active ? Colors.accent : Colors.textPrimary}
                       />
                       <Text
                         style={{
-                          color: active ? "#6a0dad" : "#222",
+                          color: active ? Colors.accent : Colors.primary,
                           fontWeight: active ? "700" : "500",
                         }}
                       >
@@ -4042,7 +4043,7 @@ const earningsChartConfig = {
                               styles.tableRow,
                               {
                                 backgroundColor:
-                                  index % 2 === 0 ? "#f9f9f9" : "#fff",
+                                  index % 2 === 0 ? "#f9f9f9" : Colors.white,
                               },
                             ]}
                           >
@@ -4104,14 +4105,14 @@ const earningsChartConfig = {
                               <TouchableOpacity
                                 onPress={() => handleDeleteShift(keyId)}
                                 style={{
-                                  backgroundColor: "#e53935",
+                                  backgroundColor: Colors.error,
                                   paddingVertical: 6,
                                   paddingHorizontal: 10,
                                   borderRadius: 8,
                                 }}
                               >
                                 <Text
-                                  style={{ color: "#fff", fontWeight: "700" }}
+                                  style={{ color: Colors.white, fontWeight: "700" }}
                                 >
                                   Delete
                                 </Text>
@@ -4159,12 +4160,12 @@ const earningsChartConfig = {
                           <Animated.View
                             entering={index < 20 ? FadeInUp.delay(index * 40) : undefined}
                             style={{
-                              backgroundColor: "#fff",
+                              backgroundColor: Colors.white,
                               borderRadius: 12,
                               padding: 12,
                               marginBottom: 12,
                               elevation: 1,
-                              shadowColor: "#000",
+                              shadowColor: Colors.black,
                               shadowOffset: { width: 0, height: 1 },
                               shadowOpacity: 0.1,
                               shadowRadius: 2,
@@ -4173,7 +4174,7 @@ const earningsChartConfig = {
                             <Text style={{ fontWeight: "600", fontSize: 16 }}>
                               {shift.worker}
                             </Text>
-                            <Text style={{ color: "#666", marginBottom: 4 }}>
+                            <Text style={{ color: Colors.textSecondary, marginBottom: 4 }}>
                               {shift.date}
                             </Text>
                             <Text style={{ fontSize: 14 }}>
@@ -4268,7 +4269,7 @@ const earningsChartConfig = {
                                       : "wallet-outline"
                                 }
                                 size={16}
-                                color={active ? "#fff" : "#444"}
+                                color={active ? Colors.white : Colors.textPrimary}
                               />
                               <Text
                                 style={[
@@ -4293,7 +4294,7 @@ const earningsChartConfig = {
                       <Ionicons
                         name="calendar-outline"
                         size={16}
-                        color="#6a0dad"
+                        color={Colors.accent}
                       />
                       <Text style={styles.rangePillText}>{periodLabel()}</Text>
                       {reportPeriod === "Custom" && (
@@ -4304,7 +4305,7 @@ const earningsChartConfig = {
                           <Ionicons
                             name="create-outline"
                             size={16}
-                            color="#6a0dad"
+                            color={Colors.accent}
                           />
                         </TouchableOpacity>
                       )}
@@ -4321,7 +4322,7 @@ const earningsChartConfig = {
                       <Ionicons
                         name="cloud-upload-outline"
                         size={18}
-                        color="#444"
+                        color={Colors.textPrimary}
                       />
                       <Text style={styles.actionBtnSecondaryText}>
                         Upload Expenses CSV
@@ -4334,7 +4335,7 @@ const earningsChartConfig = {
                       accessibilityRole="button"
                       accessibilityLabel="Export report"
                     >
-                      <Ionicons name="download" size={18} color="#fff" />
+                      <Ionicons name="download" size={18} color={Colors.white} />
                       <Text style={styles.actionBtnPrimaryText}>Export</Text>
                     </TouchableOpacity>
                   </View>
@@ -4371,12 +4372,12 @@ const earningsChartConfig = {
                     showBarTops={true}
                     showValuesOnTopOfBars={true}
                     chartConfig={{
-                      backgroundColor: "#fff",
-                      backgroundGradientFrom: "#fff",
-                      backgroundGradientTo: "#fff",
+                      backgroundColor: Colors.white,
+                      backgroundGradientFrom: Colors.white,
+                      backgroundGradientTo: Colors.white,
                       decimalPlaces: 0,
                       color: (opacity = 1) => `rgba(106, 13, 173, ${opacity})`,
-                      labelColor: () => "#666",
+                      labelColor: () => Colors.textSecondary,
                       propsForBackgroundLines: {
                         strokeDasharray: "",
                       },
@@ -4582,7 +4583,7 @@ const earningsChartConfig = {
               onPress={() => router.push("/(tabs)/services")}
             >
               <View style={[styles.manageCardIcon, { backgroundColor: "#f3eafd" }]}>
-                <Ionicons name="construct" size={26} color="#6a0dad" />
+                <Ionicons name="construct" size={26} color={Colors.accent} />
               </View>
               <View style={styles.manageCardBody}>
                 <Text style={styles.manageCardTitle}>Manage Services</Text>
@@ -4590,7 +4591,7 @@ const earningsChartConfig = {
                   Add, edit, or disable individual wash services
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color={Colors.border} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -4599,7 +4600,7 @@ const earningsChartConfig = {
               onPress={() => router.push("/(tabs)/packages")}
             >
               <View style={[styles.manageCardIcon, { backgroundColor: "#e8f4fd" }]}>
-                <Ionicons name="albums" size={26} color="#0077cc" />
+                <Ionicons name="albums" size={26} color={Colors.accent} />
               </View>
               <View style={styles.manageCardBody}>
                 <Text style={styles.manageCardTitle}>Manage Packages</Text>
@@ -4607,7 +4608,7 @@ const earningsChartConfig = {
                   Bundle services into named packages with a combined price
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color={Colors.border} />
             </TouchableOpacity>
           </View>
         )}
@@ -4619,7 +4620,7 @@ const earningsChartConfig = {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     flex: 1,
   },
   contentContainer: {
@@ -4634,7 +4635,7 @@ const styles = StyleSheet.create({
   },
   // --- Sticky header that spans the full width
   stickyHeaderWrap: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     // Full-bleed: cancel the ScrollView content padding (which is 20)
     marginHorizontal: -20,
     paddingHorizontal: 20,   // keep inner content aligned with page
@@ -4645,10 +4646,10 @@ const styles = StyleSheet.create({
 
   stickyHeaderElevated: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: Colors.border,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: Colors.black,
         shadowOpacity: 0.05,
         shadowRadius: 6,
         shadowOffset: { width: 0, height: 4 },
@@ -4668,7 +4669,7 @@ const styles = StyleSheet.create({
   logo: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#6a0dad",
+    color: Colors.accent,
     marginTop: Platform.OS === "web" ? 10 : 10,
   },
   filters: {
@@ -4678,7 +4679,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   filter: {
-    backgroundColor: "#f0f0f0",
+    backgroundColor: Colors.background,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -4690,11 +4691,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   filterText: {
-    color: "#555",
+    color: Colors.textSecondary,
     fontSize: 13,
   },
   filterTextActive: {
-    color: "#6a0dad",
+    color: Colors.accent,
     fontWeight: "600",
     fontSize: 13,
   },
@@ -4708,20 +4709,20 @@ const styles = StyleSheet.create({
   card: {
     flexGrow: 1,
     flexBasis: "48%",
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 12,
     padding: 12,
     elevation: 1,
     maxWidth: "48%",
   },
-  cardTitle: { color: "#666", fontSize: 13 },
+  cardTitle: { color: Colors.textSecondary, fontSize: 13 },
   cardAmount: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#6a0dad",
+    color: Colors.accent,
     marginTop: 4,
   },
-  cardSub: { fontSize: 12, color: "#999" },
+  cardSub: { fontSize: 12, color: Colors.textMuted },
 
   chartHeaderRow: {
     flexDirection: "row",
@@ -4729,13 +4730,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },  
   chartCard: {
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 16,
     paddingVertical: 20,
     paddingHorizontal: 24,
     marginBottom: 24,
     width: "100%",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -4758,15 +4759,15 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   segmentedButtonActive: {
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
   },
   segmentedLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6a0dad",
+    color: Colors.accent,
   },
   segmentedLabelActive: {
-    color: "#fff",
+    color: Colors.white,
   },
   
 
@@ -4774,19 +4775,19 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 16,
-    color: "#6a0dad",
+    color: Colors.accent,
   },
-  columnHeader: { fontWeight: "700", color: "#555", fontSize: 12 },
-  cell: { fontSize: 12, color: "#333" },
+  columnHeader: { fontWeight: "700", color: Colors.textSecondary, fontSize: 12 },
+  cell: { fontSize: 12, color: Colors.textPrimary },
   tableRow: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   tableHeader: {
     borderBottomWidth: 1,
-    borderColor: "#ccc",
+    borderColor: Colors.border,
     paddingBottom: 6,
     marginBottom: 10,
   },
   placeholderCard: {
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 12,
     padding: 24,
     alignItems: "center",
@@ -4796,7 +4797,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: 14,
-    color: "#777",
+    color: Colors.textSecondary,
   },
   statusBadge: {
     paddingHorizontal: 10,
@@ -4807,10 +4808,10 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#000",
+    color: Colors.black,
   },
   statusActive: { backgroundColor: "#d2f7e3" },
-  statusCompleted: { backgroundColor: "#eee" },
+  statusCompleted: { backgroundColor: Colors.border },
   exportButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -4821,7 +4822,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   exportText: {
-    color: "#6a0dad",
+    color: Colors.accent,
     fontWeight: "bold",
     marginLeft: 6,
   },
@@ -4837,12 +4838,12 @@ const styles = StyleSheet.create({
   exportIcon: { marginRight: 12 },
   exportOptionText: {
     fontSize: 15,
-    color: "#333",
+    color: Colors.textPrimary,
     fontWeight: "600",
   },
   reportsContainer: {
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     paddingBottom: 100,
   },
   reportCards: {
@@ -4872,7 +4873,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 14,
-    color: "#6a0dad",
+    color: Colors.accent,
   },
   performanceRow: {
     flexDirection: "row",
@@ -4889,23 +4890,23 @@ const styles = StyleSheet.create({
   performanceValue: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#6a0dad",
+    color: Colors.accent,
   },
   performanceNote: {
     fontSize: 12,
-    color: "#888",
+    color: Colors.textMuted,
   },
   performanceItem: {
     fontSize: 14,
     marginBottom: 2,
-    color: "#333",
+    color: Colors.textPrimary,
   },
   cardLabel: { fontSize: 24 },
   cardValue: {
     fontSize: 20,
     fontWeight: "bold",
     marginTop: 6,
-    color: "#333",
+    color: Colors.textPrimary,
   },
   refreshButton: {
     alignSelf: "flex-start",
@@ -4928,13 +4929,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
-    color: "#6a0dad",
+    color: Colors.accent,
   },
   transactionCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     padding: 16,
     borderRadius: 16,
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -4946,7 +4947,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 8,
-    color: "#6a0dad",
+    color: Colors.accent,
   },
   txRow: {
     flexDirection: "row",
@@ -4955,21 +4956,21 @@ const styles = StyleSheet.create({
   },
   txLabel: {
     fontSize: 14,
-    color: "#888",
+    color: Colors.textMuted,
   },
   txValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#222",
+    color: Colors.primary,
   },
   modalCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     padding: 24,
     borderRadius: 20,
     width: "85%",
     maxWidth: 500,
     alignItems: "flex-start",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
@@ -4978,19 +4979,19 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#6a0dad",
+    color: Colors.accent,
     marginBottom: 12,
   },
   modalLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
+    color: Colors.textPrimary,
     marginBottom: 4,
     marginTop: 12,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
@@ -4998,18 +4999,18 @@ const styles = StyleSheet.create({
   modalLine: {
     fontSize: 15,
     marginVertical: 2,
-    color: "#333",
+    color: Colors.textPrimary,
   },
   modalButton: {
     marginTop: 16,
     alignSelf: "center",
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     paddingHorizontal: 24,
     paddingVertical: 10,
     borderRadius: 12,
   },
   modalButtonText: {
-    color: "#fff",
+    color: Colors.white,
     fontWeight: "600",
     fontSize: 16,
   },
@@ -5018,7 +5019,7 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     marginRight: 8,
-    backgroundColor: "#eee",
+    backgroundColor: Colors.border,
   },
   searchBox: {
     backgroundColor: "#f3f3f3",
@@ -5028,8 +5029,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    color: "#333",
+    borderColor: Colors.border,
+    color: Colors.textPrimary,
     width: "100%",
   },
   modalOverlay: {
@@ -5038,7 +5039,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 16,
     width: "80%",
@@ -5051,34 +5052,34 @@ const styles = StyleSheet.create({
   modalClose: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#6a0dad",
+    color: Colors.accent,
     textAlign: "center",
   },
   dropdown: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     borderRadius: 8,
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
     paddingHorizontal: 10,
     marginBottom: 12,
   },
   dropdownContainer: {
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
   },
   chipStyle: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
   },
   chipText: {
-    color: "#fff",
+    color: Colors.white,
     fontWeight: "600",
   },
   reportToolbar: {
@@ -5098,7 +5099,7 @@ const styles = StyleSheet.create({
   toolbarLabel: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#666",
+    color: Colors.textSecondary,
     marginBottom: 6,
   },
 
@@ -5122,13 +5123,13 @@ const styles = StyleSheet.create({
   periodPickerText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6a0dad",
+    color: Colors.accent,
   },
 
   // Segmented control
   segment: {
     flexDirection: "row",
-    backgroundColor: "#eee",
+    backgroundColor: Colors.border,
     borderRadius: 999,
     padding: 4,
     gap: 6,
@@ -5143,15 +5144,15 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   segmentBtnActive: {
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
   },
   segmentBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#444",
+    color: Colors.textPrimary,
   },
   segmentBtnTextActive: {
-    color: "#fff",
+    color: Colors.white,
   },
 
   // Range pill + actions
@@ -5166,7 +5167,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   rangePillText: {
-    color: "#6a0dad",
+    color: Colors.accent,
     fontWeight: "700",
     fontSize: 13,
   },
@@ -5182,13 +5183,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: "#eee",
+    backgroundColor: Colors.border,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   actionBtnSecondaryText: {
-    color: "#444",
+    color: Colors.textPrimary,
     fontWeight: "700",
   },
 
@@ -5196,13 +5197,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 10,
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   actionBtnPrimaryText: {
-    color: "#fff",
+    color: Colors.white,
     fontWeight: "700",
   },
 
@@ -5226,7 +5227,7 @@ const styles = StyleSheet.create({
   },
 
   headingButtonText: {
-    color: "#6a0dad",
+    color: Colors.accent,
     fontWeight: "600",
     marginLeft: 6,
     fontSize: 13,
@@ -5241,13 +5242,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: Platform.select({ ios: 24, android: 16, default: 16 }),
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
@@ -5258,13 +5259,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 999,
-    backgroundColor: "#ddd",
+    backgroundColor: Colors.border,
     marginBottom: 8,
   },
   sheetTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#333",
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   sheetContent: {
@@ -5280,7 +5281,7 @@ const styles = StyleSheet.create({
   manageSectionTitle: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#888",
+    color: Colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 10,
@@ -5289,13 +5290,13 @@ const styles = StyleSheet.create({
   manageCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: Colors.black,
         shadowOpacity: 0.06,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 2 },
@@ -5315,12 +5316,12 @@ const styles = StyleSheet.create({
   manageCardTitle: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#1f1f1f",
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   manageCardSub: {
     fontSize: 12,
-    color: "#888",
+    color: Colors.textMuted,
     lineHeight: 17,
   },
 });

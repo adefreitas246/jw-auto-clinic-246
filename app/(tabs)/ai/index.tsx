@@ -1,4 +1,4 @@
-// app/(tabs)/ai/index.tsx — Claude AI Hub
+﻿// app/(tabs)/ai/index.tsx — Claude AI Hub
 // Entry point for all three AI-powered admin features.
 import { Ionicons } from '@expo/vector-icons';
 import { router }   from 'expo-router';
@@ -8,6 +8,7 @@ import {
   StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 // ─── Feature card data ────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ const FEATURES = [
   {
     route:       '/(tabs)/ai/schedule',
     icon:        'calendar-outline',
-    color:       '#6a0dad',
+    color:       Colors.accent,
     bg:          '#f3eafd',
     title:       'Smart Scheduling',
     description: 'AI recommends the optimal time slot and best technician for a new booking based on current workload.',
@@ -24,7 +25,7 @@ const FEATURES = [
   {
     route:       '/(tabs)/ai/insights',
     icon:        'bar-chart-outline',
-    color:       '#0077cc',
+    color:       Colors.accent,
     bg:          '#e8f4fd',
     title:       'Demand Insights',
     description: 'Analyse 90 days of bookings to identify peak hours, slow days, and get 3 staffing recommendations.',
@@ -33,7 +34,7 @@ const FEATURES = [
   {
     route:       '/(tabs)/ai/pricing',
     icon:        'pricetag-outline',
-    color:       '#10b981',
+    color:       Colors.success,
     bg:          '#ecfdf5',
     title:       'Dynamic Pricing',
     description: 'Claude checks live queue depth vs. historical demand and suggests a surcharge or discount right now.',
@@ -54,7 +55,7 @@ export default function AIHubScreen() {
         {/* ── Header ── */}
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <View style={s.headerText}>
             <Text style={s.title}>AI Assistant</Text>
@@ -68,7 +69,7 @@ export default function AIHubScreen() {
 
         {/* ── Info banner ── */}
         <View style={s.infoBanner}>
-          <Ionicons name="shield-checkmark-outline" size={16} color="#6a0dad" />
+          <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
           <Text style={s.infoText}>
             All AI requests route through your backend.
             Your Anthropic API key is never exposed to the app.
@@ -96,7 +97,7 @@ export default function AIHubScreen() {
               <Text style={s.cardDesc}>{f.description}</Text>
             </View>
 
-            <Ionicons name="chevron-forward" size={18} color="#ccc" style={{ alignSelf: 'center' }} />
+            <Ionicons name="chevron-forward" size={18} color={Colors.border} style={{ alignSelf: 'center' }} />
           </Pressable>
         ))}
 
@@ -113,7 +114,7 @@ export default function AIHubScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -126,26 +127,26 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12,
     marginBottom: 6,
   },
-  backBtn:    { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
+  backBtn:    { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   headerText: { flex: 1 },
-  title:      { fontSize: 22, fontWeight: '900', color: '#1f1f1f' },
-  sub:        { fontSize: 12, color: '#9ca3af', marginTop: 1 },
+  title:      { fontSize: 22, fontWeight: '900', color: Colors.textPrimary },
+  sub:        { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
   claudeBadge: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#cc5500',
+    backgroundColor: Colors.warning,
     alignItems: 'center', justifyContent: 'center',
   },
-  claudeInitial: { color: '#fff', fontWeight: '900', fontSize: 18 },
+  claudeInitial: { color: Colors.white, fontWeight: '900', fontSize: 18 },
 
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     backgroundColor: '#f3eafd', borderRadius: 12, padding: 12,
   },
-  infoText: { flex: 1, fontSize: 12, color: '#6a0dad', lineHeight: 18 },
+  infoText: { flex: 1, fontSize: 12, color: Colors.accent, lineHeight: 18 },
 
   card: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 14,
-    backgroundColor: '#fff', borderRadius: 18, padding: 18,
+    backgroundColor: Colors.white, borderRadius: 18, padding: 18,
     ...SHADOW,
   },
   cardIcon: {
@@ -154,14 +155,14 @@ const s = StyleSheet.create({
   },
   cardBody:   { flex: 1, gap: 4 },
   cardTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
-  cardTitle:  { fontSize: 15, fontWeight: '800', color: '#1f1f1f' },
-  cardDesc:   { fontSize: 13, color: '#6b7280', lineHeight: 19 },
+  cardTitle:  { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
+  cardDesc:   { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
 
   badgePill: { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 3 },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
   footer: {
-    fontSize: 12, color: '#9ca3af', textAlign: 'center',
+    fontSize: 12, color: Colors.textMuted, textAlign: 'center',
     lineHeight: 18, marginTop: 8,
   },
 });

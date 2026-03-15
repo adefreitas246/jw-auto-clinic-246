@@ -1,4 +1,4 @@
-// components/CustomerTabBar.tsx
+﻿// components/CustomerTabBar.tsx
 // Glass pill tab bar for the customer app.
 // Shows 4 tabs (home, catalog, vehicles, loyalty) + a "More" button opening MoreMenu.
 import { useAuth } from '@/context/AuthContext';
@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { MoreMenu, MoreMenuItem } from './MoreMenu';
+import { Colors } from '@/constants/Colors';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -31,8 +32,8 @@ const TAB_CONFIG: Record<string, { icon: IconName; activeIcon: IconName; label: 
 
 const VISIBLE_TABS = ['home', 'catalog', 'vehicles', 'loyalty'];
 
-const ACTIVE   = '#6a0dad';
-const INACTIVE = '#444';
+const ACTIVE   = Colors.accent;
+const INACTIVE = Colors.textPrimary;
 
 const MORE_ITEMS: MoreMenuItem[] = [
   { label: 'Bookings',       icon: 'calendar-outline',      route: '/(customer)/book'           },
@@ -162,7 +163,7 @@ const s = StyleSheet.create({
     borderRadius: 999,
     overflow: 'hidden',
     elevation: 18,
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.2,
     shadowRadius: 20,

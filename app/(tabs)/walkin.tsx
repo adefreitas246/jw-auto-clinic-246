@@ -1,4 +1,4 @@
-// app/(tabs)/walkin.tsx — Self-Service Walk-in Kiosk
+﻿// app/(tabs)/walkin.tsx — Self-Service Walk-in Kiosk
 // Tablet-optimized, 5-screen flow (idle + 4 steps):
 //   0 — Idle/welcome (tap anywhere to start)
 //   1 — Choose service or package
@@ -32,6 +32,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -141,17 +142,17 @@ function CatalogTile({
         </Text>
       )}
       <View style={k.tilePriceRow}>
-        <Text style={[k.tilePrice, selected && { color: "#6a0dad" }]}>
+        <Text style={[k.tilePrice, selected && { color: Colors.accent }]}>
           ${item.price.toFixed(2)}
         </Text>
         <View style={k.tileDurChip}>
-          <Ionicons name="time-outline" size={12} color="#888" />
+          <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
           <Text style={k.tileDur}>{item.durationMinutes} min</Text>
         </View>
       </View>
       {selected && (
         <View style={k.tileCheck}>
-          <Ionicons name="checkmark" size={16} color="#fff" />
+          <Ionicons name="checkmark" size={16} color={Colors.white} />
         </View>
       )}
     </Pressable>
@@ -343,7 +344,7 @@ export default function WalkinKioskScreen() {
       {step === 0 && (
         <Pressable style={{ flex: 1 }} onPress={() => goTo(1)}>
           <LinearGradient
-            colors={["#3d007a", "#6a0dad", "#9c3fe0"]}
+            colors={["#3d007a", Colors.accent, "#9c3fe0"]}
             style={k.idleScreen}
             start={{ x: 0.1, y: 0 }}
             end={{ x: 0.9, y: 1 }}
@@ -366,7 +367,7 @@ export default function WalkinKioskScreen() {
               <Animated.View
                 style={[k.idleIconWrap, { transform: [{ scale: pulseAnim }] }]}
               >
-                <Ionicons name="car-sport-outline" size={72} color="#fff" />
+                <Ionicons name="car-sport-outline" size={72} color={Colors.white} />
               </Animated.View>
 
               <Text style={k.idleTitle}>Walk-in Service</Text>
@@ -406,14 +407,14 @@ export default function WalkinKioskScreen() {
               }
               hitSlop={10}
             >
-              <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
             </Pressable>
             <View style={k.headerCenter}>
               <StepDots step={step} />
               <Text style={k.headerTitle}>{STEP_LABELS[step]}</Text>
             </View>
             <Pressable style={k.headerX} onPress={resetToIdle} hitSlop={10}>
-              <Ionicons name="close" size={22} color="#888" />
+              <Ionicons name="close" size={22} color={Colors.textMuted} />
             </Pressable>
           </View>
 
@@ -425,7 +426,7 @@ export default function WalkinKioskScreen() {
             >
               {catalogBusy && (
                 <View style={k.centered}>
-                  <ActivityIndicator size="large" color="#6a0dad" />
+                  <ActivityIndicator size="large" color={Colors.accent} />
                 </View>
               )}
               {!catalogBusy && catalog.length === 0 && (
@@ -433,7 +434,7 @@ export default function WalkinKioskScreen() {
                   <Ionicons
                     name="alert-circle-outline"
                     size={40}
-                    color="#ccc"
+                    color={Colors.border}
                   />
                   <Text style={k.emptyText}>
                     No services available. Please see staff.
@@ -493,7 +494,7 @@ export default function WalkinKioskScreen() {
                       </View>
                       <Pressable style={k.continueBtn} onPress={() => goTo(2)}>
                         <Text style={k.continueBtnText}>Continue</Text>
-                        <Ionicons name="arrow-forward" size={18} color="#fff" />
+                        <Ionicons name="arrow-forward" size={18} color={Colors.white} />
                       </Pressable>
                     </View>
                   )}
@@ -515,7 +516,7 @@ export default function WalkinKioskScreen() {
                 {/* Selected service recap */}
                 {selected && (
                   <View style={k.serviceRecap}>
-                    <Ionicons name="layers-outline" size={16} color="#6a0dad" />
+                    <Ionicons name="layers-outline" size={16} color={Colors.accent} />
                     <Text style={k.serviceRecapText}>
                       {selected.name} · ${selected.price.toFixed(2)}
                     </Text>
@@ -527,7 +528,7 @@ export default function WalkinKioskScreen() {
                 <TextInput
                   style={k.input}
                   placeholder="e.g. John Smith"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor={Colors.border}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -542,7 +543,7 @@ export default function WalkinKioskScreen() {
                 <TextInput
                   style={k.input}
                   placeholder="e.g. 868-555-0123"
-                  placeholderTextColor="#bbb"
+                  placeholderTextColor={Colors.border}
                   value={phone}
                   onChangeText={setPhone}
                   keyboardType="phone-pad"
@@ -561,7 +562,7 @@ export default function WalkinKioskScreen() {
                   disabled={!name.trim()}
                 >
                   <Text style={k.continueBtnText}>Continue</Text>
-                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                  <Ionicons name="arrow-forward" size={18} color={Colors.white} />
                 </Pressable>
               </ScrollView>
             </KeyboardAvoidingView>
@@ -591,7 +592,7 @@ export default function WalkinKioskScreen() {
                     <Ionicons
                       name="cash-outline"
                       size={36}
-                      color={payMethod === "cash" ? "#fff" : "#6a0dad"}
+                      color={payMethod === "cash" ? Colors.white : Colors.accent}
                     />
                   </View>
                   <Text
@@ -607,7 +608,7 @@ export default function WalkinKioskScreen() {
                   </Text>
                   {payMethod === "cash" && (
                     <View style={k.payCheck}>
-                      <Ionicons name="checkmark" size={14} color="#fff" />
+                      <Ionicons name="checkmark" size={14} color={Colors.white} />
                     </View>
                   )}
                 </Pressable>
@@ -629,7 +630,7 @@ export default function WalkinKioskScreen() {
                     <Ionicons
                       name="receipt-outline"
                       size={36}
-                      color={payMethod === "counter" ? "#fff" : "#6a0dad"}
+                      color={payMethod === "counter" ? Colors.white : Colors.accent}
                     />
                   </View>
                   <Text
@@ -645,7 +646,7 @@ export default function WalkinKioskScreen() {
                   </Text>
                   {payMethod === "counter" && (
                     <View style={k.payCheck}>
-                      <Ionicons name="checkmark" size={14} color="#fff" />
+                      <Ionicons name="checkmark" size={14} color={Colors.white} />
                     </View>
                   )}
                 </Pressable>
@@ -662,14 +663,14 @@ export default function WalkinKioskScreen() {
                 disabled={submitting}
               >
                 {submitting ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={Colors.white} />
                 ) : (
                   <>
                     <Text style={k.confirmBtnText}>Join Queue</Text>
                     <Ionicons
                       name="checkmark-circle-outline"
                       size={20}
-                      color="#fff"
+                      color={Colors.white}
                     />
                   </>
                 )}
@@ -682,7 +683,7 @@ export default function WalkinKioskScreen() {
       {/* ── Step 4: Confirmation ── */}
       {step === 4 && result && (
         <LinearGradient
-          colors={["#1a5c2e", "#2e7d32", "#43a047"]}
+          colors={["#1a5c2e", Colors.success, "#43a047"]}
           style={k.confirmScreen}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -690,7 +691,7 @@ export default function WalkinKioskScreen() {
           <SafeAreaView style={k.confirmInner}>
             {/* Check icon */}
             <View style={k.confirmCheck}>
-              <Ionicons name="checkmark" size={48} color="#fff" />
+              <Ionicons name="checkmark" size={48} color={Colors.white} />
             </View>
 
             <Text style={k.confirmTitle}>You're in the queue!</Text>
@@ -754,7 +755,7 @@ export default function WalkinKioskScreen() {
 const SHADOW =
   Platform.select({
     ios: {
-      shadowColor: "#000",
+      shadowColor: Colors.black,
       shadowOpacity: 0.08,
       shadowRadius: 10,
       shadowOffset: { width: 0, height: 3 },
@@ -771,7 +772,7 @@ const k = StyleSheet.create({
     gap: 12,
     padding: 32,
   },
-  emptyText: { fontSize: 16, color: "#aaa", textAlign: "center" },
+  emptyText: { fontSize: 16, color: Colors.textMuted, textAlign: "center" },
 
   // ── Idle screen ──
   idleScreen: { flex: 1 },
@@ -794,7 +795,7 @@ const k = StyleSheet.create({
   idleTitle: {
     fontSize: 44,
     fontWeight: "900",
-    color: "#fff",
+    color: Colors.white,
     marginBottom: 10,
   },
   idleSub: {
@@ -822,9 +823,9 @@ const k = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: Colors.background,
   },
   headerBack: {
     width: 44,
@@ -839,21 +840,21 @@ const k = StyleSheet.create({
     justifyContent: "center",
   },
   headerCenter: { flex: 1, alignItems: "center", gap: 6 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: "#1f1f1f" },
+  headerTitle: { fontSize: 18, fontWeight: "800", color: Colors.textPrimary },
 
   // Step dots
   dots: { flexDirection: "row", gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { backgroundColor: "#6a0dad", width: 20 },
-  dotDone: { backgroundColor: "#6a0dad", opacity: 0.4 },
-  dotIdle: { backgroundColor: "#ddd" },
+  dotActive: { backgroundColor: Colors.accent, width: 20 },
+  dotDone: { backgroundColor: Colors.accent, opacity: 0.4 },
+  dotIdle: { backgroundColor: Colors.border },
 
   // ── Step 1: Grid ──
   gridContent: { padding: 20, paddingBottom: 120 },
   gridSection: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#888",
+    color: Colors.textMuted,
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: 12,
@@ -862,7 +863,7 @@ const k = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 8 },
   tile: {
     width: "47.5%",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 18,
     padding: 18,
     borderWidth: 2,
@@ -871,10 +872,10 @@ const k = StyleSheet.create({
     minHeight: 130,
     ...SHADOW,
   },
-  tileSelected: { borderColor: "#6a0dad", backgroundColor: "#faf5ff" },
+  tileSelected: { borderColor: Colors.accent, backgroundColor: "#faf5ff" },
   bundleBadge: {
     alignSelf: "flex-start",
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -883,34 +884,34 @@ const k = StyleSheet.create({
   bundleText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#fff",
+    color: Colors.white,
     letterSpacing: 0.8,
   },
   tileName: {
     fontSize: 17,
     fontWeight: "800",
-    color: "#1f1f1f",
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
-  tileNameSelected: { color: "#6a0dad" },
-  tileDesc: { fontSize: 13, color: "#888", marginBottom: 10, lineHeight: 18 },
+  tileNameSelected: { color: Colors.accent },
+  tileDesc: { fontSize: 13, color: Colors.textMuted, marginBottom: 10, lineHeight: 18 },
   tilePriceRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: "auto" as any,
   },
-  tilePrice: { fontSize: 20, fontWeight: "900", color: "#1f1f1f" },
+  tilePrice: { fontSize: 20, fontWeight: "900", color: Colors.textPrimary },
   tileDurChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: Colors.background,
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  tileDur: { fontSize: 11, color: "#888", fontWeight: "600" },
+  tileDur: { fontSize: 11, color: Colors.textMuted, fontWeight: "600" },
   tileCheck: {
     position: "absolute",
     top: 12,
@@ -918,7 +919,7 @@ const k = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -929,28 +930,28 @@ const k = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: Colors.background,
     ...SHADOW,
   },
-  selectedName: { fontSize: 15, fontWeight: "700", color: "#1f1f1f" },
-  selectedPrice: { fontSize: 13, color: "#888", marginTop: 2 },
+  selectedName: { fontSize: 15, fontWeight: "700", color: Colors.textPrimary },
+  selectedPrice: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
 
   // ── Continue / action buttons ──
   continueBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     borderRadius: 14,
     paddingHorizontal: 24,
     paddingVertical: 14,
   },
   continueBtnFull: { marginTop: 32, justifyContent: "center" },
-  continueBtnDisabled: { backgroundColor: "#ccc" },
-  continueBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  continueBtnDisabled: { backgroundColor: Colors.border },
+  continueBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 
   // ── Step 2: Form ──
   formContent: { padding: 24, paddingBottom: 40 },
@@ -966,24 +967,24 @@ const k = StyleSheet.create({
   serviceRecapText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#6a0dad",
+    color: Colors.accent,
     flex: 1,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#555",
+    color: Colors.textSecondary,
     marginBottom: 8,
     marginTop: 20,
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 14,
     padding: 18,
     fontSize: 18,
-    color: "#1f1f1f",
+    color: Colors.textPrimary,
     borderWidth: 1.5,
-    borderColor: "#e8e8e8",
+    borderColor: Colors.border,
     ...SHADOW,
   },
 
@@ -992,13 +993,13 @@ const k = StyleSheet.create({
   paymentTotal: {
     fontSize: 24,
     fontWeight: "900",
-    color: "#1f1f1f",
+    color: Colors.textPrimary,
     textAlign: "center",
   },
   paymentRow: { flexDirection: "row", gap: 16 },
   payCard: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 24,
     alignItems: "center",
@@ -1007,7 +1008,7 @@ const k = StyleSheet.create({
     borderColor: "transparent",
     ...SHADOW,
   },
-  payCardSelected: { borderColor: "#6a0dad", backgroundColor: "#faf5ff" },
+  payCardSelected: { borderColor: Colors.accent, backgroundColor: "#faf5ff" },
   payIconWrap: {
     width: 64,
     height: 64,
@@ -1016,12 +1017,12 @@ const k = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  payIconWrapSelected: { backgroundColor: "#6a0dad" },
-  payCardTitle: { fontSize: 20, fontWeight: "800", color: "#1f1f1f" },
-  payCardTitleSelected: { color: "#6a0dad" },
+  payIconWrapSelected: { backgroundColor: Colors.accent },
+  payCardTitle: { fontSize: 20, fontWeight: "800", color: Colors.textPrimary },
+  payCardTitleSelected: { color: Colors.accent },
   payCardSub: {
     fontSize: 14,
-    color: "#888",
+    color: Colors.textMuted,
     textAlign: "center",
     lineHeight: 20,
   },
@@ -1032,7 +1033,7 @@ const k = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1041,12 +1042,12 @@ const k = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     borderRadius: 16,
     paddingVertical: 18,
     ...SHADOW,
   },
-  confirmBtnText: { color: "#fff", fontSize: 18, fontWeight: "800" },
+  confirmBtnText: { color: Colors.white, fontSize: 18, fontWeight: "800" },
 
   // ── Step 4: Confirmation ──
   confirmScreen: { flex: 1 },
@@ -1066,7 +1067,7 @@ const k = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  confirmTitle: { fontSize: 36, fontWeight: "900", color: "#fff" },
+  confirmTitle: { fontSize: 36, fontWeight: "900", color: Colors.white },
   confirmName: {
     fontSize: 20,
     color: "rgba(255,255,255,0.85)",
@@ -1080,7 +1081,7 @@ const k = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  queueNum: { fontSize: 80, fontWeight: "900", color: "#fff", lineHeight: 90 },
+  queueNum: { fontSize: 80, fontWeight: "900", color: Colors.white, lineHeight: 90 },
   statsRow: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.15)",
@@ -1092,7 +1093,7 @@ const k = StyleSheet.create({
   },
   statCard: { flex: 1, alignItems: "center" },
   statDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.3)" },
-  statValue: { fontSize: 32, fontWeight: "900", color: "#fff" },
+  statValue: { fontSize: 32, fontWeight: "900", color: Colors.white },
   statLabel: { fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 },
   serviceConfirmText: {
     fontSize: 16,
@@ -1119,5 +1120,5 @@ const k = StyleSheet.create({
     paddingVertical: 16,
     marginTop: 12,
   },
-  doneBtnText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  doneBtnText: { color: Colors.white, fontSize: 18, fontWeight: "700" },
 });

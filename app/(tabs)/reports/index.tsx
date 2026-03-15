@@ -1,4 +1,4 @@
-// app/(tabs)/reports/index.tsx — Admin Revenue Dashboard + Report Hub
+﻿// app/(tabs)/reports/index.tsx — Admin Revenue Dashboard + Report Hub
 //
 // Sections:
 //   • KPI cards: Today + All-time stats
@@ -25,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
+import { Colors } from '@/constants/Colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -50,15 +51,15 @@ const W     = Dimensions.get('window').width;
 const CHART = W - 40;  // chart width (20px padding each side)
 
 const CHART_BASE = {
-  backgroundGradientFrom: '#ffffff',
-  backgroundGradientTo:   '#ffffff',
+  backgroundGradientFrom: Colors.white,
+  backgroundGradientTo:   Colors.white,
   decimalPlaces:          0,
   color:          (op = 1) => `rgba(106, 13, 173, ${op})`,
-  labelColor:     ()       => '#9ca3af',
-  propsForBackgroundLines: { stroke: '#f3f4f6' },
+  labelColor:     ()       => Colors.textMuted,
+  propsForBackgroundLines: { stroke: Colors.surfaceAlt },
 };
 
-const PIE_PALETTE = ['#6a0dad', '#a855f7', '#ec4899', '#f59e0b', '#10b981'];
+const PIE_PALETTE = [Colors.accent, '#a855f7', '#ec4899', Colors.warning, Colors.success];
 
 const REPORT_CARDS = [
   {
@@ -66,21 +67,21 @@ const REPORT_CARDS = [
     title: 'Revenue Report',
     desc:  'Transaction-level breakdown with day/service aggregates.',
     icon:  'cash-outline',
-    color: '#10b981',
+    color: Colors.success,
   },
   {
     type:  'employees',
     title: 'Employee Performance',
     desc:  'Jobs completed, revenue generated, avg service time.',
     icon:  'people-outline',
-    color: '#3b82f6',
+    color: Colors.info,
   },
   {
     type:  'customers',
     title: 'Customer List',
     desc:  'Customer directory with visit counts and total spend.',
     icon:  'person-outline',
-    color: '#f59e0b',
+    color: Colors.warning,
   },
   {
     type:  'services',
@@ -138,7 +139,7 @@ function KpiCard({
 function SectionHeader({ title, icon }: { title: string; icon: string }) {
   return (
     <View style={rd.sectionRow}>
-      <Ionicons name={icon as any} size={15} color="#6a0dad" />
+      <Ionicons name={icon as any} size={15} color={Colors.accent} />
       <Text style={rd.sectionTitle}>{title}</Text>
     </View>
   );
@@ -196,7 +197,7 @@ export default function ReportsDashboard() {
         name:            s.name.length > 14 ? s.name.slice(0, 14) + '…' : s.name,
         population:      s.revenue,
         color:           PIE_PALETTE[i % PIE_PALETTE.length],
-        legendFontColor: '#555',
+        legendFontColor: Colors.textSecondary,
         legendFontSize:  12,
       }))
     : null;
@@ -212,20 +213,20 @@ export default function ReportsDashboard() {
           <Text style={rd.sub}>Admin Dashboard</Text>
         </View>
         <Pressable onPress={() => fetch(false)} style={rd.refreshBtn} hitSlop={8}>
-          <Ionicons name="refresh" size={20} color="#6a0dad" />
+          <Ionicons name="refresh" size={20} color={Colors.accent} />
         </Pressable>
       </View>
 
       {loading ? (
         <View style={rd.centered}>
-          <ActivityIndicator size="large" color="#6a0dad" />
+          <ActivityIndicator size="large" color={Colors.accent} />
         </View>
       ) : (
         <ScrollView
           contentContainerStyle={rd.scroll}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6a0dad" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
         >
 
@@ -233,9 +234,9 @@ export default function ReportsDashboard() {
           <SectionHeader title="Overview" icon="stats-chart-outline" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
             <View style={rd.kpiRow}>
-              <KpiCard label="Today's Revenue"  value={fmtMoney(data?.todayRevenue ?? 0)}  icon="today-outline"         color="#6a0dad" sub={`${data?.todayTransactions ?? 0} jobs`} />
-              <KpiCard label="Total Revenue"    value={fmtMoney(data?.totalRevenue ?? 0)}  icon="cash-outline"          color="#10b981" sub={`${data?.totalServices ?? 0} all-time`} />
-              <KpiCard label="Staff On-clock"   value={String(data?.activeNow ?? 0)}       icon="people-outline"        color="#3b82f6" sub={`of ${data?.totalEmployees ?? 0} staff`} />
+              <KpiCard label="Today's Revenue"  value={fmtMoney(data?.todayRevenue ?? 0)}  icon="today-outline"         color={Colors.accent} sub={`${data?.todayTransactions ?? 0} jobs`} />
+              <KpiCard label="Total Revenue"    value={fmtMoney(data?.totalRevenue ?? 0)}  icon="cash-outline"          color={Colors.success} sub={`${data?.totalServices ?? 0} all-time`} />
+              <KpiCard label="Staff On-clock"   value={String(data?.activeNow ?? 0)}       icon="people-outline"        color={Colors.info} sub={`of ${data?.totalEmployees ?? 0} staff`} />
             </View>
           </ScrollView>
 
@@ -274,7 +275,7 @@ export default function ReportsDashboard() {
                 height={160}
                 chartConfig={{
                   ...CHART_BASE,
-                  propsForDots: { r: '5', strokeWidth: '2', stroke: '#6a0dad' },
+                  propsForDots: { r: '5', strokeWidth: '2', stroke: Colors.accent },
                 }}
                 bezier
                 style={rd.chart}
@@ -348,9 +349,9 @@ export default function ReportsDashboard() {
               </View>
               <View style={rd.exportBadges}>
                 <View style={rd.badge}><Text style={rd.badgeText}>CSV</Text></View>
-                <View style={[rd.badge, rd.badgePdf]}><Text style={[rd.badgeText, { color: '#fff' }]}>PDF</Text></View>
+                <View style={[rd.badge, rd.badgePdf]}><Text style={[rd.badgeText, { color: Colors.white }]}>PDF</Text></View>
               </View>
-              <Ionicons name="chevron-forward" size={16} color="#ccc" style={{ marginLeft: 6 }} />
+              <Ionicons name="chevron-forward" size={16} color={Colors.border} style={{ marginLeft: 6 }} />
             </Pressable>
           ))}
 
@@ -364,7 +365,7 @@ export default function ReportsDashboard() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -376,51 +377,51 @@ const rd = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14,
   },
-  title:      { fontSize: 24, fontWeight: '800', color: '#1f1f1f' },
-  sub:        { fontSize: 13, color: '#888', marginTop: 2 },
+  title:      { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  sub:        { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
   refreshBtn: { padding: 6 },
 
   scroll: { paddingHorizontal: 20, paddingBottom: 40 },
 
   // Section
   sectionRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginTop: 4 },
-  sectionTitle:{ fontSize: 13, fontWeight: '700', color: '#6a0dad', textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionTitle:{ fontSize: 13, fontWeight: '700', color: Colors.accent, textTransform: 'uppercase', letterSpacing: 0.5 },
 
   // KPI
   kpiRow:   { flexDirection: 'row', gap: 12, paddingRight: 20 },
   kpiCard:  {
-    width: 140, backgroundColor: '#fff', borderRadius: 14,
+    width: 140, backgroundColor: Colors.white, borderRadius: 14,
     padding: 14, borderTopWidth: 3, ...SHADOW,
   },
   kpiIconWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  kpiValue:    { fontSize: 20, fontWeight: '800', color: '#1f1f1f' },
-  kpiLabel:    { fontSize: 11, color: '#888', marginTop: 3 },
-  kpiSub:      { fontSize: 10, color: '#aaa', marginTop: 2 },
+  kpiValue:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  kpiLabel:    { fontSize: 11, color: Colors.textMuted, marginTop: 3 },
+  kpiSub:      { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
 
   // Charts
-  chartCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 14, ...SHADOW },
+  chartCard: { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginBottom: 14, ...SHADOW },
   chart:     { borderRadius: 8, marginTop: 10 },
 
   // Horizontal bar list
   barRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   colorDot:  { width: 8, height: 8, borderRadius: 4 },
-  barLabel:  { fontSize: 12, color: '#555', width: 100 },
-  barTrack:  { flex: 1, height: 6, backgroundColor: '#f3f4f6', borderRadius: 3, overflow: 'hidden' },
+  barLabel:  { fontSize: 12, color: Colors.textSecondary, width: 100 },
+  barTrack:  { flex: 1, height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
   barFill:   { height: 6, borderRadius: 3 },
-  barValue:  { fontSize: 12, fontWeight: '700', color: '#1f1f1f', width: 68, textAlign: 'right' },
+  barValue:  { fontSize: 12, fontWeight: '700', color: Colors.textPrimary, width: 68, textAlign: 'right' },
 
   // Report cards
   reportCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 16,
+    backgroundColor: Colors.white, borderRadius: 16,
     padding: 16, marginBottom: 12, ...SHADOW,
   },
   reportIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  reportTitle: { fontSize: 15, fontWeight: '700', color: '#1f1f1f', marginBottom: 3 },
-  reportDesc:  { fontSize: 12, color: '#888', lineHeight: 17 },
+  reportTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
+  reportDesc:  { fontSize: 12, color: Colors.textMuted, lineHeight: 17 },
 
   exportBadges: { flexDirection: 'row', gap: 4 },
   badge:        { borderRadius: 6, backgroundColor: '#f0fdf4', paddingHorizontal: 6, paddingVertical: 3 },
-  badgePdf:     { backgroundColor: '#dc2626' },
-  badgeText:    { fontSize: 9, fontWeight: '800', color: '#16a34a', letterSpacing: 0.3 },
+  badgePdf:     { backgroundColor: Colors.error },
+  badgeText:    { fontSize: 9, fontWeight: '800', color: Colors.success, letterSpacing: 0.3 },
 });

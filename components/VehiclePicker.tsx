@@ -1,4 +1,4 @@
-// components/VehiclePicker.tsx
+﻿// components/VehiclePicker.tsx
 // Reusable bottom-sheet component for selecting (or clearing) a customer vehicle.
 // Usage:
 //   const [pickerOpen, setPickerOpen] = useState(false);
@@ -27,6 +27,7 @@ import {
 
 import { useVehicles } from '@/hooks/useVehicles';
 import { Vehicle } from '@/types/vehicle';
+import { Colors } from '@/constants/Colors';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.55;
@@ -83,7 +84,7 @@ export default function VehiclePicker({
         <View style={s.header}>
           <Text style={s.title}>Select Vehicle</Text>
           <Pressable onPress={onClose} hitSlop={8}>
-            <Ionicons name="close" size={22} color="#555" />
+            <Ionicons name="close" size={22} color={Colors.textSecondary} />
           </Pressable>
         </View>
 
@@ -97,14 +98,14 @@ export default function VehiclePicker({
               <Ionicons
                 name="remove-circle-outline"
                 size={22}
-                color={!selected ? '#6a0dad' : '#aaa'}
+                color={!selected ? Colors.accent : Colors.textMuted}
               />
             </View>
             <View style={s.rowBody}>
               <Text style={[s.rowTitle, !selected && s.rowTitleActive]}>No vehicle</Text>
             </View>
             {!selected && (
-              <Ionicons name="checkmark-circle" size={20} color="#6a0dad" />
+              <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />
             )}
           </Pressable>
 
@@ -125,7 +126,7 @@ export default function VehiclePicker({
                     <Ionicons
                       name="car-outline"
                       size={22}
-                      color={isActive ? '#6a0dad' : '#888'}
+                      color={isActive ? Colors.accent : Colors.textMuted}
                     />
                   </View>
                   <View style={s.rowBody}>
@@ -137,7 +138,7 @@ export default function VehiclePicker({
                     </Text>
                   </View>
                   {isActive && (
-                    <Ionicons name="checkmark-circle" size={20} color="#6a0dad" />
+                    <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />
                   )}
                 </Pressable>
               );
@@ -152,7 +153,7 @@ export default function VehiclePicker({
               router.push('/(customer)/vehicles/add');
             }}
           >
-            <Ionicons name="add-circle-outline" size={20} color="#6a0dad" />
+            <Ionicons name="add-circle-outline" size={20} color={Colors.accent} />
             <Text style={s.addText}>Add a new vehicle</Text>
           </Pressable>
         </ScrollView>
@@ -173,11 +174,11 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     height: SHEET_HEIGHT,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: -4 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: -4 } },
       android: { elevation: 12 },
     }),
   },
@@ -186,7 +187,7 @@ const s = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#ddd',
+    backgroundColor: Colors.border,
     marginTop: 10,
     marginBottom: 4,
   },
@@ -197,9 +198,9 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: Colors.border,
   },
-  title: { fontSize: 17, fontWeight: '700', color: '#1f1f1f' },
+  title: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
   list: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 8 },
 
@@ -216,17 +217,17 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   rowBody:       { flex: 1 },
-  rowTitle:      { fontSize: 15, color: '#1f1f1f' },
-  rowTitleActive:{ fontWeight: '600', color: '#6a0dad' },
-  rowSub:        { fontSize: 12, color: '#888', marginTop: 2 },
+  rowTitle:      { fontSize: 15, color: Colors.textPrimary },
+  rowTitleActive:{ fontWeight: '600', color: Colors.accent },
+  rowSub:        { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
-  hint: { textAlign: 'center', color: '#aaa', marginTop: 20, fontSize: 14 },
+  hint: { textAlign: 'center', color: Colors.textMuted, marginTop: 20, fontSize: 14 },
 
   addRow: {
     flexDirection: 'row',
@@ -236,7 +237,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     marginTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#eee',
+    borderTopColor: Colors.border,
   },
-  addText: { fontSize: 15, color: '#6a0dad', fontWeight: '600' },
+  addText: { fontSize: 15, color: Colors.accent, fontWeight: '600' },
 });

@@ -1,4 +1,4 @@
-// app/(tabs)/ai/insights.tsx — Demand Prediction
+﻿// app/(tabs)/ai/insights.tsx — Demand Prediction
 //
 // Trigger: Admin taps "Load Insights"
 // Sends to Claude: last 90 days of bookings grouped by day + hour
@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,7 +36,7 @@ type DemandContext = {
 // ─── Recommendation card ──────────────────────────────────────────────────────
 
 const REC_ICONS = ['person-add-outline', 'trending-up-outline', 'megaphone-outline'];
-const REC_COLORS = ['#6a0dad', '#0077cc', '#10b981'];
+const REC_COLORS = [Colors.accent, Colors.accent, Colors.success];
 const REC_BG     = ['#f3eafd', '#e8f4fd', '#ecfdf5'];
 
 function RecCard({ rec, index }: { rec: Recommendation; index: number }) {
@@ -152,7 +153,7 @@ export default function DemandInsightsScreen() {
         {/* ── Header ── */}
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={s.headerTitle}>Demand Insights</Text>
           <View style={s.claudeBadge}>
@@ -171,7 +172,7 @@ export default function DemandInsightsScreen() {
         {/* ── Context summary pill ── */}
         {ctx && !isLoading && (
           <View style={s.ctxPill}>
-            <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
             <Text style={s.ctxPillText}>
               {ctx.totalBookings} bookings analysed · {ctx.period}-day window
             </Text>
@@ -187,7 +188,7 @@ export default function DemandInsightsScreen() {
           >
             {isLoading ? (
               <>
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={Colors.white} size="small" />
                 <Text style={s.loadBtnText}>
                   {loadingCtx ? 'Fetching booking data…' : 'Claude is analysing…'}
                 </Text>
@@ -203,7 +204,7 @@ export default function DemandInsightsScreen() {
         {/* ── Error ── */}
         {(ctxError || error) && (
           <View style={s.errCard}>
-            <Ionicons name="alert-circle-outline" size={18} color="#e53935" />
+            <Ionicons name="alert-circle-outline" size={18} color={Colors.error} />
             <Text style={s.errText}>{ctxError ?? error}</Text>
           </View>
         )}
@@ -213,7 +214,7 @@ export default function DemandInsightsScreen() {
           <>
             {/* Refresh button */}
             <Pressable style={s.refreshBtn} onPress={loadInsights} disabled={isLoading}>
-              <Ionicons name="refresh-outline" size={15} color="#6a0dad" />
+              <Ionicons name="refresh-outline" size={15} color={Colors.accent} />
               <Text style={s.refreshText}>Refresh</Text>
             </Pressable>
 
@@ -226,12 +227,12 @@ export default function DemandInsightsScreen() {
             {result.peakHours.length > 0 && (
               <View style={s.section}>
                 <View style={s.sectionHeader}>
-                  <Ionicons name="flame-outline" size={16} color="#e53935" />
+                  <Ionicons name="flame-outline" size={16} color={Colors.error} />
                   <Text style={s.sectionTitle}>Peak Hours</Text>
                 </View>
                 <View style={s.chipRow}>
                   {result.peakHours.map((h, i) => (
-                    <HourChip key={i} time={h} color="#e53935" bg="#fff1f2" />
+                    <HourChip key={i} time={h} color={Colors.error} bg="#fff1f2" />
                   ))}
                 </View>
               </View>
@@ -241,12 +242,12 @@ export default function DemandInsightsScreen() {
             {result.slowDays.length > 0 && (
               <View style={s.section}>
                 <View style={s.sectionHeader}>
-                  <Ionicons name="moon-outline" size={16} color="#6b7280" />
+                  <Ionicons name="moon-outline" size={16} color={Colors.textSecondary} />
                   <Text style={s.sectionTitle}>Slowest Days</Text>
                 </View>
                 <View style={s.chipRow}>
                   {result.slowDays.map((d, i) => (
-                    <DayChip key={i} day={d} color="#6b7280" bg="#f3f4f6" />
+                    <DayChip key={i} day={d} color={Colors.textSecondary} bg={Colors.surface}Alt />
                   ))}
                 </View>
               </View>
@@ -275,7 +276,7 @@ export default function DemandInsightsScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -288,10 +289,10 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 2,
   },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle:  { fontSize: 18, fontWeight: '900', color: '#1f1f1f' },
-  claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: '#cc5500', alignItems: 'center', justifyContent: 'center' },
-  claudeInitial:{ color: '#fff', fontWeight: '900', fontSize: 16 },
+  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  headerTitle:  { fontSize: 18, fontWeight: '900', color: Colors.textPrimary },
+  claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
+  claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 
   descCard: { backgroundColor: '#e8f4fd', borderRadius: 14, padding: 14 },
   descText: { fontSize: 13, color: '#0c4a6e', lineHeight: 20 },
@@ -304,31 +305,31 @@ const s = StyleSheet.create({
 
   loadBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: '#0077cc', borderRadius: 16, paddingVertical: 16,
+    backgroundColor: Colors.accent, borderRadius: 16, paddingVertical: 16,
     ...Platform.select({
-      ios:     { shadowColor: '#0077cc', shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
     }),
   },
-  loadBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  loadBtnText: { color: Colors.white, fontWeight: '800', fontSize: 16 },
 
   refreshBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end',
     backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 14, paddingVertical: 7,
   },
-  refreshText: { fontSize: 13, color: '#6a0dad', fontWeight: '700' },
+  refreshText: { fontSize: 13, color: Colors.accent, fontWeight: '700' },
 
   errCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#fef2f2', borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: '#fca5a5',
   },
-  errText: { flex: 1, fontSize: 13, color: '#e53935' },
+  errText: { flex: 1, fontSize: 13, color: Colors.error },
 
   section:       { gap: 10 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  sectionTitle:  { fontSize: 14, fontWeight: '700', color: '#1f1f1f' },
-  claudeAttr:    { fontSize: 14, fontWeight: '800', color: '#6a0dad' },
+  sectionTitle:  { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  claudeAttr:    { fontSize: 14, fontWeight: '800', color: Colors.accent },
 
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   recList: { gap: 12 },
@@ -339,13 +340,13 @@ const s = StyleSheet.create({
 const rc = StyleSheet.create({
   card: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 14,
-    backgroundColor: '#fff', borderRadius: 16, padding: 16,
+    backgroundColor: Colors.white, borderRadius: 16, padding: 16,
     borderLeftWidth: 4, ...SHADOW,
   },
   numBadge: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   body:     { flex: 1, gap: 4 },
   title:    { fontSize: 14, fontWeight: '800' },
-  detail:   { fontSize: 13, color: '#4b5563', lineHeight: 19 },
+  detail:   { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
 });
 
 // ─── Chip styles ──────────────────────────────────────────────────────────────
@@ -361,16 +362,16 @@ const chip = StyleSheet.create({
 // ─── Top-slots chart styles ───────────────────────────────────────────────────
 
 const SHADOW_CARD = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
 const ch = StyleSheet.create({
-  wrap:  { backgroundColor: '#fff', borderRadius: 16, padding: 16, gap: 10, ...SHADOW_CARD },
-  title: { fontSize: 13, fontWeight: '700', color: '#1f1f1f', marginBottom: 4 },
+  wrap:  { backgroundColor: Colors.white, borderRadius: 16, padding: 16, gap: 10, ...SHADOW_CARD },
+  title: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   row:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  label: { width: 120, fontSize: 12, color: '#6b7280' },
-  barTrack: { flex: 1, height: 10, backgroundColor: '#f3f4f6', borderRadius: 99, overflow: 'hidden' },
-  bar:      { height: '100%', backgroundColor: '#0077cc', borderRadius: 99 },
-  count:    { width: 28, fontSize: 12, color: '#374151', fontWeight: '700', textAlign: 'right' },
+  label: { width: 120, fontSize: 12, color: Colors.textSecondary },
+  barTrack: { flex: 1, height: 10, backgroundColor: Colors.surfaceAlt, borderRadius: 99, overflow: 'hidden' },
+  bar:      { height: '100%', backgroundColor: Colors.accent, borderRadius: 99 },
+  count:    { width: 28, fontSize: 12, color: Colors.textSecondary, fontWeight: '700', textAlign: 'right' },
 });

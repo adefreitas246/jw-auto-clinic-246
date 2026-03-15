@@ -1,4 +1,4 @@
-// app/(tabs)/services/_form.tsx — shared add/edit form for admin service management
+﻿// app/(tabs)/services/_form.tsx — shared add/edit form for admin service management
 import axios from 'axios';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 
 import { Service } from '@/types/catalog';
+import { Colors } from '@/constants/Colors';
 
 const CATEGORIES = ['General', 'Exterior', 'Interior', 'Detail', 'Premium', 'Other'];
 
@@ -115,11 +116,11 @@ export default function ServiceFormScreen({ mode }: Props) {
 
         <View style={s.switchRow}>
           <Text style={s.label}>Active (visible to customers)</Text>
-          <Switch value={active} onValueChange={setActive} trackColor={{ true: '#6a0dad', false: '#ccc' }} thumbColor="#fff" />
+          <Switch value={active} onValueChange={setActive} trackColor={{ true: Colors.accent, false: Colors.border }} thumbColor={Colors.white} />
         </View>
 
         <Pressable style={[s.saveBtn, saving && { opacity: 0.7 }]} onPress={handleSave} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={s.saveBtnText}>{mode === 'add' ? 'Add Service' : 'Save Changes'}</Text>}
+          {saving ? <ActivityIndicator color={Colors.white} /> : <Text style={s.saveBtnText}>{mode === 'add' ? 'Add Service' : 'Save Changes'}</Text>}
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -129,16 +130,16 @@ export default function ServiceFormScreen({ mode }: Props) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f7f7fb' },
   content:   { padding: 20, paddingBottom: 48 },
-  label:     { fontSize: 13, fontWeight: '600', color: '#444', marginBottom: 6, marginTop: 14 },
-  input:     { backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e0e0e0', paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#1f1f1f' },
+  label:     { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 6, marginTop: 14 },
+  input:     { backgroundColor: Colors.white, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: Colors.textPrimary },
   multiline: { minHeight: 80, paddingTop: 10 },
   row:       { flexDirection: 'row', alignItems: 'flex-start' },
   pills:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  pill:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd' },
-  pillActive:     { backgroundColor: '#6a0dad', borderColor: '#6a0dad' },
-  pillText:       { fontSize: 13, color: '#555' },
-  pillTextActive: { color: '#fff', fontWeight: '600' },
+  pill:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  pillActive:     { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  pillText:       { fontSize: 13, color: Colors.textSecondary },
+  pillTextActive: { color: Colors.white, fontWeight: '600' },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 },
-  saveBtn:   { backgroundColor: '#6a0dad', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  saveBtn:   { backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+  saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

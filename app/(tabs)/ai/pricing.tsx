@@ -1,4 +1,4 @@
-// app/(tabs)/ai/pricing.tsx — Dynamic Pricing Suggestion
+﻿// app/(tabs)/ai/pricing.tsx — Dynamic Pricing Suggestion
 //
 // Trigger: Screen loads (or admin refreshes)
 // Sends to Claude: current queue length, time of day, day of week,
@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -40,31 +41,31 @@ const SUGGESTION_CONFIG = {
     label:     'Peak Surcharge',
     icon:      'trending-up-outline',
     chipBg:    '#fff7ed',
-    chipColor: '#ea580c',
+    chipColor: Colors.warning,
     chipBorder:'#fed7aa',
     description: 'High demand detected. Consider a temporary price increase.',
     applyText: 'Apply Surcharge',
-    applyBg:   '#ea580c',
+    applyBg:   Colors.warning,
   },
   discount: {
     label:     'Off-Peak Discount',
     icon:      'trending-down-outline',
     chipBg:    '#ecfdf5',
-    chipColor: '#10b981',
+    chipColor: Colors.success,
     chipBorder:'#a7f3d0',
     description: 'Low demand right now. A discount could attract more bookings.',
     applyText: 'Apply Discount',
-    applyBg:   '#10b981',
+    applyBg:   Colors.success,
   },
   none: {
     label:     'Standard Pricing',
     icon:      'remove-circle-outline',
-    chipBg:    '#f3f4f6',
-    chipColor: '#6b7280',
-    chipBorder:'#e5e7eb',
+    chipBg:    Colors.surfaceAlt,
+    chipColor: Colors.textSecondary,
+    chipBorder:Colors.border,
     description: 'Demand is within normal range. No price adjustment needed.',
     applyText: 'No Action',
-    applyBg:   '#6b7280',
+    applyBg:   Colors.textSecondary,
   },
 };
 
@@ -80,22 +81,22 @@ function ConditionsCard({ ctx }: { ctx: PricingContext }) {
       <Text style={cc.title}>Current Conditions</Text>
       <View style={cc.grid}>
         <View style={cc.cell}>
-          <Ionicons name="time-outline" size={18} color="#6a0dad" />
+          <Ionicons name="time-outline" size={18} color={Colors.accent} />
           <Text style={cc.cellLabel}>Time</Text>
           <Text style={cc.cellValue}>{ctx.currentHour}:00</Text>
         </View>
         <View style={cc.cell}>
-          <Ionicons name="calendar-outline" size={18} color="#0077cc" />
+          <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
           <Text style={cc.cellLabel}>Day</Text>
           <Text style={cc.cellValue}>{ctx.dayOfWeek}</Text>
         </View>
         <View style={cc.cell}>
-          <Ionicons name="car-outline" size={18} color="#f59e0b" />
+          <Ionicons name="car-outline" size={18} color={Colors.warning} />
           <Text style={cc.cellLabel}>Queue</Text>
           <Text style={cc.cellValue}>{ctx.queueLength}</Text>
         </View>
         <View style={cc.cell}>
-          <Ionicons name="stats-chart-outline" size={18} color="#10b981" />
+          <Ionicons name="stats-chart-outline" size={18} color={Colors.success} />
           <Text style={cc.cellLabel}>Avg (slot)</Text>
           <Text style={cc.cellValue}>{ctx.historicalAvgForSlot}</Text>
         </View>
@@ -106,7 +107,7 @@ function ConditionsCard({ ctx }: { ctx: PricingContext }) {
         <View style={cc.ratioWrap}>
           <Text style={cc.ratioLabel}>
             Queue vs Historical Average:{' '}
-            <Text style={{ fontWeight: '800', color: ratio > 1.3 ? '#ea580c' : ratio < 0.6 ? '#10b981' : '#6b7280' }}>
+            <Text style={{ fontWeight: '800', color: ratio > 1.3 ? Colors.warning : ratio < 0.6 ? Colors.success : Colors.textSecondary }}>
               {Math.round(ratio * 100)}%
             </Text>
           </Text>
@@ -115,7 +116,7 @@ function ConditionsCard({ ctx }: { ctx: PricingContext }) {
               cc.ratioFill,
               {
                 width: `${Math.min(ratio * 60, 100)}%` as any,
-                backgroundColor: ratio > 1.3 ? '#ea580c' : ratio < 0.6 ? '#10b981' : '#6b7280',
+                backgroundColor: ratio > 1.3 ? Colors.warning : ratio < 0.6 ? Colors.success : Colors.textSecondary,
               },
             ]} />
             {/* 100% baseline marker */}
@@ -178,14 +179,14 @@ function SuggestionChip({
           </Pressable>
           {result.suggestion !== 'none' && (
             <Pressable style={[sc.applyBtn, { backgroundColor: cfg.applyBg }]} onPress={onApply}>
-              <Ionicons name="checkmark-outline" size={15} color="#fff" />
+              <Ionicons name="checkmark-outline" size={15} color={Colors.white} />
               <Text style={sc.applyText}>{cfg.applyText}</Text>
             </Pressable>
           )}
         </View>
       ) : (
         <View style={sc.appliedBanner}>
-          <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+          <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
           <Text style={sc.appliedText}>Applied to new bookings for the next hour</Text>
         </View>
       )}
@@ -258,7 +259,7 @@ export default function DynamicPricingScreen() {
         {/* ── Header ── */}
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={s.headerTitle}>Dynamic Pricing</Text>
           <View style={s.claudeBadge}>
@@ -277,7 +278,7 @@ export default function DynamicPricingScreen() {
         {/* ── Loading state ── */}
         {isLoading && (
           <View style={s.loadingCard}>
-            <ActivityIndicator color="#6a0dad" size="large" />
+            <ActivityIndicator color={Colors.accent} size="large" />
             <Text style={s.loadingText}>
               {loadingCtx ? 'Reading current queue…' : 'Claude is evaluating pricing…'}
             </Text>
@@ -287,7 +288,7 @@ export default function DynamicPricingScreen() {
         {/* ── Error ── */}
         {(ctxError || error) && !isLoading && (
           <View style={s.errCard}>
-            <Ionicons name="alert-circle-outline" size={18} color="#e53935" />
+            <Ionicons name="alert-circle-outline" size={18} color={Colors.error} />
             <Text style={s.errText}>{ctxError ?? error}</Text>
             <Pressable style={s.retryBtn} onPress={loadAndAsk}>
               <Text style={s.retryText}>Retry</Text>
@@ -311,7 +312,7 @@ export default function DynamicPricingScreen() {
         {/* ── Refresh / check again ── */}
         {result && !isLoading && (
           <Pressable style={s.refreshBtn} onPress={loadAndAsk}>
-            <Ionicons name="refresh-outline" size={15} color="#6a0dad" />
+            <Ionicons name="refresh-outline" size={15} color={Colors.accent} />
             <Text style={s.refreshText}>Check Again</Text>
           </Pressable>
         )}
@@ -328,7 +329,7 @@ export default function DynamicPricingScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -341,63 +342,63 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 2,
   },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle:  { fontSize: 18, fontWeight: '900', color: '#1f1f1f' },
-  claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: '#cc5500', alignItems: 'center', justifyContent: 'center' },
-  claudeInitial:{ color: '#fff', fontWeight: '900', fontSize: 16 },
+  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  headerTitle:  { fontSize: 18, fontWeight: '900', color: Colors.textPrimary },
+  claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
+  claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 
   descCard: { backgroundColor: '#ecfdf5', borderRadius: 14, padding: 14 },
   descText: { fontSize: 13, color: '#065f46', lineHeight: 20 },
 
   loadingCard: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 32,
+    backgroundColor: Colors.white, borderRadius: 16, padding: 32,
     alignItems: 'center', gap: 16, ...SHADOW,
   },
-  loadingText: { fontSize: 14, color: '#6b7280', textAlign: 'center' },
+  loadingText: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center' },
 
   errCard: {
     backgroundColor: '#fef2f2', borderRadius: 14, padding: 16,
     borderWidth: 1, borderColor: '#fca5a5', gap: 10,
   },
-  errText:   { fontSize: 13, color: '#e53935', flex: 1 },
-  retryBtn:  { backgroundColor: '#e53935', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start' },
-  retryText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  errText:   { fontSize: 13, color: Colors.error, flex: 1 },
+  retryBtn:  { backgroundColor: Colors.error, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'flex-start' },
+  retryText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
 
   refreshBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center',
     backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 16, paddingVertical: 8,
   },
-  refreshText: { fontSize: 13, color: '#6a0dad', fontWeight: '700' },
+  refreshText: { fontSize: 13, color: Colors.accent, fontWeight: '700' },
 
-  note: { fontSize: 12, color: '#9ca3af', textAlign: 'center', lineHeight: 18 },
+  note: { fontSize: 12, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
 });
 
 // ─── Conditions card styles ───────────────────────────────────────────────────
 
 const cc = StyleSheet.create({
   card: {
-    backgroundColor: '#fff', borderRadius: 18, padding: 18, gap: 16, ...SHADOW,
+    backgroundColor: Colors.white, borderRadius: 18, padding: 18, gap: 16, ...SHADOW,
   },
-  title: { fontSize: 14, fontWeight: '700', color: '#1f1f1f' },
+  title: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
   grid:  { flexDirection: 'row', gap: 12 },
   cell:  { flex: 1, alignItems: 'center', gap: 4 },
-  cellLabel: { fontSize: 11, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 },
-  cellValue: { fontSize: 16, fontWeight: '900', color: '#1f1f1f' },
+  cellLabel: { fontSize: 11, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  cellValue: { fontSize: 16, fontWeight: '900', color: Colors.textPrimary },
 
   ratioWrap:  { gap: 6 },
-  ratioLabel: { fontSize: 12, color: '#6b7280' },
-  ratioTrack: { height: 10, backgroundColor: '#f3f4f6', borderRadius: 99, overflow: 'hidden', position: 'relative' },
+  ratioLabel: { fontSize: 12, color: Colors.textSecondary },
+  ratioTrack: { height: 10, backgroundColor: Colors.surfaceAlt, borderRadius: 99, overflow: 'hidden', position: 'relative' },
   ratioFill:  { height: '100%', borderRadius: 99 },
-  baseline:   { position: 'absolute', top: 0, bottom: 0, left: '60%', width: 2, backgroundColor: '#d1d5db' },
+  baseline:   { position: 'absolute', top: 0, bottom: 0, left: '60%', width: 2, backgroundColor: Colors.border },
   ratioLegend:{ flexDirection: 'row', justifyContent: 'space-between' },
-  ratioLegendText: { fontSize: 10, color: '#9ca3af' },
+  ratioLegendText: { fontSize: 10, color: Colors.textMuted },
 });
 
 // ─── Suggestion chip styles ───────────────────────────────────────────────────
 
 const sc = StyleSheet.create({
   chip: {
-    backgroundColor: '#fff', borderRadius: 20, padding: 20,
+    backgroundColor: Colors.white, borderRadius: 20, padding: 20,
     borderWidth: 2, gap: 14, ...SHADOW,
   },
   badge: {
@@ -407,28 +408,28 @@ const sc = StyleSheet.create({
   },
   badgeLabel: { fontSize: 16, fontWeight: '900' },
   pctBadge:   { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  pctText:    { color: '#fff', fontWeight: '900', fontSize: 15 },
+  pctText:    { color: Colors.white, fontWeight: '900', fontSize: 15 },
 
-  desc: { fontSize: 13, color: '#6b7280', lineHeight: 19 },
+  desc: { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
 
   reasonBox: {
-    backgroundColor: '#fafafa', borderRadius: 12, padding: 12,
-    borderLeftWidth: 3, borderLeftColor: '#d1d5db', gap: 4,
+    backgroundColor: Colors.surfaceAlt, borderRadius: 12, padding: 12,
+    borderLeftWidth: 3, borderLeftColor: Colors.border, gap: 4,
   },
-  reasonPre:  { fontSize: 11, color: '#9ca3af', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  reasonText: { fontSize: 13, color: '#4b5563', lineHeight: 20, fontStyle: 'italic' },
+  reasonPre:  { fontSize: 11, color: Colors.textMuted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  reasonText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, fontStyle: 'italic' },
 
   actions:   { flexDirection: 'row', gap: 10 },
   ignoreBtn: {
     flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
-    backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb',
+    backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border,
   },
-  ignoreText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
+  ignoreText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
   applyBtn: {
     flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, paddingVertical: 12, borderRadius: 12,
   },
-  applyText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  applyText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 
   appliedBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,

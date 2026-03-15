@@ -1,4 +1,4 @@
-// app/(tabs)/jobs/[id].tsx — Staff Job Workflow
+﻿// app/(tabs)/jobs/[id].tsx — Staff Job Workflow
 // Status stepper, photo capture / gallery upload with progress, staff notes.
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
@@ -24,6 +24,7 @@ import {
 import { useAuth }          from '@/context/AuthContext';
 import VoiceNoteRecorder    from '@/components/VoiceNoteRecorder';
 import VoiceNotePlayer, { VoiceNoteMeta } from '@/components/VoiceNotePlayer';
+import { Colors } from '@/constants/Colors';
 
 // ─── Photo item type ──────────────────────────────────────────────────────────
 interface PhotoItem {
@@ -56,10 +57,10 @@ function StepDot({ done, active }: { done: boolean; active: boolean }) {
   useEffect(() => {
     Animated.spring(scale, { toValue: done || active ? 1 : 0.7, useNativeDriver: true }).start();
   }, [done, active]);
-  const bg = done ? '#6a0dad' : active ? '#6a0dad' : '#e0e0e0';
+  const bg = done ? Colors.accent : active ? Colors.accent : Colors.border;
   return (
     <Animated.View style={[wf.dot, { backgroundColor: bg, transform: [{ scale }] }]}>
-      {done  ? <Ionicons name="checkmark" size={12} color="#fff" /> : null}
+      {done  ? <Ionicons name="checkmark" size={12} color={Colors.white} /> : null}
       {active && !done ? <View style={wf.dotPulse} /> : null}
     </Animated.View>
   );
@@ -118,21 +119,21 @@ function PhotoThumb({ item, onRemove }: { item: PhotoItem; onRemove: () => void 
       {/* Done tick */}
       {item.done && (
         <View style={wf.thumbDone}>
-          <Ionicons name="checkmark-circle" size={20} color="#2e7d32" />
+          <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
         </View>
       )}
 
       {/* Error */}
       {item.error && (
         <View style={wf.thumbDone}>
-          <Ionicons name="alert-circle" size={20} color="#c62828" />
+          <Ionicons name="alert-circle" size={20} color={Colors.error} />
         </View>
       )}
 
       {/* Remove (only when not uploading) */}
       {(item.done || item.error) && (
         <Pressable style={wf.thumbRemove} onPress={onRemove} hitSlop={6}>
-          <Ionicons name="close-circle" size={18} color="#fff" />
+          <Ionicons name="close-circle" size={18} color={Colors.white} />
         </Pressable>
       )}
     </View>
@@ -177,7 +178,7 @@ function JobCameraModal({
     return (
       <Modal visible animationType="slide">
         <View style={cam.centered}>
-          <ActivityIndicator size="large" color="#6a0dad" />
+          <ActivityIndicator size="large" color={Colors.accent} />
         </View>
       </Modal>
     );
@@ -188,7 +189,7 @@ function JobCameraModal({
       <Modal visible animationType="slide">
         <SafeAreaView style={cam.safe}>
           <View style={cam.permBox}>
-            <Ionicons name="camera-outline" size={52} color="#ccc" />
+            <Ionicons name="camera-outline" size={52} color={Colors.border} />
             <Text style={cam.permTitle}>Camera Access Needed</Text>
             <Text style={cam.permSub}>
               Allow camera access to take before/after photos.
@@ -197,7 +198,7 @@ function JobCameraModal({
               <Text style={cam.permBtnText}>Grant Permission</Text>
             </Pressable>
             <Pressable onPress={onClose} style={{ marginTop: 12 }} hitSlop={8}>
-              <Text style={{ color: '#888', fontSize: 14 }}>Cancel</Text>
+              <Text style={{ color: Colors.textMuted, fontSize: 14 }}>Cancel</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -212,7 +213,7 @@ function JobCameraModal({
           {/* Top bar */}
           <SafeAreaView style={cam.topBar} edges={['top']}>
             <Pressable style={cam.iconBtn} onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={26} color="#fff" />
+              <Ionicons name="close" size={26} color={Colors.white} />
             </Pressable>
             <View style={[cam.labelBadge, label === 'before' ? cam.labelBefore : cam.labelAfter]}>
               <Text style={cam.labelText}>{label.toUpperCase()}</Text>
@@ -222,7 +223,7 @@ function JobCameraModal({
               onPress={() => setFacing(f => f === 'back' ? 'front' : 'back')}
               hitSlop={8}
             >
-              <Ionicons name="camera-reverse-outline" size={26} color="#fff" />
+              <Ionicons name="camera-reverse-outline" size={26} color={Colors.white} />
             </Pressable>
           </SafeAreaView>
 
@@ -230,7 +231,7 @@ function JobCameraModal({
           <View style={cam.shutterRow}>
             <TouchableOpacity style={cam.shutter} onPress={shoot} disabled={capturing}>
               {capturing
-                ? <ActivityIndicator color="#6a0dad" />
+                ? <ActivityIndicator color={Colors.accent} />
                 : <View style={cam.shutterInner} />
               }
             </TouchableOpacity>
@@ -391,7 +392,7 @@ export default function JobWorkflowScreen() {
   if (loading) {
     return (
       <View style={wf.centered}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -399,7 +400,7 @@ export default function JobWorkflowScreen() {
   if (!job) {
     return (
       <View style={wf.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color="#e25555" />
+        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
         <Text style={wf.errText}>Job not found.</Text>
         <Pressable style={wf.retryBtn} onPress={() => router.back()}>
           <Text style={wf.retryText}>Go Back</Text>
@@ -417,7 +418,7 @@ export default function JobWorkflowScreen() {
       {/* ── Header ── */}
       <View style={wf.header}>
         <Pressable style={wf.backBtn} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={wf.headerTitle} numberOfLines={1}>{job.serviceLabel}</Text>
         <View style={{ width: 40 }} />
@@ -433,11 +434,11 @@ export default function JobWorkflowScreen() {
         <View style={wf.card}>
           <Text style={wf.svcName}>{job.serviceLabel}</Text>
           <View style={wf.infoRow}>
-            <Ionicons name="car-outline" size={14} color="#888" />
+            <Ionicons name="car-outline" size={14} color={Colors.textMuted} />
             <Text style={wf.infoText}>{job.vehicleLabel || 'No vehicle info'}</Text>
           </View>
           <View style={wf.infoRow}>
-            <Ionicons name="time-outline" size={14} color="#888" />
+            <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
             <Text style={wf.infoText}>
               {job.appointmentDate} · {job.appointmentTime}
             </Text>
@@ -445,7 +446,7 @@ export default function JobWorkflowScreen() {
           <View style={wf.infoRow}>
             <Ionicons
               name={job.locationType === 'mobile' ? 'navigate' : 'business'}
-              size={14} color="#888"
+              size={14} color={Colors.textMuted}
             />
             <Text style={wf.infoText}>
               {job.locationType === 'mobile'
@@ -454,7 +455,7 @@ export default function JobWorkflowScreen() {
             </Text>
           </View>
           <View style={wf.infoRow}>
-            <Ionicons name="cash-outline" size={14} color="#888" />
+            <Ionicons name="cash-outline" size={14} color={Colors.textMuted} />
             <Text style={wf.infoText}>
               ${job.totalPrice.toFixed(2)} · {job.durationMinutes} min
             </Text>
@@ -479,10 +480,10 @@ export default function JobWorkflowScreen() {
             disabled={advancing}
           >
             {advancing ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={Colors.white} />
             ) : (
               <>
-                <Ionicons name="arrow-forward-circle" size={20} color="#fff" />
+                <Ionicons name="arrow-forward-circle" size={20} color={Colors.white} />
                 <Text style={wf.advanceBtnText}>{advLabel}</Text>
               </>
             )}
@@ -491,7 +492,7 @@ export default function JobWorkflowScreen() {
 
         {isDone && (
           <View style={wf.doneCard}>
-            <Ionicons name="checkmark-circle" size={28} color="#2e7d32" />
+            <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
             <Text style={wf.doneText}>Job Finished — Customer Notified</Text>
           </View>
         )}
@@ -521,7 +522,7 @@ export default function JobWorkflowScreen() {
               style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.8 }]}
               onPress={() => setCameraOpen(true)}
             >
-              <Ionicons name="camera" size={20} color="#6a0dad" />
+              <Ionicons name="camera" size={20} color={Colors.accent} />
               <Text style={wf.captureBtnText}>Take Photo</Text>
             </Pressable>
 
@@ -529,7 +530,7 @@ export default function JobWorkflowScreen() {
               style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.8 }]}
               onPress={pickFromGallery}
             >
-              <Ionicons name="images" size={20} color="#6a0dad" />
+              <Ionicons name="images" size={20} color={Colors.accent} />
               <Text style={wf.captureBtnText}>Gallery</Text>
             </Pressable>
           </View>
@@ -547,7 +548,7 @@ export default function JobWorkflowScreen() {
             </View>
           ) : (
             <View style={wf.noPhotos}>
-              <Ionicons name="image-outline" size={32} color="#ccc" />
+              <Ionicons name="image-outline" size={32} color={Colors.border} />
               <Text style={wf.noPhotosText}>No photos added yet</Text>
             </View>
           )}
@@ -561,7 +562,7 @@ export default function JobWorkflowScreen() {
             value={notes}
             onChangeText={setNotes}
             placeholder="Add notes about this job…"
-            placeholderTextColor="#aaa"
+            placeholderTextColor={Colors.textMuted}
             multiline
             numberOfLines={4}
             textAlignVertical="top"
@@ -580,7 +581,7 @@ export default function JobWorkflowScreen() {
               }
             }}
           >
-            <Ionicons name="save-outline" size={16} color="#6a0dad" />
+            <Ionicons name="save-outline" size={16} color={Colors.accent} />
             <Text style={wf.saveNotesBtnText}>Save Notes</Text>
           </Pressable>
         </View>
@@ -594,7 +595,7 @@ export default function JobWorkflowScreen() {
                 onPress={() => setRecorderOpen(true)}
                 hitSlop={6}
               >
-                <Ionicons name="mic-outline" size={16} color="#6a0dad" />
+                <Ionicons name="mic-outline" size={16} color={Colors.accent} />
                 <Text style={wf.micBtnText}>Record</Text>
               </Pressable>
             )}
@@ -619,7 +620,7 @@ export default function JobWorkflowScreen() {
           {/* Saved notes list */}
           {voiceNotes.length === 0 && !recorderOpen ? (
             <View style={wf.noPhotos}>
-              <Ionicons name="mic-outline" size={32} color="#ccc" />
+              <Ionicons name="mic-outline" size={32} color={Colors.border} />
               <Text style={wf.noPhotosText}>No voice notes yet</Text>
             </View>
           ) : (
@@ -645,7 +646,7 @@ export default function JobWorkflowScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -654,9 +655,9 @@ const wf = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  errText: { fontSize: 15, color: '#555', marginTop: 12, textAlign: 'center' },
-  retryBtn:{ marginTop: 16, backgroundColor: '#6a0dad', borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText:{ color: '#fff', fontWeight: '700' },
+  errText: { fontSize: 15, color: Colors.textSecondary, marginTop: 12, textAlign: 'center' },
+  retryBtn:{ marginTop: 16, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+  retryText:{ color: Colors.white, fontWeight: '700' },
 
   // Header
   header: {
@@ -664,42 +665,42 @@ const wf = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '800', color: '#1f1f1f', flex: 1, textAlign: 'center', marginHorizontal: 8 },
+  headerTitle: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, flex: 1, textAlign: 'center', marginHorizontal: 8 },
 
   // Card
   card: {
-    backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 16,
+    backgroundColor: Colors.white, marginHorizontal: 16, borderRadius: 16,
     padding: 18, marginBottom: 14, ...SHADOW,
   },
-  sectionTitle:     { fontSize: 14, fontWeight: '700', color: '#1f1f1f', marginBottom: 14 },
+  sectionTitle:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   micBtn:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 },
-  micBtnText: { fontSize: 12, fontWeight: '700', color: '#6a0dad' },
+  micBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   // Summary
-  svcName:  { fontSize: 18, fontWeight: '800', color: '#1f1f1f', marginBottom: 10 },
+  svcName:  { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
   infoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  infoText: { fontSize: 13, color: '#555', flex: 1 },
+  infoText: { fontSize: 13, color: Colors.textSecondary, flex: 1 },
 
   // Stepper
   stepRow:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 3 },
   dot:           { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
-  dotPulse:      { width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' },
-  stepLabel:     { fontSize: 14, fontWeight: '600', color: '#bbb', flex: 1 },
-  stepLabelOn:   { color: '#1f1f1f' },
+  dotPulse:      { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.white },
+  stepLabel:     { fontSize: 14, fontWeight: '600', color: Colors.border, flex: 1 },
+  stepLabelOn:   { color: Colors.textPrimary },
   activePill:    { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 },
   activePillText:{ fontSize: 11, fontWeight: '700' },
-  connector:     { width: 2, height: 18, backgroundColor: '#e0e0e0', marginLeft: 12, marginVertical: 2 },
-  connectorDone: { backgroundColor: '#6a0dad' },
+  connector:     { width: 2, height: 18, backgroundColor: Colors.border, marginLeft: 12, marginVertical: 2 },
+  connectorDone: { backgroundColor: Colors.accent },
 
   // Advance button
   advanceBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#6a0dad', borderRadius: 14, paddingVertical: 15,
+    backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15,
     marginHorizontal: 16, marginBottom: 14,
     ...SHADOW,
   },
-  advanceBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  advanceBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 
   // Done card
   doneCard: {
@@ -707,17 +708,17 @@ const wf = StyleSheet.create({
     backgroundColor: '#e8f5e9', borderRadius: 14, padding: 16,
     marginHorizontal: 16, marginBottom: 14,
   },
-  doneText: { fontSize: 14, fontWeight: '700', color: '#2e7d32', flex: 1 },
+  doneText: { fontSize: 14, fontWeight: '700', color: Colors.success, flex: 1 },
 
   // Label toggle
   labelToggle: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   labelBtn: {
     flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
   },
   labelBtnActive:     { backgroundColor: '#f3eafd' },
-  labelBtnText:       { fontSize: 14, fontWeight: '600', color: '#888' },
-  labelBtnTextActive: { color: '#6a0dad' },
+  labelBtnText:       { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  labelBtnTextActive: { color: Colors.accent },
 
   // Capture buttons
   captureRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
@@ -725,7 +726,7 @@ const wf = StyleSheet.create({
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
     backgroundColor: '#f3eafd', borderRadius: 12, paddingVertical: 12,
   },
-  captureBtnText: { fontSize: 14, fontWeight: '700', color: '#6a0dad' },
+  captureBtnText: { fontSize: 14, fontWeight: '700', color: Colors.accent },
 
   // Photo grid
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -737,36 +738,36 @@ const wf = StyleSheet.create({
   },
   thumbBefore:     { backgroundColor: 'rgba(0,0,0,0.6)' },
   thumbAfter:      { backgroundColor: 'rgba(106,13,173,0.8)' },
-  thumbLabelText:  { color: '#fff', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
+  thumbLabelText:  { color: Colors.white, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
   thumbOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0,0,0,0.55)', paddingVertical: 6, alignItems: 'center',
   },
-  progressBar: { height: 3, backgroundColor: '#6a0dad', position: 'absolute', top: 0, left: 0 },
-  progressText:{ color: '#fff', fontSize: 11, fontWeight: '700' },
+  progressBar: { height: 3, backgroundColor: Colors.accent, position: 'absolute', top: 0, left: 0 },
+  progressText:{ color: Colors.white, fontSize: 11, fontWeight: '700' },
   thumbDone:   { position: 'absolute', bottom: 4, right: 4 },
   thumbRemove: { position: 'absolute', top: 2, right: 2 },
   noPhotos:    { alignItems: 'center', paddingVertical: 24 },
-  noPhotosText:{ fontSize: 13, color: '#aaa', marginTop: 6 },
+  noPhotosText:{ fontSize: 13, color: Colors.textMuted, marginTop: 6 },
 
   // Notes
   notesInput: {
     backgroundColor: '#f7f7fb', borderRadius: 10, padding: 12,
-    fontSize: 14, color: '#1f1f1f', minHeight: 100, marginBottom: 12,
-    borderWidth: 1, borderColor: '#e8e8e8',
+    fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border,
   },
   saveNotesBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     backgroundColor: '#f3eafd', borderRadius: 10, paddingVertical: 10,
   },
-  saveNotesBtnText: { color: '#6a0dad', fontWeight: '700', fontSize: 14 },
+  saveNotesBtnText: { color: Colors.accent, fontWeight: '700', fontSize: 14 },
 });
 
 // ─── Camera modal styles ──────────────────────────────────────────────────────
 const cam = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: Colors.black },
   camera:    { flex: 1 },
-  safe:      { flex: 1, backgroundColor: '#1f1f1f' },
+  safe:      { flex: 1, backgroundColor: Colors.textPrimary },
   centered:  { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   topBar: {
@@ -779,7 +780,7 @@ const cam = StyleSheet.create({
   labelBadge: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
   labelBefore:{ backgroundColor: 'rgba(0,0,0,0.6)' },
   labelAfter: { backgroundColor: 'rgba(106,13,173,0.75)' },
-  labelText:  { color: '#fff', fontWeight: '800', fontSize: 14, letterSpacing: 1.5 },
+  labelText:  { color: Colors.white, fontWeight: '800', fontSize: 14, letterSpacing: 1.5 },
 
   shutterRow: {
     position: 'absolute', bottom: 48, left: 0, right: 0,
@@ -787,19 +788,19 @@ const cam = StyleSheet.create({
   },
   shutter: {
     width: 72, height: 72, borderRadius: 36,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 4, borderColor: 'rgba(255,255,255,0.5)',
   },
   shutterInner: {
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#fff',
-    borderWidth: 2, borderColor: '#e0e0e0',
+    backgroundColor: Colors.white,
+    borderWidth: 2, borderColor: Colors.border,
   },
 
   permBox:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
-  permTitle:  { fontSize: 20, fontWeight: '800', color: '#1f1f1f' },
-  permSub:    { fontSize: 14, color: '#888', textAlign: 'center' },
-  permBtn:    { backgroundColor: '#6a0dad', borderRadius: 12, paddingHorizontal: 28, paddingVertical: 12 },
-  permBtnText:{ color: '#fff', fontWeight: '700', fontSize: 15 },
+  permTitle:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  permSub:    { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
+  permBtn:    { backgroundColor: Colors.accent, borderRadius: 12, paddingHorizontal: 28, paddingVertical: 12 },
+  permBtnText:{ color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

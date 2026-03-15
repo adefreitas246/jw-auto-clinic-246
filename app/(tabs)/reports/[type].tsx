@@ -1,4 +1,4 @@
-// app/(tabs)/reports/[type].tsx — Report Viewer + CSV & PDF Export
+﻿// app/(tabs)/reports/[type].tsx — Report Viewer + CSV & PDF Export
 //
 // Reads ?type=revenue|employees|customers|services + ?startDate + ?endDate
 // from route params. Shows a scrollable data table (horizontal scroll) and
@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import { Colors } from '@/constants/Colors';
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -374,14 +375,14 @@ export default function ReportViewer() {
       {/* ── Header ── */}
       <View style={rv.header}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={rv.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={rv.title} numberOfLines={1}>{cfg.title}</Text>
           <Text style={rv.sub}>{startDate} → {endDate}</Text>
         </View>
         <Pressable onPress={load} hitSlop={8} style={rv.refreshBtn} disabled={loading}>
-          <Ionicons name="refresh" size={20} color="#6a0dad" />
+          <Ionicons name="refresh" size={20} color={Colors.accent} />
         </Pressable>
       </View>
 
@@ -423,7 +424,7 @@ export default function ReportViewer() {
                 returnKeyType="done"
               />
             </View>
-            <Ionicons name="arrow-forward" size={16} color="#ccc" style={{ marginTop: 24 }} />
+            <Ionicons name="arrow-forward" size={16} color={Colors.border} style={{ marginTop: 24 }} />
             <View style={rv.dateField}>
               <Text style={rv.dateFieldLabel}>To</Text>
               <TextInput
@@ -445,7 +446,7 @@ export default function ReportViewer() {
         {/* ── Error ── */}
         {!!error && (
           <View style={rv.errorBox}>
-            <Ionicons name="alert-circle-outline" size={16} color="#dc2626" />
+            <Ionicons name="alert-circle-outline" size={16} color={Colors.error} />
             <Text style={rv.errorText}>{error}</Text>
           </View>
         )}
@@ -465,12 +466,12 @@ export default function ReportViewer() {
         {/* ── Table or loader ── */}
         {loading ? (
           <View style={rv.centered}>
-            <ActivityIndicator size="large" color="#6a0dad" />
+            <ActivityIndicator size="large" color={Colors.accent} />
             <Text style={rv.loadText}>Loading report…</Text>
           </View>
         ) : rows.length === 0 ? (
           <View style={rv.centered}>
-            <Ionicons name="document-outline" size={48} color="#ccc" />
+            <Ionicons name="document-outline" size={48} color={Colors.border} />
             <Text style={rv.emptyTitle}>No data</Text>
             <Text style={rv.emptyText}>No records found for this date range.</Text>
           </View>
@@ -540,8 +541,8 @@ export default function ReportViewer() {
             disabled={!!exporting}
           >
             {exporting === 'csv'
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Ionicons name="document-text-outline" size={18} color="#fff" />
+              ? <ActivityIndicator color={Colors.white} size="small" />
+              : <Ionicons name="document-text-outline" size={18} color={Colors.white} />
             }
             <Text style={rv.exportBtnText}>
               {exporting === 'csv' ? 'Exporting…' : 'Export CSV'}
@@ -554,8 +555,8 @@ export default function ReportViewer() {
             disabled={!!exporting}
           >
             {exporting === 'pdf'
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Ionicons name="document-attach-outline" size={18} color="#fff" />
+              ? <ActivityIndicator color={Colors.white} size="small" />
+              : <Ionicons name="document-attach-outline" size={18} color={Colors.white} />
             }
             <Text style={rv.exportBtnText}>
               {exporting === 'pdf' ? 'Generating…' : 'Export PDF'}
@@ -570,7 +571,7 @@ export default function ReportViewer() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -585,47 +586,47 @@ const rv = StyleSheet.create({
   },
   backBtn:    { padding: 4 },
   refreshBtn: { padding: 6 },
-  title:      { fontSize: 18, fontWeight: '800', color: '#1f1f1f' },
-  sub:        { fontSize: 11, color: '#888', marginTop: 1 },
+  title:      { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
+  sub:        { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 
   scroll: { paddingBottom: 40 },
 
   // Filter card
   filterCard: {
     marginHorizontal: 16, marginBottom: 14,
-    backgroundColor: '#fff', borderRadius: 14, padding: 14, ...SHADOW,
+    backgroundColor: Colors.white, borderRadius: 14, padding: 14, ...SHADOW,
   },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   chip: {
-    borderRadius: 99, borderWidth: 1.5, borderColor: '#e5e7eb',
+    borderRadius: 99, borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  chipActive:     { borderColor: '#6a0dad', backgroundColor: '#f3eafd' },
-  chipText:       { fontSize: 12, fontWeight: '600', color: '#888' },
-  chipTextActive: { color: '#6a0dad' },
+  chipActive:     { borderColor: Colors.accent, backgroundColor: '#f3eafd' },
+  chipText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  chipTextActive: { color: Colors.accent },
 
   dateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   dateField: { flex: 1 },
-  dateFieldLabel: { fontSize: 11, color: '#888', fontWeight: '600', marginBottom: 4 },
+  dateFieldLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', marginBottom: 4 },
   dateInput: {
-    borderWidth: 1.5, borderColor: '#e5e7eb', borderRadius: 8,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 8,
-    fontSize: 13, color: '#1f1f1f', backgroundColor: '#fafafa',
+    fontSize: 13, color: Colors.textPrimary, backgroundColor: Colors.surfaceAlt,
   },
   applyBtn: {
-    backgroundColor: '#6a0dad', borderRadius: 8,
+    backgroundColor: Colors.accent, borderRadius: 8,
     paddingHorizontal: 14, paddingVertical: 9,
   },
-  applyBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  applyBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
 
   // Error
   errorBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginHorizontal: 16, marginBottom: 12,
     backgroundColor: '#fef2f2', borderRadius: 10, padding: 12,
-    borderLeftWidth: 3, borderLeftColor: '#dc2626',
+    borderLeftWidth: 3, borderLeftColor: Colors.error,
   },
-  errorText: { fontSize: 13, color: '#dc2626', flex: 1 },
+  errorText: { fontSize: 13, color: Colors.error, flex: 1 },
 
   // Stats
   statsRow: {
@@ -633,50 +634,50 @@ const rv = StyleSheet.create({
     marginHorizontal: 16, marginBottom: 14,
   },
   statCard: {
-    backgroundColor: '#fff', borderRadius: 12, padding: 12,
-    borderLeftWidth: 3, borderLeftColor: '#6a0dad', ...SHADOW,
+    backgroundColor: Colors.white, borderRadius: 12, padding: 12,
+    borderLeftWidth: 3, borderLeftColor: Colors.accent, ...SHADOW,
     minWidth: 90, flex: 1,
   },
-  statValue: { fontSize: 18, fontWeight: '800', color: '#6a0dad' },
-  statLabel: { fontSize: 10, color: '#888', marginTop: 2 },
+  statValue: { fontSize: 18, fontWeight: '800', color: Colors.accent },
+  statLabel: { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
 
   // Table
   tableWrap:   { marginHorizontal: 16 },
   tableHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  rowCount:    { fontSize: 11, color: '#888', fontWeight: '600' },
+  rowCount:    { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
   hScroll:     { borderRadius: 12, ...SHADOW },
   thRow: {
-    flexDirection: 'row', backgroundColor: '#6a0dad',
+    flexDirection: 'row', backgroundColor: Colors.accent,
     paddingVertical: 9, paddingHorizontal: 12,
     borderTopLeftRadius: 10, borderTopRightRadius: 10,
   },
-  th: { fontSize: 10, fontWeight: '700', color: '#fff', letterSpacing: 0.3, textTransform: 'uppercase' },
+  th: { fontSize: 10, fontWeight: '700', color: Colors.white, letterSpacing: 0.3, textTransform: 'uppercase' },
 
-  tdRow:  { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 12, backgroundColor: '#fff' },
+  tdRow:  { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Colors.white },
   tdEven: { backgroundColor: '#faf9ff' },
-  td:     { fontSize: 12, color: '#374151' },
+  td:     { fontSize: 12, color: Colors.textSecondary },
 
-  truncNote: { fontSize: 11, color: '#aaa', textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
+  truncNote: { fontSize: 11, color: Colors.textMuted, textAlign: 'center', marginTop: 8, fontStyle: 'italic' },
 
   // Empty state
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: '#1f1f1f', marginTop: 14, marginBottom: 6 },
-  emptyText:  { fontSize: 13, color: '#888' },
-  loadText:   { fontSize: 13, color: '#888', marginTop: 10 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginTop: 14, marginBottom: 6 },
+  emptyText:  { fontSize: 13, color: Colors.textMuted },
+  loadText:   { fontSize: 13, color: Colors.textMuted, marginTop: 10 },
 
   // Export
   exportRow: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', gap: 12,
     paddingHorizontal: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16, paddingTop: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1, borderTopColor: '#f0f0f0',
-    ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: -2 } }, android: { elevation: 4 } }),
+    backgroundColor: Colors.white,
+    borderTopWidth: 1, borderTopColor: Colors.background,
+    ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: -2 } }, android: { elevation: 4 } }),
   },
   exportBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8, borderRadius: 12, paddingVertical: 14,
   },
-  csvBtn:        { backgroundColor: '#059669' },
-  pdfBtn:        { backgroundColor: '#dc2626' },
-  exportBtnText: { fontSize: 14, fontWeight: '800', color: '#fff' },
+  csvBtn:        { backgroundColor: Colors.success },
+  pdfBtn:        { backgroundColor: Colors.error },
+  exportBtnText: { fontSize: 14, fontWeight: '800', color: Colors.white },
 });

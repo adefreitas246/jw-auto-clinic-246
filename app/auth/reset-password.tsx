@@ -1,4 +1,4 @@
-// reset-password.tsx
+﻿// reset-password.tsx
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,6 +18,7 @@ import {
 } from "react-native";
 import * as Animatable from "react-native-animatable";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from '@/constants/Colors';
 
 const API =
   process.env.EXPO_PUBLIC_API_URL || "https://jw-auto-clinic-246.onrender.com";
@@ -102,7 +103,7 @@ export default function ResetPasswordScreen() {
       case "Strong":
         return "green";
       default:
-        return "#ccc";
+        return Colors.border;
     }
   }, [passwordStrength]);
 
@@ -215,7 +216,7 @@ export default function ResetPasswordScreen() {
                     <View style={styles.passwordRow}>
                       <TextInput
                         placeholder="New Password"
-                        placeholderTextColor="#777"
+                        placeholderTextColor={Colors.textSecondary}
                         secureTextEntry={!showPassword}
                         style={[styles.input, passwordError && styles.errorInput]}
                         value={password}
@@ -229,7 +230,7 @@ export default function ResetPasswordScreen() {
                         <Ionicons
                           name={showPassword ? "eye-outline" : "eye"}
                           size={22}
-                          color="#555"
+                          color={Colors.textSecondary}
                         />
                       </TouchableOpacity>
                     </View>
@@ -260,7 +261,7 @@ export default function ResetPasswordScreen() {
                     <View style={styles.passwordRow}>
                       <TextInput
                         placeholder="Confirm New Password"
-                        placeholderTextColor="#777"
+                        placeholderTextColor={Colors.textSecondary}
                         secureTextEntry={!showConfirm}
                         style={[
                           styles.input,
@@ -286,7 +287,7 @@ export default function ResetPasswordScreen() {
                         <Ionicons
                           name={showConfirm ? "eye-outline" : "eye"}
                           size={22}
-                          color="#555"
+                          color={Colors.textSecondary}
                         />
                       </TouchableOpacity>
                     </View>
@@ -320,7 +321,7 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -330,7 +331,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 24,
     flexGrow: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     justifyContent: "center",
   },
   illustration: {
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 24,
     fontSize: 16,
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
@@ -356,12 +357,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   button: {
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     paddingVertical: 14,
     borderRadius: 10,
   },
   buttonText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
     textAlign: "center",
     fontWeight: "600",
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
   successText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1f1f1f",
+    color: Colors.textPrimary,
     textAlign: "center",
     marginTop: 20,
   },
@@ -399,7 +400,7 @@ const styles = StyleSheet.create({
   },
   tooltipText: {
     fontSize: 12,
-    color: "#555",
+    color: Colors.textSecondary,
   },
   passwordRow: {
     position: "relative",

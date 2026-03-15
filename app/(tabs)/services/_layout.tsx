@@ -1,12 +1,13 @@
-// app/(tabs)/services/_layout.tsx
+﻿// app/(tabs)/services/_layout.tsx
 import { Stack } from 'expo-router';
+import { Colors } from '@/constants/Colors';
 
 export default function ServicesAdminLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#6a0dad' },
-        headerTintColor: '#fff',
+        headerStyle: { backgroundColor: Colors.accent },
+        headerTintColor: Colors.white,
         headerTitleStyle: { fontWeight: '700' },
       }}
     >

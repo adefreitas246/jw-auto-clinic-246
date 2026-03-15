@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+﻿import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from "@expo/vector-icons";
 import { Asset } from 'expo-asset';
 import * as FileSystem from "expo-file-system/legacy";
@@ -19,6 +19,7 @@ import {
 } from "react-native";
 import * as Animatable from 'react-native-animatable';
 import DropDownPicker from 'react-native-dropdown-picker';
+import { Colors } from '@/constants/Colors';
 
 interface Transaction {
   _id: string;
@@ -539,7 +540,7 @@ export default function TransactionsScreen() {
             style={styles.iconBtn}
             accessibilityLabel="Edit item"
           >
-            <Ionicons name="create-outline" size={20} color="#0F9B8E" />
+            <Ionicons name="create-outline" size={20} color={Colors.accent} />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => onRemove(item.id)}
@@ -1750,7 +1751,7 @@ export default function TransactionsScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#fff' }}
+      style={{ flex: 1, backgroundColor: Colors.white }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
@@ -1771,7 +1772,7 @@ export default function TransactionsScreen() {
               ListHeaderComponent={StickyTxHeader}
               ListEmptyComponent={
                 !loadingTx ? (
-                  <Text style={{ textAlign: "center", marginTop: 40, color: "#666" }}>
+                  <Text style={{ textAlign: "center", marginTop: 40, color: Colors.textSecondary }}>
                     No transactions yet. Tap + to add your first.
                   </Text>
                 ) : null
@@ -1779,17 +1780,17 @@ export default function TransactionsScreen() {
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => openTransactionDetails(item._id)}
-                  style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: "#eee", flexDirection: "row", justifyContent: "space-between" }}
+                  style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: Colors.border, flexDirection: "row", justifyContent: "space-between" }}
                   accessibilityLabel="Open transaction details"
                 >
                   <View style={{ flex: 1, paddingRight: 8, }}>
                     <Text style={{ fontWeight: "700" }}>{item.serviceType || item.serviceName || "Service"}</Text>
-                    <Text style={{ color: "#555", marginTop: 2 }}>
+                    <Text style={{ color: Colors.textSecondary, marginTop: 2 }}>
                       ${Number(item.finalPrice ?? item.originalPrice ?? 0).toFixed(2)} • {item.paymentMethod || "Cash"}
                     </Text>
-                    {!!item.customerName && <Text style={{ color: "#777", marginTop: 2 }}>{item.customerName}</Text>}
+                    {!!item.customerName && <Text style={{ color: Colors.textSecondary, marginTop: 2 }}>{item.customerName}</Text>}
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                  <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
                 </TouchableOpacity>
               )}
               contentContainerStyle={{ paddingBottom: 100, }}
@@ -1820,11 +1821,11 @@ export default function TransactionsScreen() {
                     {/* Add Transaction */}
                     <View style={styles.fabOptionRow}>
                       <TouchableOpacity
-                        style={[styles.smallFab, { backgroundColor: '#0F9B8E' }]}
+                        style={[styles.smallFab, { backgroundColor: Colors.accent }]}
                         onPress={() => { setTxFabOpen(false); openForm(); }}
                         accessibilityLabel="Add Transaction"
                       >
-                        <Ionicons name="document-text-outline" size={22} color="#fff" />
+                        <Ionicons name="document-text-outline" size={22} color={Colors.white} />
                       </TouchableOpacity>
                       <Text style={styles.fabOptionLabel}>Add Transaction</Text>
                     </View>
@@ -1833,14 +1834,14 @@ export default function TransactionsScreen() {
                     {canManage && (
                       <View style={styles.fabOptionRow}>
                         <TouchableOpacity
-                          style={[styles.smallFab, { backgroundColor: '#4CAF50' }]}
+                          style={[styles.smallFab, { backgroundColor: Colors.success }]}
                           onPress={() => {
                             setTxFabOpen(false);
                             setManageOpen(true);
                           }}
                           accessibilityLabel="Manage Services"
                         >
-                          <Ionicons name="construct-outline" size={22} color="#fff" />
+                          <Ionicons name="construct-outline" size={22} color={Colors.white} />
                         </TouchableOpacity>
                         <Text style={styles.fabOptionLabel}>Manage Services</Text>
                       </View>
@@ -1855,7 +1856,7 @@ export default function TransactionsScreen() {
                   accessibilityLabel="Open actions"
                   accessibilityRole="button"
                 >
-                  <Ionicons name={txFabOpen ? 'close' : 'add'} size={28} color="#fff" />
+                  <Ionicons name={txFabOpen ? 'close' : 'add'} size={28} color={Colors.white} />
                 </TouchableOpacity>
               </View>
             </>
@@ -1873,7 +1874,7 @@ export default function TransactionsScreen() {
                 </View>
 
                 {cart.length === 0 ? (
-                  <Text style={{ color: "#666", marginTop: 8 }}>
+                  <Text style={{ color: Colors.textSecondary, marginTop: 8 }}>
                     No items yet. Use the + button to add.
                   </Text>
                 ) : (
@@ -1902,24 +1903,24 @@ export default function TransactionsScreen() {
                     <Text style={styles.totalsLabel}>Discounts</Text>
                     <Text style={styles.totalsValue}>− ${totals.totalDiscount}</Text>
                   </View>
-                  <View style={[styles.totalsRow, { borderTopWidth: 1, borderColor: "#eee", paddingTop: 8, marginTop: 8 }]}>
+                  <View style={[styles.totalsRow, { borderTopWidth: 1, borderColor: Colors.border, paddingTop: 8, marginTop: 8 }]}>
                     <Text style={[styles.totalsLabel, { fontWeight: "800" }]}>Total</Text>
                     <Text style={[styles.totalsValue, { fontWeight: "800" }]}>${totals.grandTotal}</Text>
                   </View>
                 </View>
 
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#0F9B8E" }]} onPress={submitAll}>
-                  <Ionicons name="cash-outline" size={20} color="#fff" />
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: Colors.accent }]} onPress={submitAll}>
+                  <Ionicons name="cash-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Charge ${totals.grandTotal}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#4caf50" }]} onPress={previewAndShareCartReceipt}>
-                  <Ionicons name="share-social-outline" size={20} color="#fff" />
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: Colors.success }]} onPress={previewAndShareCartReceipt}>
+                  <Ionicons name="share-social-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Preview & Share Receipt</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#999" }]} onPress={() => setCart([])}>
-                  <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: Colors.textMuted }]} onPress={() => setCart([])}>
+                  <Ionicons name="close-circle-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Clear Cart</Text>
                 </TouchableOpacity>
               </View>
@@ -1938,11 +1939,11 @@ export default function TransactionsScreen() {
               </View>
 
               <TouchableOpacity
-                style={[styles.checkoutBtnSmall, { backgroundColor: "#0F9B8E", flexDirection: 'row', alignItems: 'center', gap: 8 }]}
+                style={[styles.checkoutBtnSmall, { backgroundColor: Colors.accent, flexDirection: 'row', alignItems: 'center', gap: 8 }]}
                 onPress={() => setCartModalVisible(true)}
                 accessibilityLabel="Open cart"
               >
-                <Ionicons name="cart-outline" size={18} color="#fff" />
+                <Ionicons name="cart-outline" size={18} color={Colors.white} />
                 <Text style={styles.checkoutBtnSmallText}>Cart ({cart.length})</Text>
               </TouchableOpacity>
             </View>
@@ -1977,11 +1978,11 @@ export default function TransactionsScreen() {
               keyboardType={editItem?.discountPercent !== undefined ? 'number-pad' : (Platform.OS === 'ios' ? 'decimal-pad' : 'numeric')}
               inputMode={editItem?.discountPercent !== undefined ? 'numeric' : 'decimal'}
               placeholder={editItem?.discountPercent !== undefined ? 'Discount %' : 'Price $'}
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
             />
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, gap: 8 }}>
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: '#aaa', flex: 1 }]}
+                style={[styles.submitButton, { backgroundColor: Colors.textMuted, flex: 1 }]}
                 onPress={() => setEditItem(null)}
               >
                 <Text style={styles.submitText}>Cancel</Text>
@@ -2041,21 +2042,21 @@ export default function TransactionsScreen() {
               display: cartModalVisible ? 'flex' : 'none',
               position: 'absolute',
               top: 10, left: 0, right: 0, bottom: 0,
-              backgroundColor: '#fff',
+              backgroundColor: Colors.white,
               height: "88%",
             }}
           >
-            <View style={{ paddingTop: Platform.OS === 'ios' ? 44 : 24, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderColor: '#eee', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ paddingTop: Platform.OS === 'ios' ? 44 : 24, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ fontSize: 18, fontWeight: '800' }}>Cart</Text>
               <TouchableOpacity onPress={() => setCartModalVisible(false)} accessibilityLabel="Close cart">
-                <Ionicons name="close" size={26} color="#333" />
+                <Ionicons name="close" size={26} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
             <View style={{ flex: 1, padding: 12 }}>
               {cart.length === 0 ? (
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: "#666" }}>Your cart is empty.</Text>
+                  <Text style={{ color: Colors.textSecondary }}>Your cart is empty.</Text>
                 </View>
               ) : (
                 <FlatList
@@ -2078,33 +2079,33 @@ export default function TransactionsScreen() {
               )}
             </View>
 
-            <View style={{ padding: 12, borderTopWidth: 1, borderColor: '#eee' }} onLayout={e => setCheckoutBarH(e.nativeEvent.layout.height)}>
+            <View style={{ padding: 12, borderTopWidth: 1, borderColor: Colors.border }} onLayout={e => setCheckoutBarH(e.nativeEvent.layout.height)}>
               <View style={[styles.totalsRow, { marginBottom: 12 }]}>
                 <Text style={[styles.totalsLabel, { fontSize: 16 }]}>Total</Text>
                 <Text style={[styles.totalsValue, { fontSize: 18 }]}>${totals.grandTotal}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
-                  style={[styles.checkoutBtn, { backgroundColor: "#999", flex: 1 }]}
+                  style={[styles.checkoutBtn, { backgroundColor: Colors.textMuted, flex: 1 }]}
                   onPress={() => setCart([])}
                   accessibilityLabel="Clear cart"
                 >
-                  <Ionicons name="close-circle-outline" size={20} color="#fff" />
+                  <Ionicons name="close-circle-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Clear</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.checkoutBtn, { backgroundColor: "#4caf50", flex: 1 }]}
+                  style={[styles.checkoutBtn, { backgroundColor: Colors.success, flex: 1 }]}
                   onPress={previewAndShareCartReceipt}
                 >
-                  <Ionicons name="share-social-outline" size={20} color="#fff" />
+                  <Ionicons name="share-social-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Share</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.checkoutBtn, { backgroundColor: "#0F9B8E", flex: 1 }]}
+                  style={[styles.checkoutBtn, { backgroundColor: Colors.accent, flex: 1 }]}
                   onPress={() => { setCartModalVisible(false); submitAll(); }}
                   accessibilityLabel="Charge and submit transactions"
                 >
-                  <Ionicons name="cash-outline" size={20} color="#fff" />
+                  <Ionicons name="cash-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Charge</Text>
                 </TouchableOpacity>
               </View>
@@ -2121,12 +2122,12 @@ export default function TransactionsScreen() {
         presentationStyle={isWide ? "formSheet" as any : "fullScreen"}
       >
         <KeyboardAvoidingView
-          style={{ flex: 1, backgroundColor: "#fff" }}
+          style={{ flex: 1, backgroundColor: Colors.white }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
         >
           {/* Header */}
-          <View style={{ paddingTop: Platform.OS === 'ios' ? 48 : 16, paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, borderColor: "#eee", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ paddingTop: Platform.OS === 'ios' ? 48 : 16, paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, borderColor: Colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontSize: 18, fontWeight: "800" }}>{editingId ? "Edit Item" : "Add New Transaction"}</Text>
             <TouchableOpacity onPress={closeForm}><Ionicons name="close" size={26} /></TouchableOpacity>
           </View>
@@ -2152,7 +2153,7 @@ export default function TransactionsScreen() {
                 searchable
                 searchPlaceholder="Search services..."
                 searchTextInputStyle={{
-                  borderColor: "#ccc",
+                  borderColor: Colors.border,
                   borderWidth: 1,
                   borderRadius: 8,
                   paddingHorizontal: 10,
@@ -2214,7 +2215,7 @@ export default function TransactionsScreen() {
               inputMode="decimal"
               returnKeyType="next"
               placeholder="e.g. 50.00"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               onSubmitEditing={() => discountRef.current?.focus()}
               blurOnSubmit={false}
               onChangeText={(text) => {
@@ -2232,7 +2233,7 @@ export default function TransactionsScreen() {
               inputMode="numeric"
               returnKeyType="next"
               placeholder="e.g. 10"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               onSubmitEditing={() => vehicleRef.current?.focus()}
               blurOnSubmit={false}
               onChangeText={(text) => setDiscountPercent(text.replace(/[^0-9]/g, ""))}
@@ -2274,7 +2275,7 @@ export default function TransactionsScreen() {
                       }}
                     >
                       <View style={{ flex: 1, paddingRight: 8 }}>
-                        <Text style={{ color: "#555", fontWeight: "600" }}>
+                        <Text style={{ color: Colors.textSecondary, fontWeight: "600" }}>
                           {multiSelectedCount > 1
                             ? `Combined Original (${multiSelectedCount} services)`
                             : "Original"}
@@ -2282,7 +2283,7 @@ export default function TransactionsScreen() {
                         {!!preview && (
                           <Text
                             style={{
-                              color: "#777",
+                              color: Colors.textSecondary,
                               fontSize: 11,
                               marginTop: 2,
                             }}
@@ -2304,7 +2305,7 @@ export default function TransactionsScreen() {
                         marginTop: 4,
                       }}
                     >
-                      <Text style={{ color: "#555" }}>Discount ({pct}%)</Text>
+                      <Text style={{ color: Colors.textSecondary }}>Discount ({pct}%)</Text>
                       <Text style={{ fontWeight: "600" }}>
                         − ${discountAmount.toFixed(2)}
                       </Text>
@@ -2349,7 +2350,7 @@ export default function TransactionsScreen() {
                             style={{
                               fontSize: 12,
                               fontWeight: "600",
-                              color: "#0F9B8E",
+                              color: Colors.accent,
                             }}
                           >
                             {showCombinedList
@@ -2363,7 +2364,7 @@ export default function TransactionsScreen() {
                             {selectedServiceObjs.map(s => (
                               <Text
                                 key={s._id}
-                                style={{ fontSize: 12, color: "#555" }}
+                                style={{ fontSize: 12, color: Colors.textSecondary }}
                               >
                                 • {s.name}
                               </Text>
@@ -2414,7 +2415,7 @@ export default function TransactionsScreen() {
                 }
               }}
               placeholder="e.g. Jane Smith"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
             />
             {customerSuggestions.length > 0 && (
               <View style={styles.suggestionBox}>
@@ -2457,7 +2458,7 @@ export default function TransactionsScreen() {
               returnKeyType="next"
               onSubmitEditing={() => notesRef.current?.focus()}
               placeholder="e.g. jane@example.com"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
             />
 
             <Text style={[styles.label, { marginTop: 10 }]}>Vehicle Details</Text>
@@ -2468,7 +2469,7 @@ export default function TransactionsScreen() {
               onFocus={() => setShowVehicleList(!!selectedCustomerId && vehicleSuggestions.length > 0)}
               onChangeText={(t) => { setVehicleDetails(t); setVehicleQuery(t); setShowVehicleList(true); }}
               placeholder="e.g. Red Toyota Corolla"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               autoCapitalize="words"
               returnKeyType="next"
               onSubmitEditing={() => nameRef.current?.focus()}
@@ -2525,13 +2526,13 @@ export default function TransactionsScreen() {
               onChangeText={setNotes}
               multiline
               placeholder="Additional info..."
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
             />
 
             {/* Actions */}
             <View style={{ flexDirection: "row", gap: 8, marginTop: 20 }}>
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: "#0F9B8E", flex: 1 }]}
+                style={[styles.submitButton, { backgroundColor: Colors.accent, flex: 1 }]}
                 onPress={addOrUpdateCartItem}
                 accessibilityLabel={editingId ? "Update item" : "Add to cart"}
               >
@@ -2539,7 +2540,7 @@ export default function TransactionsScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: "#aaa", flex: 1 }]}
+                style={[styles.submitButton, { backgroundColor: Colors.textMuted, flex: 1 }]}
                 onPress={() => clearForm(true)}
                 accessibilityLabel="Clear form"
               >
@@ -2549,12 +2550,12 @@ export default function TransactionsScreen() {
 
             {!isWide && cart.length > 0 && (
               <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#4caf50", flex: 1 }]} onPress={previewAndShareCartReceipt}>
-                  <Ionicons name="share-social-outline" size={20} color="#fff" />
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: Colors.success, flex: 1 }]} onPress={previewAndShareCartReceipt}>
+                  <Ionicons name="share-social-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Preview & Share</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: "#0F9B8E", flex: 1 }]} onPress={submitAll}>
-                  <Ionicons name="cash-outline" size={20} color="#fff" />
+                <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: Colors.accent, flex: 1 }]} onPress={submitAll}>
+                  <Ionicons name="cash-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>Charge ${totals.grandTotal}</Text>
                 </TouchableOpacity>
               </View>
@@ -2603,16 +2604,16 @@ export default function TransactionsScreen() {
                 <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingBottom: 32 }}>
                 {/* Meta */}
                 <View style={{ marginBottom: 12 }}>
-                  {!!detail?.createdAt && <Text style={{ color: "#666" }}>Date: {new Date(detail.createdAt).toLocaleString()}</Text>}
-                  <Text style={{ color: "#666" }}>ID: {detail?._id}</Text>
+                  {!!detail?.createdAt && <Text style={{ color: Colors.textSecondary }}>Date: {new Date(detail.createdAt).toLocaleString()}</Text>}
+                  <Text style={{ color: Colors.textSecondary }}>ID: {detail?._id}</Text>
                 </View>
 
                 {/* Customer */}
                 <View style={styles.card}>
                   <Text style={styles.cardTitle}>Customer</Text>
                   <Text style={styles.cardDetail}>{detail?.customerName || '—'}</Text>
-                  {!!detail?.email && <Text style={{ color: "#555" }}>{detail.email}</Text>}
-                  {!!detail?.vehicleDetails && <Text style={{ color: "#555" }}>{detail.vehicleDetails}</Text>}
+                  {!!detail?.email && <Text style={{ color: Colors.textSecondary }}>{detail.email}</Text>}
+                  {!!detail?.vehicleDetails && <Text style={{ color: Colors.textSecondary }}>{detail.vehicleDetails}</Text>}
                 </View>
 
                 {/* Items */}
@@ -2626,10 +2627,10 @@ export default function TransactionsScreen() {
                         const disc = Number(i.discountAmount || (op * (pct/100)) || 0);
                         const final = Math.max(0, op - disc);
                         return (
-                          <View key={idx} style={{ paddingVertical: 8, borderBottomWidth: idx === detail!.items!.length - 1 ? 0 : 1, borderColor: "#eee" }}>
+                          <View key={idx} style={{ paddingVertical: 8, borderBottomWidth: idx === detail!.items!.length - 1 ? 0 : 1, borderColor: Colors.border }}>
                             <Text style={{ fontWeight: '700' }}>{i.serviceType || i.serviceName || "Service"}{i.specialsName ? ` • ${i.specialsName}` : ''}</Text>
-                            <Text style={{ color: '#555' }}>${op.toFixed(2)} − {pct}% → ${final.toFixed(2)} • {i.paymentMethod || 'Cash'}</Text>
-                            {!!i.notes && <Text style={{ marginTop: 4, color: '#777' }}>Note: {i.notes}</Text>}
+                            <Text style={{ color: Colors.textSecondary }}>${op.toFixed(2)} − {pct}% → ${final.toFixed(2)} • {i.paymentMethod || 'Cash'}</Text>
+                            {!!i.notes && <Text style={{ marginTop: 4, color: Colors.textSecondary }}>Note: {i.notes}</Text>}
                           </View>
                         );
                       })}
@@ -2637,13 +2638,13 @@ export default function TransactionsScreen() {
                   ) : (
                     <View>
                       <Text style={{ fontWeight: '700' }}>{detail?.serviceType || detail?.serviceName || 'Service'}{detail?.specialsName ? ` • ${detail.specialsName}` : ''}</Text>
-                      <Text style={{ color: '#555', marginTop: 4 }}>
+                      <Text style={{ color: Colors.textSecondary, marginTop: 4 }}>
                         ${Number(detail?.originalPrice || 0).toFixed(2)}
                         {' '}− {Number(detail?.discountPercent || 0)}%
                         {' '}→ ${Number(detail?.finalPrice || Math.max(0, Number(detail?.originalPrice || 0) - Number(detail?.discountAmount || 0))).toFixed(2)}
                         {' '}• {detail?.paymentMethod || 'Cash'}
                       </Text>
-                      {!!detail?.notes && <Text style={{ marginTop: 6, color: '#777' }}>Note: {detail.notes}</Text>}
+                      {!!detail?.notes && <Text style={{ marginTop: 6, color: Colors.textSecondary }}>Note: {detail.notes}</Text>}
                     </View>
                   )}
                 </View>
@@ -2662,7 +2663,7 @@ export default function TransactionsScreen() {
                           <Text style={styles.totalsLabel}>Discounts</Text>
                           <Text style={styles.totalsValue}>− ${t.totalDiscount.toFixed(2)}</Text>
                         </View>
-                        <View style={[styles.totalsRow, { borderTopWidth: 1, borderColor: "#eee", paddingTop: 8, marginTop: 8 }]}>
+                        <View style={[styles.totalsRow, { borderTopWidth: 1, borderColor: Colors.border, paddingTop: 8, marginTop: 8 }]}>
                           <Text style={[styles.totalsLabel, { fontWeight: "800" }]}>Total</Text>
                           <Text style={[styles.totalsValue, { fontWeight: "800" }]}>${t.total.toFixed(2)}</Text>
                         </View>
@@ -2673,7 +2674,7 @@ export default function TransactionsScreen() {
 
                 {/* Actions */}
                 <TouchableOpacity
-                  style={[styles.checkoutBtn, { backgroundColor: "#4caf50" }]}
+                  style={[styles.checkoutBtn, { backgroundColor: Colors.success }]}
                   onPress={async () => {
                     if (detail?.receiptPdfBase64) {
                       await shareBase64Pdf(detail.receiptPdfBase64, detail.receiptFileName || `Receipt-${detail._id}.pdf`);
@@ -2682,7 +2683,7 @@ export default function TransactionsScreen() {
                     }
                   }}
                 >
-                  <Ionicons name="share-social-outline" size={20} color="#fff" />
+                  <Ionicons name="share-social-outline" size={20} color={Colors.white} />
                   <Text style={styles.checkoutBtnText}>
                     {detail?.receiptPdfBase64 ? 'Share Stored Receipt PDF' : 'Rebuild & Share Receipt'}
                   </Text>
@@ -2701,12 +2702,12 @@ export default function TransactionsScreen() {
         presentationStyle={isWide ? "formSheet" as any : "fullScreen"}
       >
         <ScrollView
-          style={{ flex: 1, backgroundColor: '#fff' }}
+          style={{ flex: 1, backgroundColor: Colors.white }}
           contentContainerStyle={{ paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}
-          <View style={{ paddingTop: Platform.OS === 'ios' ? 55 : 30, paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, borderColor: "#eee", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ paddingTop: Platform.OS === 'ios' ? 55 : 30, paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: 1, borderColor: Colors.border, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontSize: 18, fontWeight: "800" }}>Manage Services & Specials</Text>
             <TouchableOpacity onPress={() => setManageOpen(false)}><Ionicons name="close" size={26} /></TouchableOpacity>
           </View>
@@ -2721,7 +2722,7 @@ export default function TransactionsScreen() {
               value={newService}
               onChangeText={setNewService}
               placeholder="e.g. Tire Shine"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               returnKeyType="next"
             />
             <Text style={styles.label}>Service Price ($)</Text>
@@ -2732,7 +2733,7 @@ export default function TransactionsScreen() {
               keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'}
               inputMode="decimal"
               placeholder="e.g. 25.00"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               returnKeyType="done"
             />
             <TouchableOpacity style={styles.submitButton} onPress={handleSaveService}>
@@ -2748,7 +2749,7 @@ export default function TransactionsScreen() {
               value={newSpecial}
               onChangeText={setNewSpecial}
               placeholder="e.g. Weekend Discount"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               returnKeyType="next"
             />
             <Text style={styles.label}>Discount Percent (%)</Text>
@@ -2759,7 +2760,7 @@ export default function TransactionsScreen() {
               keyboardType="number-pad"
               inputMode="numeric"
               placeholder="e.g. 10"
-              placeholderTextColor="#777"
+              placeholderTextColor={Colors.textSecondary}
               returnKeyType="done"
             />
             <TouchableOpacity style={styles.submitButton} onPress={handleSaveSpecial}>
@@ -2777,7 +2778,7 @@ export default function TransactionsScreen() {
                 <TextInput
                   style={[styles.input, { minHeight: 48 }]}
                   placeholder="Search Services..."
-                  placeholderTextColor="#777"
+                  placeholderTextColor={Colors.textSecondary}
                   value={serviceSearch}
                   onChangeText={setServiceSearch}
                   returnKeyType="search"
@@ -2817,7 +2818,7 @@ export default function TransactionsScreen() {
                 <TextInput
                   style={[styles.input, { minHeight: 48 }]}
                   placeholder="Search Specials..."
-                  placeholderTextColor="#777"
+                  placeholderTextColor={Colors.textSecondary}
                   value={specialSearch}
                   onChangeText={setSpecialSearch}
                   returnKeyType="search"
@@ -2853,7 +2854,7 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#fff', flexGrow: 1, paddingBottom: 100, 
+  container: { backgroundColor: Colors.white, flexGrow: 1, paddingBottom: 100, 
     ...Platform.select({
       ios: {
         padding: 20,
@@ -2870,22 +2871,22 @@ const styles = StyleSheet.create({
     }), 
   },
   containerWide: {},
-  header: { fontSize: 18, fontWeight: 'bold', color: '#0F9B8E', marginBottom: 16, },
-  logo: { fontSize: 18, fontWeight: 'bold', color: '#0F9B8E', marginTop: 0, },
-  label: { marginTop: 10, marginBottom: 4, color: '#333', fontWeight: '600' },
+  header: { fontSize: 18, fontWeight: 'bold', color: Colors.accent, marginBottom: 16, },
+  logo: { fontSize: 18, fontWeight: 'bold', color: Colors.accent, marginTop: 0, },
+  label: { marginTop: 10, marginBottom: 4, color: Colors.textPrimary, fontWeight: '600' },
 
-  posContainer: { flex: 1, backgroundColor: "#fff" },
+  posContainer: { flex: 1, backgroundColor: Colors.white },
   posContainerWide: { flexDirection: "row", gap: 16, padding: 12 },
   posLeft: { flex: 1, padding: 12 },
   posRight: { width: 420, maxWidth: "100%", padding: 12 },
 
   cartCard: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: "#eee",
-    shadowColor: "#000",
+    borderColor: Colors.border,
+    shadowColor: Colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
@@ -2895,8 +2896,8 @@ const styles = StyleSheet.create({
   },
   cartHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   cartTitle: { fontSize: 18, fontWeight: "800" },
-  badge: { minWidth: 28, height: 28, borderRadius: 14, backgroundColor: "#0F9B8E", alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
-  badgeText: { color: "#fff", fontWeight: "800" },
+  badge: { minWidth: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accent, alignItems: "center", justifyContent: "center", paddingHorizontal: 6 },
+  badgeText: { color: Colors.white, fontWeight: "800" },
   cartRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2907,12 +2908,12 @@ const styles = StyleSheet.create({
     borderColor: "#f0e7ff",
   },
   cartRowTitle: { fontWeight: "700" },
-  cartRowSub: { color: "#555", marginTop: 2, fontSize: 12 },
+  cartRowSub: { color: Colors.textSecondary, marginTop: 2, fontSize: 12 },
   cartRowActions: { flexDirection: "row", alignItems: "center", marginLeft: 8 },
-  iconBtn: { padding: 6, marginLeft: 4, borderRadius: 8, backgroundColor: "#fff", borderWidth: 1, borderColor: "#eee" },
-  totalsBox: { marginTop: 16, borderRadius: 10, padding: 12, backgroundColor: "#fff", borderWidth: 1, borderColor: "#eee" },
+  iconBtn: { padding: 6, marginLeft: 4, borderRadius: 8, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
+  totalsBox: { marginTop: 16, borderRadius: 10, padding: 12, backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border },
   totalsRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
-  totalsLabel: { color: "#444" },
+  totalsLabel: { color: Colors.textPrimary },
   totalsValue: { fontWeight: "700" },
   cartListBox: { maxHeight: 320 },
   cartDetailsToggle: {
@@ -2928,7 +2929,7 @@ const styles = StyleSheet.create({
   cartDetailsToggleText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#0F9B8E",
+    color: Colors.accent,
   },
 
   checkoutBtn: {
@@ -2940,7 +2941,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  checkoutBtnText: { color: "#fff", fontWeight: "800", fontSize: 16 },
+  checkoutBtnText: { color: Colors.white, fontWeight: "800", fontSize: 16 },
 
   checkoutBar: {
     ...Platform.select({
@@ -2950,9 +2951,9 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         padding: 12,
-        backgroundColor: "#fff",
+        backgroundColor: Colors.white,
         borderTopWidth: 1,
-        borderColor: "#eee",
+        borderColor: Colors.border,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -2964,9 +2965,9 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         padding: 12,
-        backgroundColor: "#fff",
+        backgroundColor: Colors.white,
         borderTopWidth: 1,
-        borderColor: "#eee",
+        borderColor: Colors.border,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -2978,9 +2979,9 @@ const styles = StyleSheet.create({
         right: 0,
         bottom: 0,
         padding: 12,
-        backgroundColor: "#fff",
+        backgroundColor: Colors.white,
         borderTopWidth: 1,
-        borderColor: "#eee",
+        borderColor: Colors.border,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -2988,46 +2989,46 @@ const styles = StyleSheet.create({
     }),
   },  
   checkoutBtnSmall: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10 },
-  checkoutBtnSmallText: { color: "#fff", fontWeight: "800" },
+  checkoutBtnSmallText: { color: Colors.white, fontWeight: "800" },
 
   input: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10,
-    backgroundColor: '#fafafa', marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border, borderRadius: 8, padding: 10,
+    backgroundColor: Colors.surfaceAlt, marginBottom: 12,
   },
   dropdown: {
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
-    backgroundColor: '#fafafa', paddingHorizontal: 10, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border, borderRadius: 8,
+    backgroundColor: Colors.surfaceAlt, paddingHorizontal: 10, marginBottom: 12,
   },
-  dropdownContainer: { borderColor: '#ddd', borderWidth: 1, borderRadius: 8, backgroundColor: '#fafafa' },
+  dropdownContainer: { borderColor: Colors.border, borderWidth: 1, borderRadius: 8, backgroundColor: Colors.surfaceAlt },
   submitButton: {
-    backgroundColor: '#0F9B8E', paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 20,
+    backgroundColor: Colors.accent, paddingVertical: 14, borderRadius: 8, alignItems: 'center', marginTop: 20,
   },
-  submitText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  submitText: { color: Colors.white, fontWeight: '600', fontSize: 16 },
 
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   card: {
     backgroundColor: '#f9f9ff', borderRadius: 10, padding: 16, marginBottom: 12,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
+    shadowColor: Colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3,
   },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: '#333' },
-  cardDetail: { fontSize: 14, marginBottom: 12, color: '#555' },
+  cardTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: Colors.textPrimary },
+  cardDetail: { fontSize: 14, marginBottom: 12, color: Colors.textSecondary },
   buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
-  editButton: { backgroundColor: '#4CAF50', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
-  deleteButton: { backgroundColor: '#f44336', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
-  buttonText: { color: '#fff', fontWeight: '600' },
+  editButton: { backgroundColor: Colors.success, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
+  deleteButton: { backgroundColor: Colors.error, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 6 },
+  buttonText: { color: Colors.white, fontWeight: '600' },
   suggestionBox: {
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#ccc', borderRadius: 6,
+    backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border, borderRadius: 6,
     marginTop: -5, paddingHorizontal: 8, paddingVertical: 4, zIndex: 9999, maxHeight: 1000,
   },
-  suggestionItem: { paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: '#eee' },
-  collapsibleHeader: { fontWeight: '700', fontSize: 16, marginTop: 20, marginBottom: 8, color: '#0F9B8E' },
+  suggestionItem: { paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
+  collapsibleHeader: { fontWeight: '700', fontSize: 16, marginTop: 20, marginBottom: 8, color: Colors.accent },
 
   // Sticky header for Transactions FlatList
   stickyHeader: {
     paddingHorizontal: 12,
     paddingTop: 0,
     paddingBottom: 6,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     zIndex: 10,
     ...Platform.select({
       ios: { paddingTop: 20, marginTop: 0, },
@@ -3037,11 +3038,11 @@ const styles = StyleSheet.create({
   },
   stickyHeaderElevated: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
+    borderBottomColor: Colors.border,
     ...Platform.select({
       android: { elevation: 3 },
       ios: {
-        shadowColor: '#000',
+        shadowColor: Colors.black,
         shadowOpacity: 0.06,
         shadowRadius: 6,
         shadowOffset: { width: 0, height: 3 },
@@ -3052,9 +3053,9 @@ const styles = StyleSheet.create({
   stickyHeaderTitle: { 
     fontSize: 30, 
     fontWeight: '800', 
-    color: '#0F9B8E', 
+    color: Colors.accent, 
   },
-  stickyHeaderSubtitle: { color: '#666', marginTop: 4 },
+  stickyHeaderSubtitle: { color: Colors.textSecondary, marginTop: 4 },
 
   // Floating Action Button (Transactions speed-dial)
   fabTx: {
@@ -3064,10 +3065,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#0F9B8E",
+    backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 6,
@@ -3093,7 +3094,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: Colors.black,
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 4,
@@ -3109,13 +3110,13 @@ const styles = StyleSheet.create({
   },
   fabOptionLabel: {
     marginRight: 10,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#eee',
-    color: '#333',
+    borderColor: Colors.border,
+    color: Colors.textPrimary,
     fontWeight: '600',
   },
 
@@ -3127,10 +3128,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#0F9B8E",
+    backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 6,
@@ -3147,7 +3148,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheetContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 8,
@@ -3160,7 +3161,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#ccc',
+    backgroundColor: Colors.border,
     marginBottom: 8,
   },
   

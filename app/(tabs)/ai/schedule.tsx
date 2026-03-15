@@ -1,4 +1,4 @@
-// app/(tabs)/ai/schedule.tsx — Smart Scheduling Assistant
+﻿// app/(tabs)/ai/schedule.tsx — Smart Scheduling Assistant
 //
 // Trigger: Admin picks a date + service duration
 // Sends to Claude: staff availability, existing bookings, available slots
@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,11 +70,11 @@ function RecommendationBanner({
       {/* Recommended time */}
       <View style={b.timeRow}>
         <View style={b.timePill}>
-          <Ionicons name="time-outline" size={18} color="#6a0dad" />
+          <Ionicons name="time-outline" size={18} color={Colors.accent} />
           <Text style={b.timePillText}>{result.recommendedTime}</Text>
         </View>
         <View style={b.staffPill}>
-          <Ionicons name="person-circle-outline" size={18} color="#0077cc" />
+          <Ionicons name="person-circle-outline" size={18} color={Colors.accent} />
           <Text style={b.staffPillText}>{result.staffName}</Text>
         </View>
       </View>
@@ -86,11 +87,11 @@ function RecommendationBanner({
       {/* Actions */}
       <View style={b.actions}>
         <Pressable style={b.dismissBtn} onPress={onDismiss}>
-          <Ionicons name="close" size={16} color="#6b7280" />
+          <Ionicons name="close" size={16} color={Colors.textSecondary} />
           <Text style={b.dismissText}>Dismiss</Text>
         </Pressable>
         <Pressable style={b.acceptBtn} onPress={onAccept}>
-          <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+          <Ionicons name="checkmark-circle-outline" size={16} color={Colors.white} />
           <Text style={b.acceptText}>Use This Slot</Text>
         </Pressable>
       </View>
@@ -105,19 +106,19 @@ function ContextSummary({ ctx }: { ctx: ScheduleContext }) {
     <View style={s.ctxCard}>
       <Text style={s.ctxTitle}>Schedule Context Loaded</Text>
       <View style={s.ctxRow}>
-        <Ionicons name="calendar-outline" size={14} color="#888" />
+        <Ionicons name="calendar-outline" size={14} color={Colors.textMuted} />
         <Text style={s.ctxText}>{ctx.date}</Text>
-        <Ionicons name="time-outline" size={14} color="#888" style={{ marginLeft: 12 }} />
+        <Ionicons name="time-outline" size={14} color={Colors.textMuted} style={{ marginLeft: 12 }} />
         <Text style={s.ctxText}>{ctx.duration} min service</Text>
       </View>
       <View style={s.ctxRow}>
-        <Ionicons name="grid-outline" size={14} color="#888" />
+        <Ionicons name="grid-outline" size={14} color={Colors.textMuted} />
         <Text style={s.ctxText}>
           {ctx.availableSlots.length} free slots · {ctx.existingBookings.length} booked
         </Text>
       </View>
       <View style={s.ctxRow}>
-        <Ionicons name="people-outline" size={14} color="#888" />
+        <Ionicons name="people-outline" size={14} color={Colors.textMuted} />
         <Text style={s.ctxText}>{ctx.workers.length} staff members</Text>
       </View>
     </View>
@@ -201,7 +202,7 @@ export default function SmartScheduleScreen() {
         {/* ── Header ── */}
         <View style={s.header}>
           <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={s.headerTitle}>Smart Scheduling</Text>
           <View style={s.claudeBadge}>
@@ -224,7 +225,7 @@ export default function SmartScheduleScreen() {
             value={date}
             onChangeText={setDate}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor="#aaa"
+            placeholderTextColor={Colors.textMuted}
             keyboardType="numeric"
           />
 
@@ -234,7 +235,7 @@ export default function SmartScheduleScreen() {
             value={duration}
             onChangeText={setDuration}
             placeholder="60"
-            placeholderTextColor="#aaa"
+            placeholderTextColor={Colors.textMuted}
             keyboardType="number-pad"
           />
 
@@ -244,8 +245,8 @@ export default function SmartScheduleScreen() {
             disabled={loadingCtx}
           >
             {loadingCtx
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Ionicons name="download-outline" size={16} color="#fff" />
+              ? <ActivityIndicator color={Colors.white} size="small" />
+              : <Ionicons name="download-outline" size={16} color={Colors.white} />
             }
             <Text style={s.loadBtnText}>
               {loadingCtx ? 'Loading Schedule…' : 'Load Schedule Data'}
@@ -261,7 +262,7 @@ export default function SmartScheduleScreen() {
         {/* No free slots warning */}
         {ctx && ctx.availableSlots.length === 0 && (
           <View style={s.warnCard}>
-            <Ionicons name="alert-circle-outline" size={20} color="#f59e0b" />
+            <Ionicons name="alert-circle-outline" size={20} color={Colors.warning} />
             <Text style={s.warnText}>
               No available slots found for this date and duration. Try a different date.
             </Text>
@@ -277,7 +278,7 @@ export default function SmartScheduleScreen() {
           >
             {loading ? (
               <>
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={Colors.white} size="small" />
                 <Text style={s.askBtnText}>Claude is analysing…</Text>
               </>
             ) : (
@@ -291,7 +292,7 @@ export default function SmartScheduleScreen() {
         {/* ── AI error ── */}
         {error && (
           <View style={s.errCard}>
-            <Ionicons name="alert-circle-outline" size={18} color="#e53935" />
+            <Ionicons name="alert-circle-outline" size={18} color={Colors.error} />
             <Text style={s.errCardText}>{error}</Text>
           </View>
         )}
@@ -307,7 +308,7 @@ export default function SmartScheduleScreen() {
 
         {accepted && (
           <View style={s.acceptedCard}>
-            <Ionicons name="checkmark-circle" size={22} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
             <Text style={s.acceptedText}>Slot accepted! Redirecting to booking…</Text>
           </View>
         )}
@@ -319,7 +320,7 @@ export default function SmartScheduleScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -332,10 +333,10 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: 2,
   },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center' },
-  headerTitle:  { fontSize: 18, fontWeight: '900', color: '#1f1f1f' },
-  claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: '#cc5500', alignItems: 'center', justifyContent: 'center' },
-  claudeInitial:{ color: '#fff', fontWeight: '900', fontSize: 16 },
+  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
+  headerTitle:  { fontSize: 18, fontWeight: '900', color: Colors.textPrimary },
+  claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
+  claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 
   descCard: {
     backgroundColor: '#f3eafd', borderRadius: 14, padding: 14,
@@ -343,29 +344,29 @@ const s = StyleSheet.create({
   descText: { fontSize: 13, color: '#4b1683', lineHeight: 20 },
 
   formCard: {
-    backgroundColor: '#fff', borderRadius: 16, padding: 18, gap: 10, ...SHADOW,
+    backgroundColor: Colors.white, borderRadius: 16, padding: 18, gap: 10, ...SHADOW,
   },
-  formLabel: { fontSize: 13, fontWeight: '700', color: '#374151' },
+  formLabel: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
   input: {
-    backgroundColor: '#f9fafb', borderRadius: 10, borderWidth: 1,
-    borderColor: '#e5e7eb', paddingHorizontal: 14, paddingVertical: 11,
-    fontSize: 15, color: '#1f1f1f',
+    backgroundColor: Colors.surfaceAlt, borderRadius: 10, borderWidth: 1,
+    borderColor: Colors.border, paddingHorizontal: 14, paddingVertical: 11,
+    fontSize: 15, color: Colors.textPrimary,
   },
 
   loadBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#6a0dad', borderRadius: 12, paddingVertical: 13, marginTop: 4,
+    backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 13, marginTop: 4,
   },
-  loadBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  loadBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  errText: { fontSize: 12, color: '#e53935', textAlign: 'center' },
+  errText: { fontSize: 12, color: Colors.error, textAlign: 'center' },
 
   ctxCard: {
-    backgroundColor: '#fff', borderRadius: 14, padding: 16, gap: 8, ...SHADOW,
+    backgroundColor: Colors.white, borderRadius: 14, padding: 16, gap: 8, ...SHADOW,
   },
-  ctxTitle: { fontSize: 13, fontWeight: '700', color: '#1f1f1f', marginBottom: 4 },
+  ctxTitle: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   ctxRow:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  ctxText:  { fontSize: 13, color: '#6b7280' },
+  ctxText:  { fontSize: 13, color: Colors.textSecondary },
 
   warnCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -376,20 +377,20 @@ const s = StyleSheet.create({
 
   askBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    backgroundColor: '#6a0dad', borderRadius: 16, paddingVertical: 16,
+    backgroundColor: Colors.accent, borderRadius: 16, paddingVertical: 16,
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
     }),
   },
-  askBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  askBtnText: { color: Colors.white, fontWeight: '800', fontSize: 16 },
 
   errCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: '#fef2f2', borderRadius: 12, padding: 14,
     borderWidth: 1, borderColor: '#fca5a5',
   },
-  errCardText: { flex: 1, fontSize: 13, color: '#e53935' },
+  errCardText: { flex: 1, fontSize: 13, color: Colors.error },
 
   acceptedCard: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
@@ -403,24 +404,24 @@ const s = StyleSheet.create({
 
 const b = StyleSheet.create({
   banner: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 20,
     gap: 16,
     borderWidth: 2,
     borderColor: '#d8b4fe',
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
     }),
   },
   bannerHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
   },
-  claudeIcon:    { width: 40, height: 40, borderRadius: 20, backgroundColor: '#cc5500', alignItems: 'center', justifyContent: 'center' },
-  claudeInitial: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  bannerLabel:   { fontSize: 14, fontWeight: '800', color: '#1f1f1f' },
-  bannerSub:     { fontSize: 11, color: '#9ca3af', marginTop: 1 },
+  claudeIcon:    { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
+  claudeInitial: { color: Colors.white, fontWeight: '900', fontSize: 18 },
+  bannerLabel:   { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
+  bannerSub:     { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 
   timeRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
   timePill: {
@@ -428,31 +429,31 @@ const b = StyleSheet.create({
     backgroundColor: '#f3eafd', borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 8,
   },
-  timePillText:  { fontSize: 20, fontWeight: '900', color: '#6a0dad', letterSpacing: 1 },
+  timePillText:  { fontSize: 20, fontWeight: '900', color: Colors.accent, letterSpacing: 1 },
   staffPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#e8f4fd', borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 8,
   },
-  staffPillText: { fontSize: 14, fontWeight: '700', color: '#0077cc' },
+  staffPillText: { fontSize: 14, fontWeight: '700', color: Colors.accent },
 
   reasonBox: {
-    backgroundColor: '#fafafa', borderRadius: 12, padding: 12,
-    borderLeftWidth: 3, borderLeftColor: '#6a0dad',
+    backgroundColor: Colors.surfaceAlt, borderRadius: 12, padding: 12,
+    borderLeftWidth: 3, borderLeftColor: Colors.accent,
   },
-  reasonText: { fontSize: 13, color: '#4b5563', lineHeight: 20, fontStyle: 'italic' },
+  reasonText: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, fontStyle: 'italic' },
 
   actions: { flexDirection: 'row', gap: 10 },
   dismissBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb',
+    backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border,
   },
-  dismissText: { fontSize: 14, fontWeight: '600', color: '#6b7280' },
+  dismissText: { fontSize: 14, fontWeight: '600', color: Colors.textSecondary },
   acceptBtn: {
     flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 6, paddingVertical: 12, borderRadius: 12,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
   },
-  acceptText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  acceptText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 });

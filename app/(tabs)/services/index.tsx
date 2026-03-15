@@ -1,4 +1,4 @@
-// app/(tabs)/services/index.tsx  — admin service list
+﻿// app/(tabs)/services/index.tsx  — admin service list
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { router } from 'expo-router';
@@ -17,6 +17,7 @@ import {
 import { Swipeable } from 'react-native-gesture-handler';
 
 import { Service } from '@/types/catalog';
+import { Colors } from '@/constants/Colors';
 
 function RightActions({
   progress,
@@ -31,11 +32,11 @@ function RightActions({
   return (
     <Animated.View style={[a.actions, { transform: [{ translateX: x }] }]}>
       <Pressable style={[a.btn, a.editBtn]} onPress={onEdit}>
-        <Ionicons name="create-outline" size={18} color="#fff" />
+        <Ionicons name="create-outline" size={18} color={Colors.white} />
         <Text style={a.btnText}>Edit</Text>
       </Pressable>
       <Pressable style={[a.btn, a.deleteBtn]} onPress={onDelete}>
-        <Ionicons name="trash-outline" size={18} color="#fff" />
+        <Ionicons name="trash-outline" size={18} color={Colors.white} />
         <Text style={a.btnText}>Delete</Text>
       </Pressable>
     </Animated.View>
@@ -85,8 +86,8 @@ function ServiceRow({
         <Switch
           value={service.active}
           onValueChange={onToggle}
-          trackColor={{ true: '#6a0dad', false: '#ccc' }}
-          thumbColor="#fff"
+          trackColor={{ true: Colors.accent, false: Colors.border }}
+          thumbColor={Colors.white}
         />
       </View>
     </Swipeable>
@@ -130,14 +131,14 @@ export default function ManageServicesScreen() {
   };
 
   if (loading) {
-    return <View style={s.center}><ActivityIndicator color="#6a0dad" size="large" /></View>;
+    return <View style={s.center}><ActivityIndicator color={Colors.accent} size="large" /></View>;
   }
 
   return (
     <View style={s.container}>
       {services.length === 0 ? (
         <View style={s.center}>
-          <Ionicons name="construct-outline" size={48} color="#ccc" />
+          <Ionicons name="construct-outline" size={48} color={Colors.border} />
           <Text style={s.emptyText}>No services yet. Tap + to add one.</Text>
         </View>
       ) : (
@@ -163,7 +164,7 @@ export default function ManageServicesScreen() {
         style={({ pressed }) => [s.fab, pressed && { opacity: 0.85 }]}
         onPress={() => router.push('/(tabs)/services/add')}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color={Colors.white} />
       </Pressable>
     </View>
   );
@@ -172,33 +173,33 @@ export default function ManageServicesScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f7f7fb' },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#aaa', marginTop: 12, fontSize: 14 },
+  emptyText: { color: Colors.textMuted, marginTop: 12, fontSize: 14 },
   sep:       { height: 8 },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 14,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } },
       android: { elevation: 1 },
     }),
   },
   rowInactive: { opacity: 0.55 },
   rowBody:     { flex: 1 },
-  rowName:     { fontSize: 15, fontWeight: '600', color: '#1f1f1f' },
-  textMuted:   { color: '#aaa' },
-  rowMeta:     { fontSize: 12, color: '#888', marginTop: 2 },
+  rowName:     { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  textMuted:   { color: Colors.textMuted },
+  rowMeta:     { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
   fab: {
     position: 'absolute', right: 20, bottom: 28,
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
     }),
   },
@@ -207,7 +208,7 @@ const s = StyleSheet.create({
 const a = StyleSheet.create({
   actions:   { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
   btn:       { width: 60, borderRadius: 12, justifyContent: 'center', alignItems: 'center', paddingVertical: 10, marginLeft: 4 },
-  editBtn:   { backgroundColor: '#4a90e2' },
-  deleteBtn: { backgroundColor: '#e25555' },
-  btnText:   { color: '#fff', fontSize: 11, marginTop: 2 },
+  editBtn:   { backgroundColor: Colors.accent },
+  deleteBtn: { backgroundColor: Colors.error },
+  btnText:   { color: Colors.white, fontSize: 11, marginTop: 2 },
 });

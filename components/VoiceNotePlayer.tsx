@@ -1,16 +1,14 @@
-// components/VoiceNotePlayer.tsx
+﻿// components/VoiceNotePlayer.tsx
 // Plays back a voice note stored as a base64 data URI.
 // Used on the admin job detail view.
 //
 // Props:
 //   note — { _id, data, mimeType, duration, label, takenAt, staffId? }
-//
-// Requires:
-//   npx expo install expo-av
 import { Ionicons } from '@expo/vector-icons';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import React, { useEffect, useRef, useState } from 'react';
 import {
+import { Colors } from '@/constants/Colors';
   ActivityIndicator,
   Platform,
   Pressable,
@@ -50,19 +48,37 @@ export type VoiceNoteMeta = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function VoiceNotePlayer({ note }: { note: VoiceNoteMeta }) {
-  const soundRef   = useRef<Audio.Sound | null>(null);
-  const [playing,   setPlaying]   = useState(false);
-  const [posMs,     setPosMs]     = useState(0);
-  const [durMs,     setDurMs]     = useState((note.duration ?? 0) * 1000);
-  const [loading,   setLoading]   = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const player    = useAudioPlayer(null);
+  const status    = useAudioPlayerStatus(player);
 
-  // Unload sound on unmount
+  const [hasSource,  setHasSource]  = useState(false);
+  const [loading,    setLoading]    = useState(false);
+  const [loadError,  setLoadError]  = useState<string | null>(null);
+
+  // Derived from live status; fall back to note.duration before anything loads
+  const posMs    = status.currentTime * 1000;
+  const durMs    = status.duration > 0 ? status.duration * 1000 : (note.duration ?? 0) * 1000;
+  const playing  = status.playing;
+  const progress = durMs > 0 ? posMs / durMs : 0;
+
+  // Clear loading spinner once the audio is loaded
   useEffect(() => {
-    return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
-    };
-  }, []);
+    if (hasSource && status.isLoaded) {
+      setLoading(false);
+    }
+  }, [hasSource, status.isLoaded]);
+
+  // Seek back to the start after playback naturally finishes
+  const wasPlayingRef = useRef(false);
+  useEffect(() => {
+    if (wasPlayingRef.current && !status.playing && status.isLoaded) {
+      const isAtEnd = status.duration > 0 && status.currentTime >= status.duration - 0.5;
+      if (isAtEnd) {
+        player.seekTo(0);
+      }
+    }
+    wasPlayingRef.current = status.playing;
+  }, [status.playing]);
 
   async function loadAndPlay() {
     if (!note.data) {
@@ -74,66 +90,34 @@ export default function VoiceNotePlayer({ note }: { note: VoiceNoteMeta }) {
     setLoadError(null);
 
     try {
-      // Unload any previous instance
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS:   false,
-        playsInSilentModeIOS: true,
+      await setAudioModeAsync({
+        allowsRecording:   false,
+        playsInSilentMode: true,
       });
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: note.data },
-        { shouldPlay: true },
-        onPlaybackStatusUpdate
-      );
-      soundRef.current = sound;
-    } catch (err: any) {
+      player.replace({ uri: note.data });
+      setHasSource(true);
+      player.play();
+    } catch {
       setLoadError('Could not play recording.');
       setLoading(false);
-    }
-  }
-
-  function onPlaybackStatusUpdate(status: AVPlaybackStatus) {
-    if (!status.isLoaded) return;
-    setLoading(false);
-    setPlaying(status.isPlaying);
-    setPosMs(status.positionMillis ?? 0);
-    if (status.durationMillis) setDurMs(status.durationMillis);
-    if (status.didJustFinish) {
-      setPlaying(false);
-      setPosMs(0);
     }
   }
 
   async function handleToggle() {
     if (loading) return;
 
-    if (!soundRef.current) {
+    if (!hasSource) {
       await loadAndPlay();
       return;
     }
 
-    const status = await soundRef.current.getStatusAsync();
-    if (!status.isLoaded) {
-      await loadAndPlay();
-      return;
-    }
-
-    if (status.isPlaying) {
-      await soundRef.current.pauseAsync();
+    if (status.playing) {
+      player.pause();
     } else {
-      if (status.didJustFinish || status.positionMillis === status.durationMillis) {
-        await soundRef.current.setPositionAsync(0);
-      }
-      await soundRef.current.playAsync();
+      player.play();
     }
   }
-
-  const progress = durMs > 0 ? posMs / durMs : 0;
 
   return (
     <View style={vp.card}>
@@ -144,8 +128,8 @@ export default function VoiceNotePlayer({ note }: { note: VoiceNoteMeta }) {
         disabled={loading}
       >
         {loading
-          ? <ActivityIndicator size="small" color="#fff" />
-          : <Ionicons name={playing ? 'pause' : 'play'} size={18} color="#fff" />
+          ? <ActivityIndicator size="small" color={Colors.white} />
+          : <Ionicons name={playing ? 'pause' : 'play'} size={18} color={Colors.white} />
         }
       </Pressable>
 
@@ -173,7 +157,7 @@ export default function VoiceNotePlayer({ note }: { note: VoiceNoteMeta }) {
       </View>
 
       {/* Mic icon badge */}
-      <Ionicons name="mic-outline" size={15} color="#9ca3af" style={{ marginLeft: 4 }} />
+      <Ionicons name="mic-outline" size={15} color={Colors.textMuted} style={{ marginLeft: 4 }} />
     </View>
   );
 }
@@ -185,30 +169,30 @@ const vp = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#f9fafb',
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 12,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: Colors.border,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
       android: { elevation: 1 },
     }),
   },
   playBtn: {
     width: 38, height: 38, borderRadius: 19,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
   },
   info: { flex: 1, gap: 4 },
 
-  progressTrack: { height: 4, backgroundColor: '#e5e7eb', borderRadius: 99, overflow: 'hidden' },
-  progressFill:  { height: '100%', backgroundColor: '#6a0dad', borderRadius: 99 },
+  progressTrack: { height: 4, backgroundColor: Colors.border, borderRadius: 99, overflow: 'hidden' },
+  progressFill:  { height: '100%', backgroundColor: Colors.accent, borderRadius: 99 },
 
   timeRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  timeText: { fontSize: 11, color: '#9ca3af', fontVariant: ['tabular-nums'] as any },
-  dateText: { fontSize: 10, color: '#d1d5db' },
+  timeText: { fontSize: 11, color: Colors.textMuted, fontVariant: ['tabular-nums'] as any },
+  dateText: { fontSize: 10, color: Colors.border },
 
-  label:   { fontSize: 11, color: '#6b7280', fontStyle: 'italic' },
-  errText: { fontSize: 11, color: '#e53935' },
+  label:   { fontSize: 11, color: Colors.textSecondary, fontStyle: 'italic' },
+  errText: { fontSize: 11, color: Colors.error },
 });

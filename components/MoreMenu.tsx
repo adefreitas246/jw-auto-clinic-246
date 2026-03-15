@@ -1,4 +1,4 @@
-// components/MoreMenu.tsx
+﻿// components/MoreMenu.tsx
 // Reusable bottom-sheet overflow menu for role-based tab navigation.
 // Used by CustomTabBar (staff/admin) and CustomerTabBar.
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 export type MoreMenuItem = {
   label:    string;
@@ -65,14 +66,14 @@ export function MoreMenu({ visible, onClose, items }: Props) {
                   <Ionicons
                     name={item.icon as any}
                     size={20}
-                    color={item.danger ? '#e53935' : '#6a0dad'}
+                    color={item.danger ? Colors.error : Colors.accent}
                   />
                 </View>
                 <Text style={[mm.rowLabel, item.danger && mm.rowLabelDanger]}>
                   {item.label}
                 </Text>
                 {!item.danger && (
-                  <Ionicons name="chevron-forward" size={16} color="#d1d5db" />
+                  <Ionicons name="chevron-forward" size={16} color={Colors.border} />
                 )}
               </TouchableOpacity>
             ))}
@@ -90,30 +91,30 @@ const mm = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
     paddingHorizontal: 16,
     maxHeight: '82%',
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 24, shadowOffset: { width: 0, height: -4 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.2, shadowRadius: 24, shadowOffset: { width: 0, height: -4 } },
       android: { elevation: 24 },
     }),
   },
   handle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: Colors.border,
     alignSelf: 'center', marginBottom: 16,
   },
   title: {
-    fontSize: 18, fontWeight: '800', color: '#1f2937',
+    fontSize: 18, fontWeight: '800', color: Colors.textPrimary,
     marginBottom: 12, paddingHorizontal: 4,
   },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
     paddingVertical: 13, paddingHorizontal: 4,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#f3f4f6',
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.surfaceAlt,
   },
   iconWrap: {
     width: 38, height: 38, borderRadius: 10,
@@ -121,6 +122,6 @@ const mm = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   iconWrapDanger: { backgroundColor: '#fef2f2' },
-  rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: '#1f2937' },
-  rowLabelDanger: { color: '#e53935' },
+  rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  rowLabelDanger: { color: Colors.error },
 });

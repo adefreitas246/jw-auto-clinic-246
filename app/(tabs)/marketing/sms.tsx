@@ -1,4 +1,4 @@
-// app/(tabs)/marketing/sms.tsx
+﻿// app/(tabs)/marketing/sms.tsx
 // SMS Reminder Automation — scaffold with setup guide and manual trigger.
 // TODO: Wire up a real SMS provider (Twilio / local gateway) in:
 //       backend/routes/marketing.js  →  POST /sms/send-reminders
@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +18,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 type SetupStep = {
   num:   string;
@@ -94,7 +96,7 @@ export default function SmsScreen() {
     <SafeAreaView style={sm.safe}>
       <View style={sm.header}>
         <Pressable onPress={() => router.back()} style={sm.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f2937" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={sm.headerTitle}>SMS Reminders</Text>
         <View style={{ width: 36 }} />
@@ -104,7 +106,7 @@ export default function SmsScreen() {
         {/* Status banner */}
         <View style={sm.statusBanner}>
           <View style={sm.statusIcon}>
-            <Ionicons name="construct-outline" size={22} color="#f59e0b" />
+            <Ionicons name="construct-outline" size={22} color={Colors.warning} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={sm.statusTitle}>Setup Required</Text>
@@ -126,7 +128,7 @@ export default function SmsScreen() {
             ].map((step, i, arr) => (
               <View key={step.label} style={sm.flowStep}>
                 <View style={sm.flowDot}>
-                  <Ionicons name={step.icon as any} size={16} color="#6a0dad" />
+                  <Ionicons name={step.icon as any} size={16} color={Colors.accent} />
                 </View>
                 <Text style={sm.flowLabel}>{step.label}</Text>
                 {i < arr.length - 1 && <View style={sm.flowLine} />}
@@ -141,7 +143,7 @@ export default function SmsScreen() {
           <View key={step.num} style={sm.stepCard}>
             <View style={[sm.stepNum, step.done && sm.stepNumDone]}>
               {step.done
-                ? <Ionicons name="checkmark" size={14} color="#fff" />
+                ? <Ionicons name="checkmark" size={14} color={Colors.white} />
                 : <Text style={sm.stepNumText}>{step.num}</Text>
               }
             </View>
@@ -196,7 +198,7 @@ export default function SmsScreen() {
 
         {/* Code reference */}
         <View style={sm.codeRef}>
-          <Ionicons name="code-slash-outline" size={16} color="#6a0dad" />
+          <Ionicons name="code-slash-outline" size={16} color={Colors.accent} />
           <Text style={sm.codeRefText}>
             Edit: <Text style={sm.codeRefFile}>backend/routes/marketing.js</Text>
             {'\n'}Function: <Text style={sm.codeRefFile}>POST /sms/send-reminders</Text>
@@ -212,7 +214,7 @@ export default function SmsScreen() {
           </Text>
           {lastResult && (
             <View style={sm.lastResult}>
-              <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+              <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
               <Text style={sm.lastResultText}>
                 Last run: {lastResult.sent} sent / {lastResult.total} total
               </Text>
@@ -224,9 +226,9 @@ export default function SmsScreen() {
             disabled={triggering}
           >
             {triggering
-              ? <ActivityIndicator color="#fff" size="small" />
+              ? <ActivityIndicator color={Colors.white} size="small" />
               : <>
-                  <Ionicons name="play-circle-outline" size={18} color="#fff" />
+                  <Ionicons name="play-circle-outline" size={18} color={Colors.white} />
                   <Text style={sm.triggerBtnText}>Run Reminder Job Now</Text>
                 </>
             }
@@ -240,52 +242,52 @@ export default function SmsScreen() {
 }
 
 const sm = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#fafafa' },
+  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll: { padding: 16 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1f2937' },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
   statusBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fffbeb', borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: '#fde68a' },
-  statusIcon:   { width: 40, height: 40, borderRadius: 20, backgroundColor: '#fef3c7', justifyContent: 'center', alignItems: 'center' },
+  statusIcon:   { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.warningBg, justifyContent: 'center', alignItems: 'center' },
   statusTitle:  { fontSize: 14, fontWeight: '700', color: '#92400e', marginBottom: 2 },
   statusDesc:   { fontSize: 12, color: '#78350f', lineHeight: 18 },
 
   section:      { marginBottom: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1f2937', marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
 
-  flowCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb' },
+  flowCard: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: Colors.border },
   flowStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flowDot:  { width: 32, height: 32, borderRadius: 16, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center' },
-  flowLabel: { fontSize: 13, color: '#374151', fontWeight: '500', flex: 1 },
-  flowLine: { position: 'absolute', left: 15, top: 32, width: 2, height: 20, backgroundColor: '#e5e7eb' },
+  flowLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', flex: 1 },
+  flowLine: { position: 'absolute', left: 15, top: 32, width: 2, height: 20, backgroundColor: Colors.border },
 
-  stepCard:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#e5e7eb' },
-  stepNum:     { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: '#6a0dad' },
-  stepNumDone: { backgroundColor: '#10b981', borderColor: '#10b981' },
-  stepNumText: { fontSize: 13, fontWeight: '800', color: '#6a0dad' },
-  stepTitle:   { fontSize: 13, fontWeight: '700', color: '#1f2937', marginBottom: 4 },
-  stepDesc:    { fontSize: 12, color: '#6b7280', lineHeight: 18 },
+  stepCard:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
+  stepNum:     { width: 28, height: 28, borderRadius: 14, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.accent },
+  stepNumDone: { backgroundColor: Colors.success, borderColor: Colors.success },
+  stepNumText: { fontSize: 13, fontWeight: '800', color: Colors.accent },
+  stepTitle:   { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  stepDesc:    { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
 
-  providerCard: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#e5e7eb' },
+  providerCard: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: Colors.border },
   providerRow:  { flexDirection: 'row', gap: 12 },
-  providerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f9fafb', justifyContent: 'center', alignItems: 'center' },
+  providerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   providerEmoji: { fontSize: 20 },
-  providerName: { fontSize: 14, fontWeight: '700', color: '#1f2937', marginBottom: 4 },
-  providerDesc: { fontSize: 12, color: '#6b7280', lineHeight: 18, marginBottom: 8 },
+  providerName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  providerDesc: { fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginBottom: 8 },
   envChips:    { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   envChip:     { backgroundColor: '#1e1b4b', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 4 },
   envChipText: { fontSize: 9, fontWeight: '700', color: '#e0e7ff', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
 
   codeRef:     { flexDirection: 'row', gap: 10, backgroundColor: '#f5f0ff', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#d8b4fe', alignItems: 'flex-start' },
-  codeRefText: { fontSize: 12, color: '#374151', lineHeight: 20, flex: 1 },
-  codeRefFile: { fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', color: '#6a0dad', fontWeight: '700' },
+  codeRefText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 20, flex: 1 },
+  codeRefFile: { fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', color: Colors.accent, fontWeight: '700' },
 
-  triggerCard:  { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 10 },
-  triggerDesc:  { fontSize: 13, color: '#6b7280', marginBottom: 12 },
+  triggerCard:  { backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: Colors.border, marginBottom: 10 },
+  triggerDesc:  { fontSize: 13, color: Colors.textSecondary, marginBottom: 12 },
   lastResult:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
-  lastResultText: { fontSize: 12, color: '#10b981', fontWeight: '600' },
-  triggerBtn:   { backgroundColor: '#6a0dad', borderRadius: 10, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  triggerBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  lastResultText: { fontSize: 12, color: Colors.success, fontWeight: '600' },
+  triggerBtn:   { backgroundColor: Colors.accent, borderRadius: 10, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  triggerBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
 });

@@ -1,10 +1,9 @@
-// app/(customer)/book/confirmed.tsx — Step 7: Booking confirmed
+﻿// app/(customer)/book/confirmed.tsx — Step 7: Booking confirmed
 // • Requests push permission if not already granted
 // • Saves Expo push token to backend
 // • Schedules a local reminder 1 hour before the appointment
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -14,16 +13,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 
 import { useBooking } from '@/context/BookingContext';
+import { Colors } from '@/constants/Colors';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge:  false,
-  }),
-});
+// expo-notifications ships DevicePushTokenAutoRegistration.fx.js which runs as
+// a module-load side-effect and crashes in Expo Go SDK 53+.
+// Using a lazy require() defers module evaluation until the function is called,
+// so the side-effect never fires when running inside Expo Go.
+const IS_EXPO_GO = Constants.appOwnership === 'expo';
+
+function getNotifications() {
+  return require('expo-notifications') as typeof import('expo-notifications');
+}
+
+if (!IS_EXPO_GO) {
+  getNotifications().setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge:  false,
+    }),
+  });
+}
 
 async function registerPushToken(): Promise<string | null> {
+  if (IS_EXPO_GO) return null;
+  const Notifications = getNotifications();
   try {
     const { status: existing } = await Notifications.getPermissionsAsync();
     let finalStatus = existing;
@@ -40,7 +54,7 @@ async function registerPushToken(): Promise<string | null> {
         name:       'Booking Reminders',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#6a0dad',
+        lightColor: Colors.accent,
       });
     }
 
@@ -58,6 +72,8 @@ async function registerPushToken(): Promise<string | null> {
 }
 
 async function scheduleReminder(appointmentDate: string, appointmentTime: string, serviceLabel: string): Promise<void> {
+  if (IS_EXPO_GO) return;
+  const Notifications = getNotifications();
   try {
     const [y, m, d]    = appointmentDate.split('-').map(Number);
     const [hr, min]    = appointmentTime.split(':').map(Number);
@@ -125,7 +141,7 @@ export default function BookConfirmedStep() {
 
         {/* Animated check */}
         <Animated.View style={[s.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
-          <Ionicons name="checkmark" size={56} color="#fff" />
+          <Ionicons name="checkmark" size={56} color={Colors.white} />
         </Animated.View>
 
         <Text style={s.title}>Booking Confirmed!</Text>
@@ -141,9 +157,9 @@ export default function BookConfirmedStep() {
           <Ionicons
             name={notifStatus === 'granted' ? 'notifications' : 'notifications-off-outline'}
             size={16}
-            color={notifStatus === 'granted' ? '#0a8f3c' : '#888'}
+            color={notifStatus === 'granted' ? Colors.success : Colors.textMuted}
           />
-          <Text style={[s.notifText, notifStatus === 'granted' ? { color: '#0a8f3c' } : { color: '#888' }]}>
+          <Text style={[s.notifText, notifStatus === 'granted' ? { color: Colors.success } : { color: Colors.textMuted }]}>
             {notifStatus === 'pending'  && 'Setting up reminder…'}
             {notifStatus === 'granted'  && 'Reminder set for 1 hour before'}
             {notifStatus === 'denied'   && 'Enable notifications to get reminders'}
@@ -158,7 +174,7 @@ export default function BookConfirmedStep() {
             { icon: 'cash',     label: `${draft.paymentMethod.toUpperCase()} · $${draft.totalPrice.toFixed(2)}` },
           ].map(row => (
             <View key={row.label} style={s.summaryRow}>
-              <Ionicons name={row.icon as any} size={16} color="#6a0dad" />
+              <Ionicons name={row.icon as any} size={16} color={Colors.accent} />
               <Text style={s.summaryText}>{row.label}</Text>
             </View>
           ))}
@@ -177,8 +193,8 @@ export default function BookConfirmedStep() {
                   });
                 }}
               >
-                <Ionicons name="qr-code-outline" size={16} color="#fff" />
-                <Text style={[s.trackBtnText, { color: '#fff' }]}>View Check-In QR</Text>
+                <Ionicons name="qr-code-outline" size={16} color={Colors.white} />
+                <Text style={[s.trackBtnText, { color: Colors.white }]}>View Check-In QR</Text>
               </Pressable>
               <Pressable
                 style={s.trackBtn}
@@ -190,7 +206,7 @@ export default function BookConfirmedStep() {
                   });
                 }}
               >
-                <Ionicons name="navigate" size={16} color="#6a0dad" />
+                <Ionicons name="navigate" size={16} color={Colors.accent} />
                 <Text style={s.trackBtnText}>Track My Job</Text>
               </Pressable>
             </>
@@ -205,41 +221,41 @@ export default function BookConfirmedStep() {
 }
 
 const s = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: '#fff' },
+  safe:      { flex: 1, backgroundColor: Colors.white },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
 
   checkCircle: {
     width: 100, height: 100, borderRadius: 50,
-    backgroundColor: '#6a0dad', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
     marginBottom: 24,
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
       android: { elevation: 10 },
     }),
   },
-  title:     { fontSize: 26, fontWeight: '800', color: '#1f1f1f', marginBottom: 10 },
-  sub:       { fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22, marginBottom: 18 },
-  highlight: { color: '#6a0dad', fontWeight: '700' },
+  title:     { fontSize: 26, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
+  sub:       { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 18 },
+  highlight: { color: Colors.accent, fontWeight: '700' },
 
   notifBadge:   { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8, marginBottom: 24 },
   notifGranted: { backgroundColor: '#e8f5e9' },
-  notifDenied:  { backgroundColor: '#f5f5f5' },
+  notifDenied:  { backgroundColor: Colors.background },
   notifText:    { fontSize: 13, fontWeight: '600' },
 
   summaryCard: { width: '100%', backgroundColor: '#f7f7fb', borderRadius: 14, padding: 16, gap: 10, marginBottom: 28 },
   summaryRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  summaryText: { fontSize: 14, color: '#333' },
+  summaryText: { fontSize: 14, color: Colors.textPrimary },
 
   actions: { width: '100%', gap: 10 },
   qrBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: '#6a0dad', borderRadius: 14, paddingVertical: 14,
+    backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 14,
   },
   trackBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#f3eafd', borderRadius: 14, paddingVertical: 14,
   },
-  trackBtnText: { color: '#6a0dad', fontSize: 15, fontWeight: '700' },
-  doneBtn: { backgroundColor: '#6a0dad', borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
-  doneBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
+  doneBtn: { backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
+  doneBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

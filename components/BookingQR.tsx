@@ -1,4 +1,4 @@
-// components/BookingQR.tsx
+﻿// components/BookingQR.tsx
 // Fetches the signed QR payload from the server and renders it with
 // react-native-qrcode-svg. Always sits on a white background so the
 // QR scanner has guaranteed contrast regardless of device dark-mode.
@@ -13,6 +13,7 @@ import {
   StyleSheet, Text, View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ export function BookingQR({ bookingId, size = 220 }: Props) {
   if (loading) {
     return (
       <View style={[q.shell, { width: size + 32, height: size + 32 }]}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -64,7 +65,7 @@ export function BookingQR({ bookingId, size = 220 }: Props) {
   if (error || !qrData) {
     return (
       <View style={[q.shell, { width: size + 32, height: size + 32 }]}>
-        <Ionicons name="alert-circle-outline" size={32} color="#c62828" />
+        <Ionicons name="alert-circle-outline" size={32} color={Colors.error} />
         <Text style={q.errorText}>{error ?? 'QR unavailable'}</Text>
         <Pressable style={q.retryBtn} onPress={fetchQr}>
           <Text style={q.retryText}>Retry</Text>
@@ -81,7 +82,7 @@ export function BookingQR({ bookingId, size = 220 }: Props) {
         <QRCode
           value={qrData.payload}
           size={size}
-          color="#1f1f1f"
+          color={Colors.textPrimary}
           backgroundColor="white"
           quietZone={6}
         />
@@ -96,13 +97,13 @@ export function BookingQR({ bookingId, size = 220 }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
+  ios:     { shadowColor: Colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
   android: { elevation: 6 },
 }) ?? {};
 
 const q = StyleSheet.create({
   shell: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: Colors.background,
     borderRadius:    20,
     alignItems:      'center',
     justifyContent:  'center',
@@ -112,7 +113,7 @@ const q = StyleSheet.create({
   qrWrap: { alignItems: 'center', gap: 12 },
 
   qrPad: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius:    20,
     alignItems:      'center',
     justifyContent:  'center',
@@ -121,7 +122,7 @@ const q = StyleSheet.create({
 
   hint: {
     fontSize:   13,
-    color:      '#888',
+    color:      Colors.textMuted,
     textAlign:  'center',
     lineHeight: 18,
     maxWidth:   260,
@@ -129,7 +130,7 @@ const q = StyleSheet.create({
 
   errorText: {
     fontSize:   13,
-    color:      '#c62828',
+    color:      Colors.error,
     textAlign:  'center',
     paddingHorizontal: 16,
   },
@@ -141,5 +142,5 @@ const q = StyleSheet.create({
     backgroundColor:  '#f3eafd',
     borderRadius:    999,
   },
-  retryText: { fontSize: 13, fontWeight: '700', color: '#6a0dad' },
+  retryText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
 });

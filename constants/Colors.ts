@@ -1,56 +1,93 @@
 // constants/Colors.ts
-// Central design token file for Wash Hub.
-// Import Colors from here instead of using hardcoded hex values.
+// Single source of truth for all colors in Wash Hub.
+// Import { Colors } from '@/constants/Colors' — never hardcode hex values.
 
 export const Colors = {
-  // ── Brand ────────────────────────────────────────────────────────────────
-  primary:       '#1A1A2E',  // deep navy — trust, professionalism
-  secondary:     '#16213E',  // darker navy — depth
-  accent:        '#0F9B8E',  // teal — clean, water, freshness
-  accentLight:   '#14C6B5',  // light teal — highlights, CTAs
+  // ── Core Brand ────────────────────────────────────────────────────────────
+  primary:        '#1E2A3A',   // deep slate — main brand color
+  primaryDark:    '#141E2B',   // darker slate — headers, nav bars
+  primaryLight:   '#2E3E52',   // lighter slate — hover states
 
-  // ── Surfaces ─────────────────────────────────────────────────────────────
-  background:    '#F5F7FA',  // off-white — clean, airy
-  surface:       '#FFFFFF',  // pure white — cards, modals
+  // ── Accent (water/clean feel) ─────────────────────────────────────────────
+  accent:         '#2196F3',   // clean blue — CTAs, links, active states
+  accentLight:    '#64B5F6',   // light blue — highlights
+  accentMuted:    '#BBDEFB',   // very light blue — backgrounds, badges
+
+  // ── Neutrals ─────────────────────────────────────────────────────────────
+  background:     '#F4F6F8',   // light gray — app background
+  surface:        '#FFFFFF',   // white — cards, modals, inputs
+  surfaceAlt:     '#F9FAFB',   // near white — alternate rows, sections
 
   // ── Text ─────────────────────────────────────────────────────────────────
-  textPrimary:   '#1A1A2E',  // dark navy — main text
-  textSecondary: '#6B7280',  // medium gray — subtitles, labels
-  textMuted:     '#9CA3AF',  // light gray — placeholders, hints
+  textPrimary:    '#1E2A3A',   // dark slate — headings, main text
+  textSecondary:  '#64748B',   // medium slate — subtitles, labels
+  textMuted:      '#94A3B8',   // light slate — placeholders, hints
+  textInverse:    '#FFFFFF',   // white text — on dark backgrounds
 
-  // ── UI ───────────────────────────────────────────────────────────────────
-  border:        '#E5E7EB',  // very light gray — dividers, inputs
-  overlay:       'rgba(26,26,46,0.6)',
+  // ── Borders & Dividers ───────────────────────────────────────────────────
+  border:         '#E2E8F0',   // soft gray — input borders, dividers
+  borderFocus:    '#2196F3',   // blue — focused input border
 
-  // ── Semantic ─────────────────────────────────────────────────────────────
-  success:       '#10B981',  // green — completed jobs, confirmations
-  warning:       '#F59E0B',  // amber — pending, caution
-  error:         '#EF4444',  // red — errors, cancellations
+  // ── Status Colors ─────────────────────────────────────────────────────────
+  success:        '#22C55E',   // green — completed, confirmed
+  successBg:      '#DCFCE7',   // light green background
+  warning:        '#F59E0B',   // amber — pending, in progress
+  warningBg:      '#FEF3C7',   // light amber background
+  error:          '#EF4444',   // red — errors, cancelled, delete
+  errorBg:        '#FEE2E2',   // light red background
+  info:           '#3B82F6',   // blue — info badges
+  infoBg:         '#DBEAFE',   // light blue background
 
-  // ── Utilities ────────────────────────────────────────────────────────────
-  white:         '#FFFFFF',
-  black:         '#000000',
+  // ── Utility ───────────────────────────────────────────────────────────────
+  overlay:        'rgba(0,0,0,0.5)',
+  shadow:         '#000000',
+  transparent:    'transparent',
+  white:          '#FFFFFF',
+  black:          '#000000',
 } as const;
 
-// ── Status badge helpers ──────────────────────────────────────────────────
+// ── Semantic aliases — use these in components for clarity ────────────────
 
-export const StatusColors = {
-  completed:  { bg: '#D1FAE5', text: '#10B981' },
-  active:     { bg: '#D1FAE5', text: '#10B981' },
-  pending:    { bg: '#FEF3C7', text: '#F59E0B' },
-  warning:    { bg: '#FEF3C7', text: '#F59E0B' },
-  cancelled:  { bg: '#FEE2E2', text: '#EF4444' },
-  error:      { bg: '#FEE2E2', text: '#EF4444' },
-  inProgress: { bg: '#DBEAFE', text: '#3B82F6' },
+export const Theme = {
+  // Backgrounds
+  screenBg:           Colors.background,
+  cardBg:             Colors.surface,
+  inputBg:            Colors.surface,
+  headerBg:           Colors.primary,
+  tabBarBg:           Colors.surface,
+  modalBg:            Colors.surface,
+
+  // Text
+  headingText:        Colors.textPrimary,
+  bodyText:           Colors.textSecondary,
+  mutedText:          Colors.textMuted,
+  inverseText:        Colors.textInverse,
+  linkText:           Colors.accent,
+  labelText:          Colors.textSecondary,
+
+  // Buttons
+  btnPrimary:         Colors.accent,
+  btnPrimaryText:     Colors.white,
+  btnSecondary:       Colors.surface,
+  btnSecondaryText:   Colors.accent,
+  btnDanger:          Colors.error,
+  btnDangerText:      Colors.white,
+  btnDisabled:        Colors.border,
+  btnDisabledText:    Colors.textMuted,
+
+  // Inputs
+  inputBorder:        Colors.border,
+  inputBorderFocus:   Colors.borderFocus,
+  inputText:          Colors.textPrimary,
+  inputPlaceholder:   Colors.textMuted,
+
+  // Cards
+  cardBorder:         Colors.border,
+  cardShadow:         Colors.shadow,
+
+  // Navigation
+  activeTab:          Colors.accent,
+  inactiveTab:        Colors.textMuted,
 } as const;
 
-// ── Accent-tinted icon backgrounds ───────────────────────────────────────
-
-export const IconBg = {
-  teal:   '#E6FAF8',
-  navy:   '#E8EAF2',
-  green:  '#ECFDF5',
-  amber:  '#FFFBEB',
-  blue:   '#EFF6FF',
-  red:    '#FEF2F2',
-} as const;
+export default Colors;

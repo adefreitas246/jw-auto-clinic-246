@@ -1,4 +1,4 @@
-// app/(customer)/book/index.tsx — Step 1: Select Vehicle
+﻿// app/(customer)/book/index.tsx — Step 1: Select Vehicle
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -9,6 +9,7 @@ import { BookingProgressBar } from './_layout';
 import { useBooking } from '@/context/BookingContext';
 import VehiclePicker from '@/components/VehiclePicker';
 import { Vehicle } from '@/types/vehicle';
+import { Colors } from '@/constants/Colors';
 
 export default function BookVehicleStep() {
   const { draft, setVehicle } = useBooking();
@@ -34,7 +35,7 @@ export default function BookVehicleStep() {
           {draft.vehicle ? (
             <>
               <View style={s.vehicleIcon}>
-                <Ionicons name="car" size={28} color="#6a0dad" />
+                <Ionicons name="car" size={28} color={Colors.accent} />
               </View>
               <View style={s.vehicleBody}>
                 <Text style={s.vehicleName}>
@@ -46,25 +47,25 @@ export default function BookVehicleStep() {
                     .join('  ·  ')}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color={Colors.border} />
             </>
           ) : (
             <>
-              <View style={[s.vehicleIcon, { backgroundColor: '#f0f0f0' }]}>
-                <Ionicons name="car-outline" size={28} color="#aaa" />
+              <View style={[s.vehicleIcon, { backgroundColor: Colors.background }]}>
+                <Ionicons name="car-outline" size={28} color={Colors.textMuted} />
               </View>
               <View style={s.vehicleBody}>
                 <Text style={s.vehicleNameMuted}>No vehicle selected</Text>
                 <Text style={s.vehicleMeta}>Tap to choose a saved vehicle</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#ccc" />
+              <Ionicons name="chevron-forward" size={18} color={Colors.border} />
             </>
           )}
         </Pressable>
 
         {draft.vehicle && (
           <Pressable style={s.clearBtn} onPress={() => setVehicle(null)}>
-            <Ionicons name="close-circle-outline" size={16} color="#888" />
+            <Ionicons name="close-circle-outline" size={16} color={Colors.textMuted} />
             <Text style={s.clearText}>Continue without a vehicle</Text>
           </Pressable>
         )}
@@ -84,7 +85,7 @@ export default function BookVehicleStep() {
           disabled={!canContinue}
         >
           <Text style={s.nextBtnText}>Next — Choose Services</Text>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
+          <Ionicons name="arrow-forward" size={18} color={Colors.white} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -94,24 +95,24 @@ export default function BookVehicleStep() {
 const s = StyleSheet.create({
   safe:      { flex: 1, backgroundColor: '#f7f7fb' },
   container: { flex: 1, padding: 20 },
-  heading:   { fontSize: 20, fontWeight: '800', color: '#1f1f1f', marginBottom: 6 },
-  sub:       { fontSize: 14, color: '#888', marginBottom: 24 },
+  heading:   { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
+  sub:       { fontSize: 14, color: Colors.textMuted, marginBottom: 24 },
 
   vehicleCard: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 2, borderColor: '#6a0dad',
-    ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }),
+    backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 2, borderColor: Colors.accent,
+    ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }),
   },
   vehicleIcon: { width: 50, height: 50, borderRadius: 14, backgroundColor: '#f3eafd', alignItems: 'center', justifyContent: 'center', marginRight: 14 },
   vehicleBody: { flex: 1 },
-  vehicleName: { fontSize: 15, fontWeight: '700', color: '#1f1f1f' },
-  vehicleNameMuted: { fontSize: 15, fontWeight: '600', color: '#aaa' },
-  vehicleMeta:     { fontSize: 12, color: '#888', marginTop: 2 },
+  vehicleName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  vehicleNameMuted: { fontSize: 15, fontWeight: '600', color: Colors.textMuted },
+  vehicleMeta:     { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   clearBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 14, alignSelf: 'flex-start' },
-  clearText: { fontSize: 13, color: '#888' },
+  clearText: { fontSize: 13, color: Colors.textMuted },
 
   footer:          { padding: 20, paddingBottom: 32 },
-  nextBtn:         { backgroundColor: '#6a0dad', borderRadius: 14, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  nextBtn:         { backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   nextBtnDisabled: { opacity: 0.5 },
-  nextBtnText:     { color: '#fff', fontSize: 16, fontWeight: '700' },
+  nextBtnText:     { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

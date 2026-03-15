@@ -1,4 +1,4 @@
-// settings.tsx
+﻿// settings.tsx
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,6 +28,7 @@ import {
   useWindowDimensions
 } from "react-native";
 import * as Animatable from "react-native-animatable";
+import { Colors } from '@/constants/Colors';
 
 type ChangeItem = { type: "New" | "Improved" | "Fixed" | string; text: string };
 type WhatsNewItem = { version: string; date?: string; changes: ChangeItem[] };
@@ -122,11 +123,11 @@ const UI = {
   colors: {
     // Light only
     bg:          "#F5F7FA",  // Wash Hub background
-    card:        "#FFFFFF",
+    card:        Colors.white,
     border:      "#E5E7EB",
-    text:        "#1A1A2E",
+    text:        Colors.primary,
     sub:         "#6B7280",
-    primary:     "#0F9B8E",  // teal accent
+    primary:     Colors.accent,  // teal accent
     glyphBorder: "#E6FAF8",
   },
 };
@@ -748,7 +749,7 @@ export default function SettingsScreen() {
               // web-only shadow polish
               isWeb && headerElevated
                 ? {
-                    shadowColor: "#000",
+                    shadowColor: Colors.black,
                     shadowOpacity: 0.05,
                     shadowRadius: 6,
                     shadowOffset: { width: 0, height: 4 },
@@ -793,7 +794,7 @@ export default function SettingsScreen() {
               <Ionicons
                 name={editSheetVisible ? "close-outline" : "create-outline"}
                 size={18}
-                color="#fff"
+                color={Colors.white}
               />
               <Text style={styles.editPillText}>
                 {editSheetVisible ? "Close" : "Edit"}
@@ -943,7 +944,7 @@ export default function SettingsScreen() {
                 value={name}
                 onChangeText={setName}
                 placeholder="Your full name"
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.textMuted}
               />
 
               <Text style={styles.sheetLabel}>Phone</Text>
@@ -953,7 +954,7 @@ export default function SettingsScreen() {
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
                 placeholder="(246) 123-4567"
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.textMuted}
               />
 
               <Text style={styles.sheetLabel}>Email</Text>
@@ -964,7 +965,7 @@ export default function SettingsScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholder="your@example.com"
-                placeholderTextColor="#888"
+                placeholderTextColor={Colors.textMuted}
               />
 
               <View style={{ height: 16 }} />
@@ -986,7 +987,7 @@ export default function SettingsScreen() {
                 ]}
                 onPress={() => setEditSheetVisible(false)}
               >
-                <Text style={[styles.saveText, { color: "#111" }]}>
+                <Text style={[styles.saveText, { color: Colors.black }]}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -1008,7 +1009,7 @@ export default function SettingsScreen() {
             <TextInput
               style={styles.reportInput}
               placeholder="Subject"
-              placeholderTextColor="#888"
+              placeholderTextColor={Colors.textMuted}
               value={reportSubject}
               onChangeText={setReportSubject}
             />
@@ -1018,7 +1019,7 @@ export default function SettingsScreen() {
                 { height: 120, textAlignVertical: "top" },
               ]}
               placeholder="Describe the issue (steps to reproduce, expected vs actual, screenshots if any)"
-              placeholderTextColor="#888"
+              placeholderTextColor={Colors.textMuted}
               value={reportMessage}
               onChangeText={setReportMessage}
               multiline
@@ -1175,7 +1176,7 @@ const styles = StyleSheet.create({
   largeTitle: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#0F9B8E",
+    color: Colors.accent,
     letterSpacing: 0.4,
   },
 
@@ -1204,14 +1205,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  editPillText: { color: "#fff", fontWeight: "700", marginLeft: 6 },
+  editPillText: { color: Colors.white, fontWeight: "700", marginLeft: 6 },
 
   // Section container
   sectionWrap: { marginTop: 14 },
   sectionHeader: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0F9B8E",
+    color: Colors.accent,
     marginBottom: 8,
   },
   sectionBody: {
@@ -1302,7 +1303,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     textAlign: "center",
-    color: "#fff",
+    color: Colors.white,
     fontWeight: "800",
     fontSize: 16,
   },
@@ -1317,7 +1318,7 @@ const styles = StyleSheet.create({
 
   // Support form
   reportInput: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: UI.colors.border,
     borderRadius: 10,
@@ -1333,7 +1334,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   submitReportText: {
-    color: "#fff",
+    color: Colors.white,
     textAlign: "center",
     fontWeight: "800",
     fontSize: 15,
@@ -1342,7 +1343,7 @@ const styles = StyleSheet.create({
   // What's New
   whatsNewCard: {
     marginTop: 12,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderWidth: 1,
     borderColor: UI.colors.border,
     borderRadius: UI.radius,
@@ -1360,7 +1361,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   whatsNewError: { marginTop: 6, color: "#b45309", fontSize: 12 },
-  whatsNewLoading: { marginTop: 8, color: "#666", fontSize: 13 },
+  whatsNewLoading: { marginTop: 8, color: Colors.textSecondary, fontSize: 13 },
   whatsNewItem: {
     marginTop: 10,
     paddingTop: 10,
@@ -1386,7 +1387,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   badgeText: { fontSize: 11, fontWeight: "800", color: UI.colors.text },
-  whatsNewChangeText: { flex: 1, fontSize: 14, color: "#333" },
+  whatsNewChangeText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
 
   // Social footer (unused / commented in JSX for now)
   socialWrap: {
@@ -1445,7 +1446,7 @@ const styles = StyleSheet.create({
     maxHeight: "82%",
     alignSelf: "center",
     maxWidth: isWeb ? UI.maxWidth : undefined,
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: -4 },

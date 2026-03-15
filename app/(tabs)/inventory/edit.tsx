@@ -1,4 +1,4 @@
-// app/(tabs)/inventory/edit.tsx — Add / Edit Inventory Item
+﻿// app/(tabs)/inventory/edit.tsx — Add / Edit Inventory Item
 //
 // Route params:
 //   ?id=<objectId>   → edit mode (fetches existing item)
@@ -22,6 +22,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
+import { Colors } from '@/constants/Colors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -68,7 +69,7 @@ function PickerModal({
               onPress={() => { onSelect(opt); onClose(); }}
             >
               <Text style={[pm.optionText, value === opt && pm.optionTextActive]}>{opt}</Text>
-              {value === opt && <Ionicons name="checkmark" size={18} color="#6a0dad" />}
+              {value === opt && <Ionicons name="checkmark" size={18} color={Colors.accent} />}
             </Pressable>
           ))}
         </ScrollView>
@@ -80,18 +81,18 @@ function PickerModal({
 const pm = StyleSheet.create({
   overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   sheet: {
-    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20,
     paddingHorizontal: 20, paddingBottom: 32, maxHeight: '60%',
   },
   handle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: '#e5e7eb',
+    width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border,
     alignSelf: 'center', marginVertical: 12,
   },
-  title:           { fontSize: 16, fontWeight: '700', color: '#1f1f1f', marginBottom: 12 },
-  option:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  title:           { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
+  option:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
   optionActive:    { backgroundColor: '#f3eafd', borderRadius: 8, paddingHorizontal: 8 },
-  optionText:      { fontSize: 15, color: '#374151' },
-  optionTextActive:{ color: '#6a0dad', fontWeight: '700' },
+  optionText:      { fontSize: 15, color: Colors.textSecondary },
+  optionTextActive:{ color: Colors.accent, fontWeight: '700' },
 });
 
 // ── Field ─────────────────────────────────────────────────────────────────────
@@ -104,7 +105,7 @@ function Field({
   return (
     <View style={f.wrap}>
       <Text style={f.label}>
-        {label}{required && <Text style={{ color: '#ef4444' }}> *</Text>}
+        {label}{required && <Text style={{ color: Colors.error }}> *</Text>}
       </Text>
       {children}
       {error ? <Text style={f.error}>{error}</Text> : null}
@@ -114,8 +115,8 @@ function Field({
 
 const f = StyleSheet.create({
   wrap:  { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  error: { fontSize: 11, color: '#ef4444', marginTop: 4 },
+  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
+  error: { fontSize: 11, color: Colors.error, marginTop: 4 },
 });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -223,7 +224,7 @@ export default function EditInventoryScreen() {
   if (loading) {
     return (
       <SafeAreaView style={es.safe} edges={['top']}>
-        <View style={es.centered}><ActivityIndicator size="large" color="#6a0dad" /></View>
+        <View style={es.centered}><ActivityIndicator size="large" color={Colors.accent} /></View>
       </SafeAreaView>
     );
   }
@@ -237,7 +238,7 @@ export default function EditInventoryScreen() {
         {/* Header */}
         <View style={es.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} style={es.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={es.title}>{isEdit ? 'Edit Item' : 'Add Item'}</Text>
           <Pressable
@@ -246,7 +247,7 @@ export default function EditInventoryScreen() {
             disabled={saving}
           >
             {saving
-              ? <ActivityIndicator size="small" color="#fff" />
+              ? <ActivityIndicator size="small" color={Colors.white} />
               : <Text style={es.saveBtnText}>Save</Text>
             }
           </Pressable>
@@ -264,7 +265,7 @@ export default function EditInventoryScreen() {
               value={name}
               onChangeText={v => { setName(v); setErrors(p => ({ ...p, name: '' })); }}
               placeholder="e.g. Car Shampoo Concentrate"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={Colors.textMuted}
               returnKeyType="next"
               autoCapitalize="words"
             />
@@ -274,7 +275,7 @@ export default function EditInventoryScreen() {
           <Field label="Category">
             <Pressable style={es.pickerBtn} onPress={() => setCatPicker(true)}>
               <Text style={es.pickerText}>{category}</Text>
-              <Ionicons name="chevron-down" size={16} color="#aaa" />
+              <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
             </Pressable>
           </Field>
 
@@ -289,7 +290,7 @@ export default function EditInventoryScreen() {
                   keyboardType="decimal-pad"
                   returnKeyType="next"
                   placeholder="0"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={Colors.textMuted}
                 />
               </Field>
             </View>
@@ -297,7 +298,7 @@ export default function EditInventoryScreen() {
               <Field label="Unit" required error={errors.unit}>
                 <Pressable style={es.pickerBtn} onPress={() => setUnitPicker(true)}>
                   <Text style={es.pickerText}>{unit}</Text>
-                  <Ionicons name="chevron-down" size={16} color="#aaa" />
+                  <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
                 </Pressable>
               </Field>
             </View>
@@ -312,7 +313,7 @@ export default function EditInventoryScreen() {
               keyboardType="decimal-pad"
               returnKeyType="next"
               placeholder="10"
-              placeholderTextColor="#aaa"
+              placeholderTextColor={Colors.textMuted}
             />
             <Text style={es.hint}>
               Push notification fires when stock drops below this value.
@@ -326,7 +327,7 @@ export default function EditInventoryScreen() {
               value={notes}
               onChangeText={setNotes}
               placeholder="Supplier, storage location, etc."
-              placeholderTextColor="#aaa"
+              placeholderTextColor={Colors.textMuted}
               multiline
               numberOfLines={3}
               returnKeyType="done"
@@ -351,7 +352,7 @@ export default function EditInventoryScreen() {
                   if (s <= 0)      level = 'out';
                   else if (s < t)  level = 'low';
                   else if (s < t * 1.75) level = 'warn';
-                  const colors = { ok: '#10b981', warn: '#f59e0b', low: '#ef4444', out: '#7c3aed' };
+                  const colors = { ok: Colors.success, warn: Colors.warning, low: Colors.error, out: '#7c3aed' };
                   return (
                     <View key={label} style={es.previewPill}>
                       <View style={[es.dot, { backgroundColor: colors[level] }]} />
@@ -391,7 +392,7 @@ export default function EditInventoryScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -404,39 +405,39 @@ const es = StyleSheet.create({
     paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
   },
   backBtn: { padding: 4 },
-  title:   { fontSize: 18, fontWeight: '800', color: '#1f1f1f', flex: 1, marginLeft: 12 },
+  title:   { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, flex: 1, marginLeft: 12 },
   saveBtn: {
-    backgroundColor: '#6a0dad', borderRadius: 10,
+    backgroundColor: Colors.accent, borderRadius: 10,
     paddingHorizontal: 18, paddingVertical: 9,
     minWidth: 60, alignItems: 'center',
   },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  saveBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 
   scroll: { paddingHorizontal: 20, paddingTop: 8 },
 
   input: {
-    borderWidth: 1.5, borderColor: '#e5e7eb', borderRadius: 10,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 11,
-    fontSize: 15, color: '#1f1f1f', backgroundColor: '#fff',
+    fontSize: 15, color: Colors.textPrimary, backgroundColor: Colors.white,
     ...SHADOW,
   },
-  inputError: { borderColor: '#ef4444' },
+  inputError: { borderColor: Colors.error },
   inputMulti: { height: 80, textAlignVertical: 'top', paddingTop: 11 },
 
   pickerBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1.5, borderColor: '#e5e7eb', borderRadius: 10,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 12,
-    backgroundColor: '#fff', ...SHADOW,
+    backgroundColor: Colors.white, ...SHADOW,
   },
-  pickerText: { fontSize: 15, color: '#1f1f1f' },
+  pickerText: { fontSize: 15, color: Colors.textPrimary },
 
-  hint: { fontSize: 11, color: '#9ca3af', marginTop: 4 },
+  hint: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
 
-  preview: { backgroundColor: '#fff', borderRadius: 12, padding: 14, ...SHADOW },
-  previewLabel: { fontSize: 12, fontWeight: '600', color: '#888', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
+  preview: { backgroundColor: Colors.white, borderRadius: 12, padding: 14, ...SHADOW },
+  previewLabel: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
   previewRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  previewPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#f9fafb', borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
+  previewPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.surfaceAlt, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
   dot:         { width: 8, height: 8, borderRadius: 4 },
-  previewPillText: { fontSize: 11, color: '#555' },
+  previewPillText: { fontSize: 11, color: Colors.textSecondary },
 });

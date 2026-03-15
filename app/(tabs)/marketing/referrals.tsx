@@ -1,4 +1,4 @@
-// app/(tabs)/marketing/referrals.tsx
+﻿// app/(tabs)/marketing/referrals.tsx
 // Admin referral program stats — all referral codes, usage, points awarded.
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 type ReferralStat = {
   _id:               string;
@@ -52,7 +53,7 @@ export default function ReferralStatsScreen() {
     <SafeAreaView style={rf.safe}>
       <View style={rf.header}>
         <Pressable onPress={() => router.back()} style={rf.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f2937" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={rf.headerTitle}>Referral Program</Text>
         <View style={{ width: 36 }} />
@@ -62,7 +63,7 @@ export default function ReferralStatsScreen() {
         data={refs}
         keyExtractor={r => r._id}
         contentContainerStyle={rf.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#6a0dad" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
         ListHeaderComponent={
           <>
             {/* Stats strip */}
@@ -89,7 +90,7 @@ export default function ReferralStatsScreen() {
         ListEmptyComponent={
           !loading ? (
             <View style={rf.emptyWrap}>
-              <Ionicons name="people-circle-outline" size={48} color="#d1d5db" />
+              <Ionicons name="people-circle-outline" size={48} color={Colors.border} />
               <Text style={rf.emptyTitle}>No referrals yet</Text>
               <Text style={rf.empty}>Referral codes are created automatically when customers visit their referral screen.</Text>
             </View>
@@ -111,11 +112,11 @@ export default function ReferralStatsScreen() {
             </View>
             <View style={rf.statsRow2}>
               <View style={rf.miniStat}>
-                <Ionicons name="people-outline" size={12} color="#6b7280" />
+                <Ionicons name="people-outline" size={12} color={Colors.textSecondary} />
                 <Text style={rf.miniStatText}>{r.totalReferrals} referred</Text>
               </View>
               <View style={rf.miniStat}>
-                <Ionicons name="gift-outline" size={12} color="#f59e0b" />
+                <Ionicons name="gift-outline" size={12} color={Colors.warning} />
                 <Text style={rf.miniStatText}>{r.totalPointsEarned} pts earned</Text>
               </View>
             </View>
@@ -127,33 +128,33 @@ export default function ReferralStatsScreen() {
 }
 
 const rf = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#fafafa' },
+  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll: { padding: 16 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1f2937' },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  statsRow: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#e5e7eb' },
+  statsRow: { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
   statBox:  { flex: 1, alignItems: 'center' },
-  statVal:  { fontSize: 22, fontWeight: '800', color: '#1f2937' },
-  statLbl:  { fontSize: 11, color: '#9ca3af', marginTop: 2 },
-  statDiv:  { width: 1, backgroundColor: '#f3f4f6' },
+  statVal:  { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  statLbl:  { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  statDiv:  { width: 1, backgroundColor: Colors.surfaceAlt },
 
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1f2937', marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
   emptyWrap:    { alignItems: 'center', paddingTop: 40, gap: 8 },
-  emptyTitle:   { fontSize: 16, fontWeight: '600', color: '#6b7280' },
-  empty:        { color: '#9ca3af', textAlign: 'center', fontSize: 13, lineHeight: 19 },
+  emptyTitle:   { fontSize: 16, fontWeight: '600', color: Colors.textSecondary },
+  empty:        { color: Colors.textMuted, textAlign: 'center', fontSize: 13, lineHeight: 19 },
 
-  card:     { backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#e5e7eb' },
+  card:     { backgroundColor: Colors.white, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: Colors.border },
   cardTop:  { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   avatar:   { width: 38, height: 38, borderRadius: 19, backgroundColor: '#f5f0ff', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 15, fontWeight: '700', color: '#6a0dad' },
-  name:     { fontSize: 14, fontWeight: '700', color: '#1f2937' },
-  email:    { fontSize: 11, color: '#9ca3af' },
+  avatarText: { fontSize: 15, fontWeight: '700', color: Colors.accent },
+  name:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  email:    { fontSize: 11, color: Colors.textMuted },
   codeBadge: { backgroundColor: '#f5f0ff', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8 },
-  codeText:  { fontSize: 13, fontWeight: '800', color: '#6a0dad', letterSpacing: 1 },
+  codeText:  { fontSize: 13, fontWeight: '800', color: Colors.accent, letterSpacing: 1 },
   statsRow2: { flexDirection: 'row', gap: 16 },
   miniStat:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  miniStatText: { fontSize: 12, color: '#6b7280' },
+  miniStatText: { fontSize: 12, color: Colors.textSecondary },
 });

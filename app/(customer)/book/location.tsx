@@ -1,4 +1,4 @@
-// app/(customer)/book/location.tsx — Step 4: Fixed bay or mobile address
+﻿// app/(customer)/book/location.tsx — Step 4: Fixed bay or mobile address
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as Location from 'expo-location';
@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookingProgressBar } from './_layout';
 import { useBooking } from '@/context/BookingContext';
 import { BusinessLocation } from '@/types/booking';
+import { Colors } from '@/constants/Colors';
 
 export default function BookLocationStep() {
   const { draft, setLocation } = useBooking();
@@ -87,7 +88,7 @@ export default function BookLocationStep() {
               <Ionicons
                 name={type === 'bay' ? 'business' : 'car'}
                 size={20}
-                color={locType === type ? '#6a0dad' : '#888'}
+                color={locType === type ? Colors.accent : Colors.textMuted}
               />
               <Text style={[s.typeBtnText, locType === type && s.typeBtnTextActive]}>
                 {type === 'bay' ? 'Visit our bay' : 'Mobile service'}
@@ -101,7 +102,7 @@ export default function BookLocationStep() {
           <View>
             <Text style={s.sectionTitle}>Choose a location</Text>
             {loadingBays ? (
-              <ActivityIndicator color="#6a0dad" />
+              <ActivityIndicator color={Colors.accent} />
             ) : bays.length === 0 ? (
               <Text style={s.hint}>No bay locations configured for this business.</Text>
             ) : (
@@ -114,14 +115,14 @@ export default function BookLocationStep() {
                     onPress={() => setSelBay(bay)}
                   >
                     <View style={s.bayIconWrap}>
-                      <Ionicons name="location" size={22} color={isSel ? '#6a0dad' : '#888'} />
+                      <Ionicons name="location" size={22} color={isSel ? Colors.accent : Colors.textMuted} />
                     </View>
                     <View style={s.bayBody}>
-                      <Text style={[s.bayLabel, isSel && { color: '#6a0dad' }]}>{bay.label}</Text>
+                      <Text style={[s.bayLabel, isSel && { color: Colors.accent }]}>{bay.label}</Text>
                       {!!bay.address && <Text style={s.bayAddr}>{bay.address}</Text>}
                       {!!bay.phone  && <Text style={s.bayAddr}>{bay.phone}</Text>}
                     </View>
-                    {isSel && <Ionicons name="checkmark-circle" size={20} color="#6a0dad" />}
+                    {isSel && <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />}
                   </Pressable>
                 );
               })
@@ -149,8 +150,8 @@ export default function BookLocationStep() {
                 disabled={locating}
               >
                 {locating
-                  ? <ActivityIndicator color="#6a0dad" size="small" />
-                  : <Ionicons name="navigate" size={16} color="#6a0dad" />
+                  ? <ActivityIndicator color={Colors.accent} size="small" />
+                  : <Ionicons name="navigate" size={16} color={Colors.accent} />
                 }
                 <Text style={s.gpsBtnText}>Use my current location</Text>
               </Pressable>
@@ -166,7 +167,7 @@ export default function BookLocationStep() {
           disabled={!canContinue}
         >
           <Text style={s.nextBtnText}>Next — Review</Text>
-          <Ionicons name="arrow-forward" size={17} color="#fff" />
+          <Ionicons name="arrow-forward" size={17} color={Colors.white} />
         </Pressable>
       </View>
     </SafeAreaView>
@@ -178,27 +179,27 @@ const s = StyleSheet.create({
   content: { padding: 20, paddingBottom: 120 },
 
   typeRow:         { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  typeBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#fff', borderRadius: 12, paddingVertical: 14, borderWidth: 2, borderColor: '#eee' },
-  typeBtnActive:   { borderColor: '#6a0dad', backgroundColor: '#fdf8ff' },
-  typeBtnText:     { fontSize: 13, fontWeight: '600', color: '#888' },
-  typeBtnTextActive: { color: '#6a0dad' },
+  typeBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.white, borderRadius: 12, paddingVertical: 14, borderWidth: 2, borderColor: Colors.border },
+  typeBtnActive:   { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
+  typeBtnText:     { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
+  typeBtnTextActive: { color: Colors.accent },
 
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: '#1f1f1f', marginBottom: 12 },
-  hint:         { fontSize: 13, color: '#aaa', fontStyle: 'italic' },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
+  hint:         { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic' },
 
-  bayCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent', ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 1 } }) },
-  bayCardSel: { borderColor: '#6a0dad', backgroundColor: '#fdf8ff' },
+  bayCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent', ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 1 } }) },
+  bayCardSel: { borderColor: Colors.accent, backgroundColor: '#fdf8ff' },
   bayIconWrap:{ width: 40, height: 40, borderRadius: 10, backgroundColor: '#f3eafd', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   bayBody:    { flex: 1 },
-  bayLabel:   { fontSize: 14, fontWeight: '700', color: '#1f1f1f' },
-  bayAddr:    { fontSize: 12, color: '#888', marginTop: 1 },
+  bayLabel:   { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  bayAddr:    { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
 
-  addressInput: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e0e0e0', padding: 12, fontSize: 14, minHeight: 72, marginBottom: 12, color: '#1f1f1f' },
+  addressInput: { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 12, fontSize: 14, minHeight: 72, marginBottom: 12, color: Colors.textPrimary },
   gpsBtn:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#f3eafd', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
-  gpsBtnText: { fontSize: 13, color: '#6a0dad', fontWeight: '600' },
+  gpsBtnText: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
-  footer:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', padding: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20, borderTopWidth: 1, borderTopColor: '#f0f0f0', ...Platform.select({ ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
-  nextBtn:    { backgroundColor: '#6a0dad', borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  footer:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.white, padding: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20, borderTopWidth: 1, borderTopColor: Colors.background, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
+  nextBtn:    { backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   nextBtnOff: { opacity: 0.4 },
-  nextBtnText:{ color: '#fff', fontWeight: '700', fontSize: 15 },
+  nextBtnText:{ color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

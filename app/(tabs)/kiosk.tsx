@@ -1,4 +1,4 @@
-// app/(tabs)/kiosk.tsx — Tablet Kiosk Mode
+﻿// app/(tabs)/kiosk.tsx — Tablet Kiosk Mode
 // Full-screen, always-on camera that auto-processes QR codes with zero
 // staff interaction. Designed for a tablet mounted at the wash bay entrance.
 //
@@ -24,6 +24,7 @@ import {
   StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,7 +79,7 @@ function KioskToast({ toast }: { toast: ToastState }) {
       <Ionicons
         name={toast.success ? 'checkmark-circle' : 'alert-circle'}
         size={40}
-        color="#fff"
+        color={Colors.white}
       />
       <Text style={ki.toastTitle}>{toast.message}</Text>
       {toast.detail && <Text style={ki.toastDetail}>{toast.detail}</Text>}
@@ -122,8 +123,8 @@ function ExitButton({ onExit }: { onExit: () => void }) {
       <View style={ki.exitProgress}>
         <Animated.View style={[ki.exitProgressFill, { width: arcWidth }]} />
       </View>
-      <Ionicons name="log-out-outline" size={18} color={holding ? '#c62828' : 'rgba(255,255,255,0.7)'} />
-      <Text style={[ki.exitText, holding && { color: '#c62828' }]}>
+      <Ionicons name="log-out-outline" size={18} color={holding ? Colors.error : 'rgba(255,255,255,0.7)'} />
+      <Text style={[ki.exitText, holding && { color: Colors.error }]}>
         {holding ? 'Exiting…' : 'Hold to Exit'}
       </Text>
     </Pressable>
@@ -235,7 +236,7 @@ export default function KioskScreen() {
   if (!permission) {
     return (
       <View style={ki.centered}>
-        <ActivityIndicator color="#6a0dad" size="large" />
+        <ActivityIndicator color={Colors.accent} size="large" />
       </View>
     );
   }
@@ -243,9 +244,9 @@ export default function KioskScreen() {
   // ── Permission denied ─────────────────────────────────────────────────────
   if (!permission.granted) {
     return (
-      <View style={[ki.centered, { backgroundColor: '#111' }]}>
-        <Ionicons name="camera-outline" size={56} color="#555" />
-        <Text style={[ki.hint, { color: '#fff', fontSize: 18, marginBottom: 24 }]}>
+      <View style={[ki.centered, { backgroundColor: Colors.black }]}>
+        <Ionicons name="camera-outline" size={56} color={Colors.textSecondary} />
+        <Text style={[ki.hint, { color: Colors.white, fontSize: 18, marginBottom: 24 }]}>
           Camera permission required for kiosk mode
         </Text>
         <Pressable style={ki.permBtn} onPress={requestPermission}>
@@ -256,7 +257,7 @@ export default function KioskScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <View style={{ flex: 1, backgroundColor: Colors.black }}>
       {/* ── Full-screen camera ── */}
       <CameraView
         style={StyleSheet.absoluteFill}
@@ -297,7 +298,7 @@ export default function KioskScreen() {
             {/* Processing spinner inside frame */}
             {processing && (
               <View style={ki.frameSpinner}>
-                <ActivityIndicator color="#fff" size="large" />
+                <ActivityIndicator color={Colors.white} size="large" />
               </View>
             )}
           </View>
@@ -334,11 +335,11 @@ const ki = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12,
   },
   brandRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandDot:  { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4caf50' },
-  brandText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  brandDot:  { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
+  brandText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
   statsRow:  { alignItems: 'center' },
   statLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
-  statValue: { color: '#fff', fontSize: 22, fontWeight: '900' },
+  statValue: { color: Colors.white, fontSize: 22, fontWeight: '900' },
 
   // Exit button
   exitBtn: {
@@ -347,7 +348,7 @@ const ki = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 8, overflow: 'hidden',
   },
   exitProgress:     { position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, backgroundColor: 'transparent' },
-  exitProgressFill: { height: '100%', backgroundColor: '#c62828' },
+  exitProgressFill: { height: '100%', backgroundColor: Colors.error },
   exitText:         { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
 
   // Viewfinder frame
@@ -356,7 +357,7 @@ const ki = StyleSheet.create({
     width: 280, height: 280,
     position: 'relative', alignItems: 'center', justifyContent: 'center',
   },
-  corner:   { position: 'absolute', width: 36, height: 36, borderColor: '#fff', borderWidth: 4 },
+  corner:   { position: 'absolute', width: 36, height: 36, borderColor: Colors.white, borderWidth: 4 },
   cTL: { top: 0, left: 0,  borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius:    10 },
   cTR: { top: 0, right: 0, borderLeftWidth:  0, borderBottomWidth: 0, borderTopRightRadius:   10 },
   cBL: { bottom: 0, left: 0,  borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius:  10 },
@@ -381,16 +382,16 @@ const ki = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     padding: 24, gap: 10,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
       android: { elevation: 20 },
     }),
   },
-  toastSuccess: { backgroundColor: '#2e7d32' },
-  toastError:   { backgroundColor: '#c62828' },
-  toastTitle:   { fontSize: 22, fontWeight: '900', color: '#fff', textAlign: 'center' },
+  toastSuccess: { backgroundColor: Colors.success },
+  toastError:   { backgroundColor: Colors.error },
+  toastTitle:   { fontSize: 22, fontWeight: '900', color: Colors.white, textAlign: 'center' },
   toastDetail:  { fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'center', lineHeight: 20 },
 
   // Permission
-  permBtn:     { backgroundColor: '#6a0dad', borderRadius: 14, paddingHorizontal: 32, paddingVertical: 14 },
-  permBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  permBtn:     { backgroundColor: Colors.accent, borderRadius: 14, paddingHorizontal: 32, paddingVertical: 14 },
+  permBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
 });

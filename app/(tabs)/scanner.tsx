@@ -1,4 +1,4 @@
-// app/(tabs)/scanner.tsx — Staff QR Check-In Scanner
+﻿// app/(tabs)/scanner.tsx — Staff QR Check-In Scanner
 // Opens a camera viewfinder that continuously scans for booking QR codes.
 // On a successful scan it calls POST /api/bookings/:id/checkin, verifies the
 // HMAC token, advances the job to "in_progress", and fires a push notification
@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/context/AuthContext';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -88,7 +89,7 @@ function ResultOverlay({
       {/* ── Processing spinner ── */}
       {state === 'processing' && (
         <View style={ov.processingRow}>
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={Colors.white} size="small" />
           <Text style={ov.processingText}>Verifying QR…</Text>
         </View>
       )}
@@ -98,7 +99,7 @@ function ResultOverlay({
         <>
           <View style={ov.iconRow}>
             <View style={[ov.iconCircle, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Ionicons name="close" size={32} color="#fff" />
+              <Ionicons name="close" size={32} color={Colors.white} />
             </View>
           </View>
           <Text style={ov.errorTitle}>Check-In Failed</Text>
@@ -114,7 +115,7 @@ function ResultOverlay({
         <>
           <View style={ov.iconRow}>
             <View style={[ov.iconCircle, { backgroundColor: 'rgba(255,255,255,0.25)' }]}>
-              <Ionicons name="checkmark" size={34} color="#fff" />
+              <Ionicons name="checkmark" size={34} color={Colors.white} />
             </View>
           </View>
           <Text style={ov.successTitle}>Customer Checked In!</Text>
@@ -238,7 +239,7 @@ export default function ScannerScreen() {
   if (!permission) {
     return (
       <View style={sc.centered}>
-        <ActivityIndicator color="#6a0dad" />
+        <ActivityIndicator color={Colors.accent} />
       </View>
     );
   }
@@ -249,13 +250,13 @@ export default function ScannerScreen() {
       <SafeAreaView style={sc.safe} edges={['top']}>
         <View style={sc.header}>
           <Pressable style={sc.headerBtn} onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={sc.headerTitle}>QR Scanner</Text>
           <View style={{ width: 40 }} />
         </View>
         <View style={sc.centered}>
-          <Ionicons name="camera-outline" size={48} color="#ccc" />
+          <Ionicons name="camera-outline" size={48} color={Colors.border} />
           <Text style={sc.permTitle}>Camera Access Required</Text>
           <Text style={sc.permSub}>
             Allow camera access to scan customer check-in QR codes.
@@ -269,7 +270,7 @@ export default function ScannerScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#000' }}>
+    <View style={{ flex: 1, backgroundColor: Colors.black }}>
       {/* ── Camera ── */}
       <CameraView
         style={StyleSheet.absoluteFill}
@@ -283,7 +284,7 @@ export default function ScannerScreen() {
         {/* Top bar */}
         <SafeAreaView edges={['top']} style={sc.topBar}>
           <Pressable style={sc.topBtn} onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
+            <Ionicons name="arrow-back" size={22} color={Colors.white} />
           </Pressable>
           <Text style={sc.topTitle}>Scan Customer QR</Text>
           <Pressable
@@ -291,7 +292,7 @@ export default function ScannerScreen() {
             onPress={() => router.push('/(tabs)/kiosk')}
             hitSlop={8}
           >
-            <Ionicons name="tablet-landscape-outline" size={22} color="#fff" />
+            <Ionicons name="tablet-landscape-outline" size={22} color={Colors.white} />
           </Pressable>
         </SafeAreaView>
 
@@ -342,13 +343,13 @@ const sc = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
   },
   headerBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#1f1f1f' },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
 
   // Permission screen
-  permTitle: { fontSize: 18, fontWeight: '800', color: '#1f1f1f', textAlign: 'center' },
-  permSub:   { fontSize: 14, color: '#888',   textAlign: 'center', lineHeight: 20 },
-  permBtn:   { backgroundColor: '#6a0dad', borderRadius: 14, paddingHorizontal: 32, paddingVertical: 14 },
-  permBtnText:{ color: '#fff', fontSize: 15, fontWeight: '700' },
+  permTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, textAlign: 'center' },
+  permSub:   { fontSize: 14, color: Colors.textMuted,   textAlign: 'center', lineHeight: 20 },
+  permBtn:   { backgroundColor: Colors.accent, borderRadius: 14, paddingHorizontal: 32, paddingVertical: 14 },
+  permBtnText:{ color: Colors.white, fontSize: 15, fontWeight: '700' },
 
   // Viewfinder
   viewfinderOverlay: {
@@ -361,14 +362,14 @@ const sc = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   topBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  topTitle: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  topTitle: { fontSize: 16, fontWeight: '700', color: Colors.white },
 
   frameWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 20 },
   frame: {
     width: 260, height: 260,
     position: 'relative',
   },
-  corner:   { position: 'absolute', width: 30, height: 30, borderColor: '#fff', borderWidth: 3 },
+  corner:   { position: 'absolute', width: 30, height: 30, borderColor: Colors.white, borderWidth: 3 },
   cornerTL: { top: 0, left: 0,  borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius:     8 },
   cornerTR: { top: 0, right: 0, borderLeftWidth:  0, borderBottomWidth: 0, borderTopRightRadius:    8 },
   cornerBL: { bottom: 0, left: 0,  borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius:  8 },
@@ -381,8 +382,8 @@ const sc = StyleSheet.create({
     borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8,
     marginBottom: 40,
   },
-  staffDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4caf50' },
-  staffName: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  staffDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
+  staffName: { color: Colors.white, fontSize: 13, fontWeight: '600' },
 });
 
 // ─── Styles: overlay ─────────────────────────────────────────────────────────
@@ -393,22 +394,22 @@ const ov = StyleSheet.create({
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     padding: 24, paddingBottom: 48,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: -4 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.3, shadowRadius: 20, shadowOffset: { width: 0, height: -4 } },
       android: { elevation: 20 },
     }),
   },
-  sheetSuccess:    { backgroundColor: '#2e7d32' },
-  sheetError:      { backgroundColor: '#c62828' },
-  sheetProcessing: { backgroundColor: '#333', paddingVertical: 20 },
+  sheetSuccess:    { backgroundColor: Colors.success },
+  sheetError:      { backgroundColor: Colors.error },
+  sheetProcessing: { backgroundColor: Colors.textPrimary, paddingVertical: 20 },
 
   processingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12 },
-  processingText:{ color: '#fff', fontSize: 15, fontWeight: '600' },
+  processingText:{ color: Colors.white, fontSize: 15, fontWeight: '600' },
 
   iconRow:   { alignItems: 'center', marginBottom: 12 },
   iconCircle:{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
 
-  successTitle: { fontSize: 22, fontWeight: '900', color: '#fff', textAlign: 'center', marginBottom: 16 },
-  errorTitle:   { fontSize: 20, fontWeight: '900', color: '#fff', textAlign: 'center', marginBottom: 8 },
+  successTitle: { fontSize: 22, fontWeight: '900', color: Colors.white, textAlign: 'center', marginBottom: 16 },
+  errorTitle:   { fontSize: 20, fontWeight: '900', color: Colors.white, textAlign: 'center', marginBottom: 8 },
   errorMsg:     { fontSize: 14, color: 'rgba(255,255,255,0.85)', textAlign: 'center', lineHeight: 20, marginBottom: 20 },
 
   summaryCard: {
@@ -416,13 +417,13 @@ const ov = StyleSheet.create({
     borderRadius: 14, padding: 14, marginBottom: 12, gap: 8,
   },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  detailText:{ color: '#fff', fontSize: 14, fontWeight: '600', flex: 1 },
+  detailText:{ color: Colors.white, fontSize: 14, fontWeight: '600', flex: 1 },
 
   pushNote: { fontSize: 12, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 18, lineHeight: 18 },
 
   btnRow:     { flexDirection: 'row', gap: 10 },
   actionBtn:  { flex: 1, backgroundColor: 'rgba(255,255,255,0.25)', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  actionBtnText:{ color: '#fff', fontSize: 15, fontWeight: '700' },
+  actionBtnText:{ color: Colors.white, fontSize: 15, fontWeight: '700' },
   ghostBtn:   { flex: 1, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  ghostBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  ghostBtnText: { color: Colors.white, fontSize: 15, fontWeight: '600' },
 });

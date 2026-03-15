@@ -1,4 +1,4 @@
-// app/(customer)/vehicles/index.tsx
+﻿// app/(customer)/vehicles/index.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useRef } from 'react';
@@ -16,6 +16,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 
 import { useVehicles } from '@/hooks/useVehicles';
 import { Vehicle } from '@/types/vehicle';
+import { Colors } from '@/constants/Colors';
 
 // ─── Swipeable right actions ────────────────────────────────────────────────
 function RightActions({
@@ -34,11 +35,11 @@ function RightActions({
   return (
     <Animated.View style={[styles.actions, { transform: [{ translateX }] }]}>
       <Pressable style={[styles.actionBtn, styles.editBtn]} onPress={onEdit}>
-        <Ionicons name="create-outline" size={20} color="#fff" />
+        <Ionicons name="create-outline" size={20} color={Colors.white} />
         <Text style={styles.actionText}>Edit</Text>
       </Pressable>
       <Pressable style={[styles.actionBtn, styles.deleteBtn]} onPress={onDelete}>
-        <Ionicons name="trash-outline" size={20} color="#fff" />
+        <Ionicons name="trash-outline" size={20} color={Colors.white} />
         <Text style={styles.actionText}>Delete</Text>
       </Pressable>
     </Animated.View>
@@ -88,7 +89,7 @@ function VehicleCard({
     >
       <View style={styles.card}>
         <View style={styles.cardIcon}>
-          <Ionicons name="car-outline" size={28} color="#6a0dad" />
+          <Ionicons name="car-outline" size={28} color={Colors.accent} />
         </View>
         <View style={styles.cardBody}>
           <Text style={styles.cardTitle}>
@@ -105,7 +106,7 @@ function VehicleCard({
             </Text>
           )}
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#ccc" />
+        <Ionicons name="chevron-forward" size={18} color={Colors.border} />
       </View>
     </Swipeable>
   );
@@ -126,7 +127,7 @@ export default function VehicleListScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -144,7 +145,7 @@ export default function VehicleListScreen() {
 
       {vehicles.length === 0 && !error ? (
         <View style={styles.center}>
-          <Ionicons name="car-outline" size={56} color="#ccc" />
+          <Ionicons name="car-outline" size={56} color={Colors.border} />
           <Text style={styles.emptyTitle}>No vehicles yet</Text>
           <Text style={styles.emptySubtitle}>
             Add your car to speed up future bookings.
@@ -173,7 +174,7 @@ export default function VehicleListScreen() {
         style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
         onPress={() => router.push('/(customer)/vehicles/add')}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name="add" size={28} color={Colors.white} />
       </Pressable>
     </View>
   );
@@ -189,11 +190,11 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 14,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
       android: { elevation: 2 },
     }),
   },
@@ -207,9 +208,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: '#1f1f1f' },
-  cardSub:   { fontSize: 13, color: '#666', marginTop: 2 },
-  cardNotes: { fontSize: 12, color: '#999', marginTop: 3 },
+  cardTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  cardSub:   { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  cardNotes: { fontSize: 12, color: Colors.textMuted, marginTop: 3 },
 
   actions: {
     flexDirection: 'row',
@@ -224,9 +225,9 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     paddingVertical: 10,
   },
-  editBtn:   { backgroundColor: '#4a90e2' },
-  deleteBtn: { backgroundColor: '#e25555' },
-  actionText: { color: '#fff', fontSize: 11, marginTop: 2 },
+  editBtn:   { backgroundColor: Colors.accent },
+  deleteBtn: { backgroundColor: Colors.error },
+  actionText: { color: Colors.white, fontSize: 11, marginTop: 2 },
 
   fab: {
     position: 'absolute',
@@ -235,11 +236,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 6 },
     }),
   },
@@ -254,9 +255,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 8,
   },
-  errorText: { color: '#c00', fontSize: 13, flex: 1 },
-  retryText: { color: '#6a0dad', fontWeight: '600', marginLeft: 8 },
+  errorText: { color: Colors.error, fontSize: 13, flex: 1 },
+  retryText: { color: Colors.accent, fontWeight: '600', marginLeft: 8 },
 
-  emptyTitle:    { fontSize: 18, fontWeight: '600', color: '#333', marginTop: 16 },
-  emptySubtitle: { fontSize: 14, color: '#888', textAlign: 'center', marginTop: 6 },
+  emptyTitle:    { fontSize: 18, fontWeight: '600', color: Colors.textPrimary, marginTop: 16 },
+  emptySubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 6 },
 });

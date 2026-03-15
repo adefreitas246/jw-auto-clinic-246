@@ -1,10 +1,11 @@
-// app/(customer)/_layout.tsx
+﻿// app/(customer)/_layout.tsx
 import { CustomerTabBar } from '@/components/CustomerTabBar';
 import { useAuth } from '@/context/AuthContext';
 import { Tabs, Redirect } from 'expo-router';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 function TransparentHeader() {
   const insets = useSafeAreaInsets();
@@ -21,7 +22,7 @@ export default function CustomerLayout() {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }

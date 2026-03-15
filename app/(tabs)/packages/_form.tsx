@@ -1,4 +1,4 @@
-// app/(tabs)/packages/_form.tsx — Package Builder (add/edit)
+﻿// app/(tabs)/packages/_form.tsx — Package Builder (add/edit)
 // Lets admins: name the package, pick services from a checklist,
 // optionally override the combined price, toggle active.
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ import {
 } from 'react-native';
 
 import { Package, Service } from '@/types/catalog';
+import { Colors } from '@/constants/Colors';
 
 interface Props { mode: 'add' | 'edit' }
 
@@ -123,7 +124,7 @@ export default function PackageFormScreen({ mode }: Props) {
         {/* Service checklist */}
         <Text style={s.label}>Included Services *</Text>
         {loadingSvcs ? (
-          <ActivityIndicator color="#6a0dad" />
+          <ActivityIndicator color={Colors.accent} />
         ) : services.length === 0 ? (
           <Text style={s.hint}>No active services found. Create some services first.</Text>
         ) : (
@@ -139,7 +140,7 @@ export default function PackageFormScreen({ mode }: Props) {
                   <Ionicons
                     name={checked ? 'checkbox' : 'square-outline'}
                     size={22}
-                    color={checked ? '#6a0dad' : '#ccc'}
+                    color={checked ? Colors.accent : Colors.border}
                   />
                   <View style={s.checkBody}>
                     <Text style={[s.checkName, checked && s.checkNameActive]}>{svc.name}</Text>
@@ -172,13 +173,13 @@ export default function PackageFormScreen({ mode }: Props) {
         {/* Active toggle */}
         <View style={s.switchRow}>
           <Text style={s.label}>Active (visible to customers)</Text>
-          <Switch value={active} onValueChange={setActive} trackColor={{ true: '#6a0dad', false: '#ccc' }} thumbColor="#fff" />
+          <Switch value={active} onValueChange={setActive} trackColor={{ true: Colors.accent, false: Colors.border }} thumbColor={Colors.white} />
         </View>
 
         {/* Save */}
         <Pressable style={[s.saveBtn, saving && { opacity: 0.7 }]} onPress={handleSave} disabled={saving}>
           {saving
-            ? <ActivityIndicator color="#fff" />
+            ? <ActivityIndicator color={Colors.white} />
             : <Text style={s.saveBtnText}>{mode === 'add' ? 'Create Package' : 'Save Changes'}</Text>
           }
         </Pressable>
@@ -190,24 +191,24 @@ export default function PackageFormScreen({ mode }: Props) {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f7f7fb' },
   content:   { padding: 20, paddingBottom: 48 },
-  label:     { fontSize: 13, fontWeight: '600', color: '#444', marginBottom: 6, marginTop: 14 },
-  hint:      { fontSize: 13, color: '#aaa', fontStyle: 'italic' },
-  input:     { backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e0e0e0', paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#1f1f1f' },
+  label:     { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 6, marginTop: 14 },
+  hint:      { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic' },
+  input:     { backgroundColor: Colors.white, borderRadius: 10, borderWidth: 1, borderColor: Colors.border, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: Colors.textPrimary },
   multiline: { minHeight: 72, paddingTop: 10 },
 
-  checklist:    { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e8e8e8', overflow: 'hidden' },
-  checkRow:     { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#f0f0f0' },
+  checklist:    { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  checkRow:     { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.background },
   checkRowActive: { backgroundColor: '#fdf8ff' },
   checkBody:    { flex: 1, marginLeft: 10 },
-  checkName:    { fontSize: 14, color: '#333' },
-  checkNameActive: { color: '#6a0dad', fontWeight: '600' },
-  checkMeta:    { fontSize: 12, color: '#aaa', marginTop: 1 },
+  checkName:    { fontSize: 14, color: Colors.textPrimary },
+  checkNameActive: { color: Colors.accent, fontWeight: '600' },
+  checkMeta:    { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
 
   sumRow:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f3eafd', borderRadius: 10, padding: 12, marginTop: 10 },
-  sumLabel: { fontSize: 13, color: '#6a0dad' },
-  sumValue: { fontSize: 16, fontWeight: '700', color: '#6a0dad' },
+  sumLabel: { fontSize: 13, color: Colors.accent },
+  sumValue: { fontSize: 16, fontWeight: '700', color: Colors.accent },
 
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 },
-  saveBtn:   { backgroundColor: '#6a0dad', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  saveBtn:   { backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 24 },
+  saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

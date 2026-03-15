@@ -1,4 +1,4 @@
-// app/(customer)/home.tsx
+﻿// app/(customer)/home.tsx
 import { Colors, IconBg } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +36,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: 'car',
     label: 'My Vehicles',
     sub: 'Manage saved cars',
-    color: '#3B82F6',
+    color: Colors.info,
     bg: IconBg.blue,
     route: '/(customer)/vehicles',
   },
@@ -60,7 +60,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     icon: 'people-circle-outline',
     label: 'Refer a Friend',
     sub: 'Share code & earn',
-    color: '#3B82F6',
+    color: Colors.info,
     bg: IconBg.blue,
     route: '/(customer)/referral',
   },
@@ -143,7 +143,7 @@ export default function CustomerHome() {
 }
 
 const shadow = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 3 },
   default: {},
 });

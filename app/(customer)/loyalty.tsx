@@ -1,4 +1,4 @@
-// app/(customer)/loyalty.tsx
+﻿// app/(customer)/loyalty.tsx
 // Customer loyalty dashboard — points balance, tier, milestone progress,
 // history list, and redeem button.
 import { Ionicons } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Milestone = { points: number; label: string; emoji: string };
@@ -55,8 +56,8 @@ type LoyaltyData = {
 
 const TIER_META = {
   bronze: { color: '#cd7f32', bg: '#fdf5ec', label: 'Bronze',  icon: '🥉' },
-  silver: { color: '#9ca3af', bg: '#f3f4f6', label: 'Silver',  icon: '🥈' },
-  gold:   { color: '#f59e0b', bg: '#fffbeb', label: 'Gold',    icon: '🥇' },
+  silver: { color: Colors.textMuted, bg: Colors.surfaceAlt, label: 'Silver',  icon: '🥈' },
+  gold:   { color: Colors.warning, bg: '#fffbeb', label: 'Gold',    icon: '🥇' },
 };
 
 // ─── Animated points counter ──────────────────────────────────────────────────
@@ -166,7 +167,7 @@ export default function LoyaltyScreen() {
       {/* Header */}
       <View style={st.header}>
         <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f2937" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={st.headerTitle}>Loyalty Rewards</Text>
         <View style={{ width: 36 }} />
@@ -174,7 +175,7 @@ export default function LoyaltyScreen() {
 
       <ScrollView
         contentContainerStyle={st.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor="#6a0dad" />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
         showsVerticalScrollIndicator={false}
       >
         {/* Tier + Points card */}
@@ -215,8 +216,8 @@ export default function LoyaltyScreen() {
         <View style={st.tiersRow}>
           {[
             { icon: '🥉', label: 'Bronze',  pts: 0,         color: '#cd7f32' },
-            { icon: '🥈', label: 'Silver',  pts: silverT,   color: '#9ca3af' },
-            { icon: '🥇', label: 'Gold',    pts: goldT,     color: '#f59e0b' },
+            { icon: '🥈', label: 'Silver',  pts: silverT,   color: Colors.textMuted },
+            { icon: '🥇', label: 'Gold',    pts: goldT,     color: Colors.warning },
           ].map(t => (
             <View key={t.label} style={[st.tierChip, earned >= t.pts && account.tier !== 'bronze' || t.pts === 0 ? st.tierChipActive : {}]}>
               <Text style={st.tierChipEmoji}>{t.icon}</Text>
@@ -229,7 +230,7 @@ export default function LoyaltyScreen() {
         {/* Redeem button */}
         {config.enabled !== false && account.points >= (config.minRedeem ?? 50) && (
           <Pressable style={st.redeemBtn} onPress={() => setRedeemModal(true)}>
-            <Ionicons name="gift-outline" size={18} color="#fff" />
+            <Ionicons name="gift-outline" size={18} color={Colors.white} />
             <Text style={st.redeemBtnText}>Redeem Points</Text>
           </Pressable>
         )}
@@ -259,12 +260,12 @@ export default function LoyaltyScreen() {
         ) : (
           [...account.history].reverse().map(h => (
             <View key={h._id} style={st.histRow}>
-              <View style={[st.histDot, { backgroundColor: h.type === 'earn' ? '#10b981' : h.type === 'redeem' ? '#ef4444' : '#f59e0b' }]} />
+              <View style={[st.histDot, { backgroundColor: h.type === 'earn' ? Colors.success : h.type === 'redeem' ? Colors.error : Colors.warning }]} />
               <View style={{ flex: 1 }}>
                 <Text style={st.histDesc}>{h.description || (h.type === 'earn' ? 'Points earned' : 'Points redeemed')}</Text>
                 <Text style={st.histDate}>{new Date(h.createdAt).toLocaleDateString()}</Text>
               </View>
-              <Text style={[st.histPts, { color: h.type === 'earn' ? '#10b981' : '#ef4444' }]}>
+              <Text style={[st.histPts, { color: h.type === 'earn' ? Colors.success : Colors.error }]}>
                 {h.type === 'earn' || h.type === 'bonus' ? '+' : '-'}{h.points}
               </Text>
             </View>
@@ -288,7 +289,7 @@ export default function LoyaltyScreen() {
             onChangeText={setRedeemPts}
             keyboardType="numeric"
             placeholder={`Enter points (min ${config.minRedeem ?? 50})`}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={Colors.textMuted}
           />
           {redeemPts ? (
             <Text style={st.modalPreview}>
@@ -297,10 +298,10 @@ export default function LoyaltyScreen() {
           ) : null}
           <View style={st.modalBtns}>
             <Pressable style={st.modalCancel} onPress={() => setRedeemModal(false)}>
-              <Text style={{ color: '#6b7280', fontWeight: '600' }}>Cancel</Text>
+              <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
             </Pressable>
             <Pressable style={[st.modalConfirm, redeeming && { opacity: 0.6 }]} onPress={handleRedeem} disabled={redeeming}>
-              <Text style={{ color: '#fff', fontWeight: '700' }}>
+              <Text style={{ color: Colors.white, fontWeight: '700' }}>
                 {redeeming ? 'Redeeming…' : 'Confirm'}
               </Text>
             </Pressable>
@@ -313,64 +314,64 @@ export default function LoyaltyScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#fafafa' },
+  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: 16 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#f3f4f6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: '#1f2937' },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  card:          { borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
+  card:          { borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
   tierRow:       { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   tierEmoji:     { fontSize: 36 },
   tierLabel:     { fontSize: 18, fontWeight: '800' },
-  totalEarned:   { fontSize: 12, color: '#6b7280', marginTop: 2 },
-  pointsLabel:   { fontSize: 12, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.8 },
-  pointsNum:     { fontSize: 52, fontWeight: '900', color: '#1f2937', lineHeight: 58 },
-  redeemValue:   { fontSize: 13, color: '#6b7280', marginTop: 4 },
+  totalEarned:   { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  pointsLabel:   { fontSize: 12, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
+  pointsNum:     { fontSize: 52, fontWeight: '900', color: Colors.textPrimary, lineHeight: 58 },
+  redeemValue:   { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
 
-  milestoneCard:     { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#e5e7eb' },
-  milestoneTitle:    { fontSize: 15, fontWeight: '700', color: '#1f2937' },
-  milestoneSubtitle: { fontSize: 12, color: '#6b7280', marginTop: 2, marginBottom: 10 },
-  barTrack:          { height: 10, backgroundColor: '#f3f4f6', borderRadius: 5, overflow: 'hidden' },
-  barFill:           { height: 10, backgroundColor: '#6a0dad', borderRadius: 5 },
-  milestoneRemain:   { fontSize: 11, color: '#9ca3af', marginTop: 6, textAlign: 'right' },
+  milestoneCard:     { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  milestoneTitle:    { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  milestoneSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 2, marginBottom: 10 },
+  barTrack:          { height: 10, backgroundColor: Colors.surfaceAlt, borderRadius: 5, overflow: 'hidden' },
+  barFill:           { height: 10, backgroundColor: Colors.accent, borderRadius: 5 },
+  milestoneRemain:   { fontSize: 11, color: Colors.textMuted, marginTop: 6, textAlign: 'right' },
 
   tiersRow:      { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  tierChip:      { flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: '#e5e7eb' },
-  tierChipActive: { borderColor: '#6a0dad', backgroundColor: '#f5f0ff' },
+  tierChip:      { flex: 1, backgroundColor: Colors.surfaceAlt, borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  tierChipActive: { borderColor: Colors.accent, backgroundColor: '#f5f0ff' },
   tierChipEmoji: { fontSize: 20 },
   tierChipLabel: { fontSize: 12, fontWeight: '700', marginTop: 4 },
-  tierChipPts:   { fontSize: 10, color: '#9ca3af', marginTop: 2 },
+  tierChipPts:   { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
 
-  redeemBtn:     { backgroundColor: '#6a0dad', borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
-  redeemBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  redeemBtn:     { backgroundColor: Colors.accent, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
+  redeemBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  statsRow:   { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: '#e5e7eb' },
+  statsRow:   { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
   statBox:    { flex: 1, alignItems: 'center' },
-  statVal:    { fontSize: 20, fontWeight: '800', color: '#1f2937' },
-  statLbl:    { fontSize: 11, color: '#9ca3af', marginTop: 2, textAlign: 'center' },
-  statDivider: { width: 1, backgroundColor: '#f3f4f6' },
+  statVal:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  statLbl:    { fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
+  statDivider: { width: 1, backgroundColor: Colors.surfaceAlt },
 
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: '#1f2937', marginBottom: 10 },
-  empty:        { color: '#9ca3af', textAlign: 'center', marginTop: 20, fontSize: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
+  empty:        { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
-  histRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', gap: 10 },
+  histRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt, gap: 10 },
   histDot:  { width: 10, height: 10, borderRadius: 5 },
-  histDesc: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  histDate: { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  histDesc: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
+  histDate: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   histPts:  { fontSize: 15, fontWeight: '700' },
 
-  muted: { color: '#9ca3af', fontSize: 14 },
+  muted: { color: Colors.textMuted, fontSize: 14 },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalSheet:    { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
-  modalTitle:    { fontSize: 18, fontWeight: '800', color: '#1f2937', marginBottom: 6 },
-  modalSub:      { fontSize: 13, color: '#6b7280', lineHeight: 20, marginBottom: 16 },
-  modalInput:    { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, padding: 12, fontSize: 16, color: '#111827', marginBottom: 8 },
-  modalPreview:  { fontSize: 13, color: '#6a0dad', fontWeight: '600', marginBottom: 16 },
+  modalSheet:    { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
+  modalTitle:    { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
+  modalSub:      { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 16 },
+  modalInput:    { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontSize: 16, color: Colors.textPrimary, marginBottom: 8 },
+  modalPreview:  { fontSize: 13, color: Colors.accent, fontWeight: '600', marginBottom: 16 },
   modalBtns:     { flexDirection: 'row', gap: 12 },
-  modalCancel:   { flex: 1, padding: 14, backgroundColor: '#f3f4f6', borderRadius: 10, alignItems: 'center' },
-  modalConfirm:  { flex: 1, padding: 14, backgroundColor: '#6a0dad', borderRadius: 10, alignItems: 'center' },
+  modalCancel:   { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center' },
+  modalConfirm:  { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center' },
 });

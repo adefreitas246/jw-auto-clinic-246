@@ -1,4 +1,4 @@
-// forgot.tsx
+﻿// forgot.tsx
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import * as Animatable from "react-native-animatable";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Colors } from '@/constants/Colors';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -108,7 +109,7 @@ export default function ForgotPasswordScreen() {
 
               <TextInput
                 placeholder="Email Address"
-                placeholderTextColor="#777"
+                placeholderTextColor={Colors.textSecondary}
                 style={[styles.input, emailError && styles.errorInput]}
                 value={email}
                 onChangeText={(text) => {
@@ -139,7 +140,7 @@ export default function ForgotPasswordScreen() {
                     Platform.OS === "web" && { backgroundColor: "#f3eaff" },
                 ]}
               >
-                <Ionicons name="arrow-back" size={16} color="#6a0dad" />
+                <Ionicons name="arrow-back" size={16} color={Colors.accent} />
                 <Text style={styles.backButtonText}>Back to Login</Text>
               </Pressable>
             </Animatable.View>
@@ -153,7 +154,7 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
   },
   heading: {
     fontSize: 22,
@@ -175,7 +176,7 @@ const styles = StyleSheet.create({
   },
   subtext: {
     fontSize: 14,
-    color: "#555",
+    color: Colors.textSecondary,
     textAlign: "center",
     marginBottom: 24,
   },
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 24,
     fontSize: 16,
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
@@ -213,20 +214,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   loginBtn: {
-    backgroundColor: "#6a0dad",
+    backgroundColor: Colors.accent,
     paddingVertical: 14,
     borderRadius: 10,
     marginBottom: 16,
   },
   loginText: {
-    color: "#fff",
+    color: Colors.white,
     fontSize: 16,
     textAlign: "center",
     fontWeight: "600",
   },
   forgotText: {
     fontSize: 14,
-    color: "#6a0dad",
+    color: Colors.accent,
     textAlign: "center",
   },
   backButton: {
@@ -236,7 +237,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderColor: "#6a0dad",
+    borderColor: Colors.accent,
     borderWidth: 1,
     borderRadius: 8,
     alignSelf: "center",
@@ -246,7 +247,7 @@ const styles = StyleSheet.create({
 
   backButtonText: {
     fontSize: 14,
-    color: "#6a0dad",
+    color: Colors.accent,
     marginLeft: 6,
     fontWeight: "500",
   },

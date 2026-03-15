@@ -1,4 +1,4 @@
-// components/VoiceNoteRecorder.tsx
+﻿// components/VoiceNoteRecorder.tsx
 // Staff voice note recording component.
 // Renders a compact inline card that moves through three phases:
 //   idle → recording → stopped (with upload option)
@@ -10,7 +10,7 @@
 //   onCancel  — called when the user dismisses the recorder
 //
 // Requires:
-//   npx expo install expo-av expo-file-system
+//   npx expo install expo-audio expo-file-system
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import * as FileSystem from 'expo-file-system';
@@ -28,6 +28,7 @@ import {
 } from 'react-native';
 
 import { useVoiceNote } from '@/hooks/useVoiceNote';
+import { Colors } from '@/constants/Colors';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
     <View style={vr.card}>
       {/* Header */}
       <View style={vr.header}>
-        <Ionicons name="mic" size={18} color="#e53935" />
+        <Ionicons name="mic" size={18} color={Colors.error} />
         <Text style={vr.headerText}>Voice Note</Text>
       </View>
 
@@ -148,11 +149,11 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
           </View>
           <View style={vr.btnRow}>
             <Pressable style={vr.cancelBtn} onPress={handleCancel}>
-              <Ionicons name="close" size={16} color="#6b7280" />
+              <Ionicons name="close" size={16} color={Colors.textSecondary} />
               <Text style={vr.cancelBtnText}>Cancel</Text>
             </Pressable>
             <Pressable style={vr.stopBtn} onPress={handleStop}>
-              <Ionicons name="stop" size={18} color="#fff" />
+              <Ionicons name="stop" size={18} color={Colors.white} />
               <Text style={vr.stopBtnText}>Stop</Text>
             </Pressable>
           </View>
@@ -163,7 +164,7 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
       {state === 'stopped' && (
         <View style={vr.body}>
           <View style={vr.doneRow}>
-            <Ionicons name="checkmark-circle" size={22} color="#10b981" />
+            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
             <Text style={vr.doneText}>Recorded {formatDuration(duration)}</Text>
           </View>
 
@@ -171,7 +172,7 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
 
           <View style={vr.btnRow}>
             <Pressable style={vr.cancelBtn} onPress={handleCancel} disabled={uploading}>
-              <Ionicons name="trash-outline" size={16} color="#6b7280" />
+              <Ionicons name="trash-outline" size={16} color={Colors.textSecondary} />
               <Text style={vr.cancelBtnText}>Discard</Text>
             </Pressable>
             <Pressable
@@ -180,8 +181,8 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
               disabled={uploading}
             >
               {uploading
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Ionicons name="cloud-upload-outline" size={18} color="#fff" />
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Ionicons name="cloud-upload-outline" size={18} color={Colors.white} />
               }
               <Text style={vr.uploadBtnText}>{uploading ? 'Saving…' : 'Save Note'}</Text>
             </Pressable>
@@ -192,7 +193,7 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
       {/* Idle — shouldn't normally show (auto-starts); shown briefly on first render */}
       {state === 'idle' && (
         <View style={vr.body}>
-          <ActivityIndicator color="#6a0dad" />
+          <ActivityIndicator color={Colors.accent} />
         </View>
       )}
     </View>
@@ -203,13 +204,13 @@ export default function VoiceNoteRecorder({ jobId, token, onSaved, onCancel }: P
 
 const vr = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 14,
     borderWidth: 1.5,
     borderColor: '#fca5a5',
     overflow: 'hidden',
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
       android: { elevation: 2 },
     }),
   },
@@ -223,28 +224,28 @@ const vr = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#fca5a5',
   },
-  headerText: { fontSize: 13, fontWeight: '700', color: '#e53935' },
+  headerText: { fontSize: 13, fontWeight: '700', color: Colors.error },
 
   body: { padding: 14, gap: 12 },
 
   // Recording row
   pulseRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pulse:    { width: 12, height: 12, borderRadius: 6, backgroundColor: '#e53935' },
-  timerText:{ fontSize: 20, fontWeight: '900', color: '#1f2937', letterSpacing: 1 },
-  recLabel: { fontSize: 12, color: '#6b7280', flex: 1 },
+  pulse:    { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.error },
+  timerText:{ fontSize: 20, fontWeight: '900', color: Colors.textPrimary, letterSpacing: 1 },
+  recLabel: { fontSize: 12, color: Colors.textSecondary, flex: 1 },
 
   // Done row
   doneRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  doneText: { fontSize: 14, fontWeight: '700', color: '#10b981' },
+  doneText: { fontSize: 14, fontWeight: '700', color: Colors.success },
 
   // Buttons
   btnRow:    { flexDirection: 'row', gap: 10 },
-  cancelBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: '#f3f4f6', borderWidth: 1, borderColor: '#e5e7eb' },
-  cancelBtnText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
-  stopBtn:   { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: '#e53935' },
-  stopBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  uploadBtn: { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: '#6a0dad' },
-  uploadBtnText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  cancelBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border },
+  cancelBtnText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  stopBtn:   { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: Colors.error },
+  stopBtnText: { fontSize: 13, fontWeight: '700', color: Colors.white },
+  uploadBtn: { flex: 1.5, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: Colors.accent },
+  uploadBtnText: { fontSize: 13, fontWeight: '700', color: Colors.white },
 
-  errText: { fontSize: 12, color: '#e53935', textAlign: 'center' },
+  errText: { fontSize: 12, color: Colors.error, textAlign: 'center' },
 });

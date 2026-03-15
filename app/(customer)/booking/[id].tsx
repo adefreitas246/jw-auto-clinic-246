@@ -1,4 +1,4 @@
-// app/(customer)/booking/[id].tsx — Customer Booking Detail + QR Code
+﻿// app/(customer)/booking/[id].tsx — Customer Booking Detail + QR Code
 // Fetches the booking and displays:
 //  • Booking status badge
 //  • BookingQR component (customer shows this to staff at check-in)
@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookingQR } from '@/components/BookingQR';
+import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,10 +42,10 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; icon: string }
 > = {
-  pending_payment: { label: 'Awaiting Payment', color: '#e65100', bg: '#fff3e0', icon: 'time-outline'          },
-  confirmed:       { label: 'Confirmed',         color: '#6a0dad', bg: '#f3eafd', icon: 'checkmark-circle'     },
-  cancelled:       { label: 'Cancelled',          color: '#c62828', bg: '#ffebee', icon: 'close-circle'        },
-  completed:       { label: 'Completed',          color: '#2e7d32', bg: '#e8f5e9', icon: 'checkmark-done-circle'},
+  pending_payment: { label: 'Awaiting Payment', color: Colors.warning, bg: '#fff3e0', icon: 'time-outline'          },
+  confirmed:       { label: 'Confirmed',         color: Colors.accent, bg: '#f3eafd', icon: 'checkmark-circle'     },
+  cancelled:       { label: 'Cancelled',          color: Colors.error, bg: '#ffebee', icon: 'close-circle'        },
+  completed:       { label: 'Completed',          color: Colors.success, bg: '#e8f5e9', icon: 'checkmark-done-circle'},
 };
 
 const JOB_STATUS_LABELS: Record<string, string> = {
@@ -62,7 +63,7 @@ function SummaryRow({
 }) {
   return (
     <View style={s.summaryRow}>
-      <Ionicons name={icon as any} size={16} color="#6a0dad" style={{ marginTop: 1 }} />
+      <Ionicons name={icon as any} size={16} color={Colors.accent} style={{ marginTop: 1 }} />
       <View style={{ flex: 1 }}>
         <Text style={s.summaryLabel}>{label}</Text>
         <Text style={s.summaryValue}>{value}</Text>
@@ -127,7 +128,7 @@ export default function BookingDetailScreen() {
   if (loading) {
     return (
       <View style={s.centered}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -138,11 +139,11 @@ export default function BookingDetailScreen() {
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.header}>
           <Pressable style={s.backBtn} onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
         </View>
         <View style={s.centered}>
-          <Ionicons name="alert-circle-outline" size={40} color="#ccc" />
+          <Ionicons name="alert-circle-outline" size={40} color={Colors.border} />
           <Text style={s.errorText}>{error ?? 'Booking not found'}</Text>
           <Pressable style={s.retryBtn} onPress={() => fetchBooking()}>
             <Text style={s.retryText}>Retry</Text>
@@ -166,7 +167,7 @@ export default function BookingDetailScreen() {
       {/* ── Header ── */}
       <View style={s.header}>
         <Pressable style={s.backBtn} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color="#1f1f1f" />
+          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Booking Details</Text>
         <View style={{ width: 40 }} />
@@ -178,7 +179,7 @@ export default function BookingDetailScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => fetchBooking(true)}
-            tintColor="#6a0dad"
+            tintColor={Colors.accent}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -249,7 +250,7 @@ export default function BookingDetailScreen() {
         {/* ── Already checked in notice ── */}
         {booking.status === 'confirmed' && booking.jobStatus !== 'assigned' && (
           <View style={s.checkedInBanner}>
-            <Ionicons name="checkmark-circle" size={18} color="#2e7d32" />
+            <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
             <Text style={s.checkedInText}>
               Checked in — your wash is underway. Pull to refresh for updates.
             </Text>
@@ -266,7 +267,7 @@ export default function BookingDetailScreen() {
                 params:   { id: booking._id },
               })}
             >
-              <Ionicons name="navigate" size={16} color="#6a0dad" />
+              <Ionicons name="navigate" size={16} color={Colors.accent} />
               <Text style={s.trackBtnText}>Track My Job</Text>
             </Pressable>
           )}
@@ -281,7 +282,7 @@ export default function BookingDetailScreen() {
               disabled={cancelling}
             >
               {cancelling
-                ? <ActivityIndicator size="small" color="#c62828" />
+                ? <ActivityIndicator size="small" color={Colors.error} />
                 : <Text style={s.cancelBtnText}>Cancel Booking</Text>
               }
             </Pressable>
@@ -295,7 +296,7 @@ export default function BookingDetailScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -308,7 +309,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 14,
   },
   backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: '#1f1f1f' },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
 
   content: { paddingBottom: 40 },
 
@@ -318,51 +319,51 @@ const s = StyleSheet.create({
     marginBottom: 14, ...SHADOW,
   },
   statusLabel:   { fontSize: 15, fontWeight: '800' },
-  jobStatusText: { fontSize: 12, color: '#555', marginTop: 2 },
+  jobStatusText: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   // QR section
   qrSection: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     marginHorizontal: 16, borderRadius: 20,
     padding: 20, marginBottom: 14, alignItems: 'center',
     ...SHADOW,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#1f1f1f', marginBottom: 6 },
-  qrSub:        { fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 18 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
+  qrSub:        { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 18 },
   qrCenter:     { alignItems: 'center' },
 
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     marginHorizontal: 16, borderRadius: 16,
     padding: 18, marginBottom: 14, ...SHADOW,
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: '#1f1f1f', marginBottom: 16 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 16 },
 
   summaryRow: {
     flexDirection: 'row', alignItems: 'flex-start',
     gap: 12, marginBottom: 12,
   },
-  summaryLabel: { fontSize: 11, color: '#888', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  summaryValue: { fontSize: 14, color: '#1f1f1f', fontWeight: '600', marginTop: 2 },
+  summaryLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '600', marginTop: 2 },
 
   checkedInBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     backgroundColor: '#e8f5e9', borderRadius: 12, padding: 14,
     marginHorizontal: 16, marginBottom: 14,
-    borderLeftWidth: 3, borderLeftColor: '#2e7d32',
+    borderLeftWidth: 3, borderLeftColor: Colors.success,
   },
-  checkedInText: { flex: 1, fontSize: 13, color: '#2e7d32', fontWeight: '600', lineHeight: 18 },
+  checkedInText: { flex: 1, fontSize: 13, color: Colors.success, fontWeight: '600', lineHeight: 18 },
 
   actions:  { marginHorizontal: 16, gap: 10 },
   trackBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: '#f3eafd', borderRadius: 14, paddingVertical: 14,
   },
-  trackBtnText: { color: '#6a0dad', fontSize: 15, fontWeight: '700' },
-  cancelBtn:    { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: '#c62828' },
-  cancelBtnText:{ color: '#c62828', fontSize: 15, fontWeight: '700' },
+  trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
+  cancelBtn:    { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.error },
+  cancelBtnText:{ color: Colors.error, fontSize: 15, fontWeight: '700' },
 
-  errorText: { fontSize: 14, color: '#888', textAlign: 'center' },
+  errorText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
   retryBtn:  { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: '#f3eafd', borderRadius: 999 },
-  retryText: { color: '#6a0dad', fontWeight: '700' },
+  retryText: { color: Colors.accent, fontWeight: '700' },
 });

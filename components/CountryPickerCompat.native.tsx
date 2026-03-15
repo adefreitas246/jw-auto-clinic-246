@@ -1,9 +1,10 @@
-// components/CountryPickerCompat.native.tsx
+﻿// components/CountryPickerCompat.native.tsx
 import type { CountryCode as LpnCountryCode } from "libphonenumber-js/core";
 import React, { useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { CountryPicker as RNCCP } from "react-native-country-codes-picker";
 import { getCountryCallingCode } from "react-phone-number-input";
+import { Colors } from '@/constants/Colors';
 
 export type CountryCode = string;
 export type Country = { cca2: string; callingCode: string[]; name?: string };
@@ -52,7 +53,7 @@ export default function CountryPickerCompatNative({
           paddingHorizontal: 10,
           borderRadius: 10,
           borderWidth: 1,
-          borderColor: "#ddd",
+          borderColor: Colors.border,
           flexDirection: "row",
           alignItems: "center",
           gap: 8,
@@ -85,12 +86,12 @@ export default function CountryPickerCompatNative({
             marginHorizontal: 12,
             marginTop: 10,
             borderWidth: 1,
-            borderColor: "#ddd",
+            borderColor: Colors.border,
             borderRadius: 10,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor: "#fff",
-            color: "#111",
+            backgroundColor: Colors.white,
+            color: Colors.black,
           },
         }}
         pickerButtonOnPress={(item: PickerItem) => {

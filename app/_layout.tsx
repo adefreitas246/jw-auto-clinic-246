@@ -1,4 +1,4 @@
-// _layout.tsx
+﻿// _layout.tsx
 // Background task definitions must be registered at the top level before any
 // component mounts. Importing this file is enough — the defineTask call
 // executes at module load time.
@@ -13,19 +13,15 @@ if (!isExpoGo) {
 
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useColorScheme } from "@/hooks/useColorScheme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
+import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Slot, usePathname, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Colors } from '@/constants/Colors';
 
 const ONBOARDING_ROUTE = "/onboarding-screen";
 
@@ -136,7 +132,7 @@ function AuthGate() {
   if (loading || checkingOnboarding) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -144,7 +140,7 @@ function AuthGate() {
   if (shouldOnboard && !pathname.startsWith(ONBOARDING_ROUTE)) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#6a0dad" />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
     );
   }
@@ -152,18 +148,30 @@ function AuthGate() {
   return <Slot key={slotKey} />;
 }
 
+const WashHubTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary:      Colors.accent,
+    background:   Colors.background,
+    card:         Colors.surface,
+    text:         Colors.textPrimary,
+    border:       Colors.border,
+    notification: Colors.accent,
+  },
+};
+
 export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
-  const colorScheme = useColorScheme();
   if (!loaded) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <ThemeProvider value={colorScheme === "light" ? DefaultTheme : DarkTheme}>
+          <ThemeProvider value={WashHubTheme}>
             <AuthGate />
             <StatusBar style="auto" />
           </ThemeProvider>

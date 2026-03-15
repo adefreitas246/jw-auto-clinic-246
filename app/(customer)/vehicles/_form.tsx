@@ -1,4 +1,4 @@
-// app/(customer)/vehicles/_form.tsx
+﻿// app/(customer)/vehicles/_form.tsx
 // Shared form for adding and editing a vehicle.
 // Not an Expo Router route (prefixed with _).
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -20,6 +20,7 @@ import {
 
 import { useVehicles } from '@/hooks/useVehicles';
 import {
+import { Colors } from '@/constants/Colors';
   EMPTY_VEHICLE_FORM,
   Vehicle,
   VehicleForm,
@@ -90,7 +91,7 @@ function PlateCamera({
                 disabled={capturing}
               >
                 {capturing ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={Colors.white} />
                 ) : (
                   <View style={cam.captureInner} />
                 )}
@@ -245,7 +246,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
               disabled={scanning}
             >
               {scanning ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color={Colors.white} size="small" />
               ) : (
                 <Text style={s.scanBtnText}>Scan Plate</Text>
               )}
@@ -297,7 +298,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
             disabled={saving}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={Colors.white} />
             ) : (
               <Text style={s.saveBtnText}>
                 {mode === 'add' ? 'Add Vehicle' : 'Save Changes'}
@@ -315,16 +316,16 @@ const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f7f7fb' },
   content:   { padding: 20, paddingBottom: 48 },
 
-  label: { fontSize: 13, fontWeight: '600', color: '#444', marginBottom: 6, marginTop: 14 },
+  label: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 6, marginTop: 14 },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: Colors.border,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
-    color: '#1f1f1f',
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   multiline: { minHeight: 80, paddingTop: 10 },
@@ -332,7 +333,7 @@ const s = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
   scanBtn: {
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 11,
@@ -340,34 +341,34 @@ const s = StyleSheet.create({
     alignItems: 'center',
     minWidth: 100,
   },
-  scanBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  scanBtnText: { color: Colors.white, fontWeight: '600', fontSize: 14 },
 
   sizeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   sizePill: {
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: Colors.border,
   },
-  sizePillActive:     { backgroundColor: '#6a0dad', borderColor: '#6a0dad' },
-  sizePillText:       { fontSize: 13, color: '#555' },
-  sizePillTextActive: { color: '#fff', fontWeight: '600' },
+  sizePillActive:     { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  sizePillText:       { fontSize: 13, color: Colors.textSecondary },
+  sizePillTextActive: { color: Colors.white, fontWeight: '600' },
 
   saveBtn: {
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 24,
   },
-  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });
 
 // Camera modal styles
 const cam = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: Colors.black },
   preview:   { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -378,12 +379,12 @@ const cam = StyleSheet.create({
     width: 280,
     height: 80,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: Colors.white,
     borderRadius: 8,
     backgroundColor: 'transparent',
   },
   guideText: {
-    color: '#fff',
+    color: Colors.white,
     marginTop: 12,
     fontSize: 13,
     textAlign: 'center',
@@ -394,13 +395,13 @@ const cam = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 20,
-    backgroundColor: '#111',
+    backgroundColor: Colors.black,
   },
   captureBtn: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -408,18 +409,18 @@ const cam = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
   },
   cancelBtn: { padding: 8 },
-  cancelText: { color: '#fff', fontSize: 15 },
+  cancelText: { color: Colors.white, fontSize: 15 },
 
   permView: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  permText: { color: '#fff', fontSize: 15, textAlign: 'center', marginBottom: 20 },
+  permText: { color: Colors.white, fontSize: 15, textAlign: 'center', marginBottom: 20 },
   permBtn: {
-    backgroundColor: '#6a0dad',
+    backgroundColor: Colors.accent,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
   },
-  permBtnText: { color: '#fff', fontWeight: '700' },
+  permBtnText: { color: Colors.white, fontWeight: '700' },
 });

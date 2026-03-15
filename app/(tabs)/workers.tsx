@@ -1,4 +1,4 @@
-import CountryPickerCompat, { Country, CountryCode } from "@/components/CountryPickerCompat";
+﻿import CountryPickerCompat, { Country, CountryCode } from "@/components/CountryPickerCompat";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
@@ -23,6 +23,7 @@ import DropDownPicker from "react-native-dropdown-picker";
 import "react-native-gesture-handler";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Colors } from '@/constants/Colors';
 
 type Role = "admin" | "staff";
 
@@ -59,11 +60,11 @@ function EmployeesScreen() {
     radius: Platform.select({ ios: 14, android: 10, default: 12 })!,
     colors: {
       bg:          "#F5F7FA",  // Wash Hub background
-      card:        "#FFFFFF",
+      card:        Colors.white,
       border:      "#E5E7EB",
-      text:        "#1A1A2E",
+      text:        Colors.primary,
       sub:         "#6B7280",
-      primary:     "#0F9B8E",  // teal accent
+      primary:     Colors.accent,  // teal accent
       glyphBorder: "#E6FAF8",
     },
   };
@@ -613,7 +614,7 @@ function EmployeesScreen() {
               accessibilityRole="button"
               accessibilityLabel="Add worker"
             >
-              <Ionicons name="person-add-outline" size={18} color="#fff" />
+              <Ionicons name="person-add-outline" size={18} color={Colors.white} />
               <Text style={styles.webPrimaryBtnText} numberOfLines={1} ellipsizeMode="tail">
                 Add Worker
               </Text>
@@ -675,7 +676,7 @@ function EmployeesScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search by name, email, or phone"
-                placeholderTextColor="#777"
+                placeholderTextColor={Colors.textSecondary}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="search"
@@ -726,13 +727,13 @@ function EmployeesScreen() {
       <View style={styles.webToolbarWrap}>
         <View style={styles.webToolbarRow}>
           <View style={styles.webSearchWrap}>
-            <Ionicons name="search-outline" size={16} color="#6b7280" />
+            <Ionicons name="search-outline" size={16} color={Colors.textSecondary} />
             <TextInput
               style={styles.webSearchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search name, email, phone…"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={Colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="search"
@@ -835,16 +836,16 @@ function EmployeesScreen() {
             {Platform.OS === "web" && (
               <>
                 <TouchableOpacity onPress={() => openEdit(emp)} accessibilityRole="button" accessibilityLabel={`Edit ${emp.name}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="create-outline" size={18} color="#0F9B8E" />
+                  <Ionicons name="create-outline" size={18} color={Colors.accent} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => confirmDelete(emp)} accessibilityRole="button" accessibilityLabel={`Delete ${emp.name}`} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                  <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                  <Ionicons name="trash-outline" size={18} color={Colors.error} />
                 </TouchableOpacity>
               </>
             )}
 
             <View style={[styles.roleBadge, emp.role === "admin" ? styles.roleAdmin : styles.roleStaff]}>
-              <Text style={[styles.roleText, emp.role === "admin" ? { color: "#0F9B8E" } : { color: "#065f46" }]} numberOfLines={1}>
+              <Text style={[styles.roleText, emp.role === "admin" ? { color: Colors.accent } : { color: "#065f46" }]} numberOfLines={1}>
                 {String(emp.role).toUpperCase()}
               </Text>
             </View>
@@ -861,7 +862,7 @@ function EmployeesScreen() {
           <TouchableOpacity
             style={[
               styles.clockButton,
-              emp.clockedIn ? { backgroundColor: "#ef4444" } : { backgroundColor: "#22c55e" },
+              emp.clockedIn ? { backgroundColor: Colors.error } : { backgroundColor: Colors.success },
               clockingIds.has(emp._id) && { opacity: 0.7 },
             ]}
             onPress={() => handleClockInOut(emp)}
@@ -869,7 +870,7 @@ function EmployeesScreen() {
             accessibilityRole="button"
             accessibilityLabel={`${emp.clockedIn ? "Clock out" : "Clock in"} ${emp.name}`}
           >
-            <Ionicons name={emp.clockedIn ? "time-outline" : "play-circle-outline"} size={18} color="#fff" />
+            <Ionicons name={emp.clockedIn ? "time-outline" : "play-circle-outline"} size={18} color={Colors.white} />
             <Text style={styles.clockText}>{clockingIds.has(emp._id) ? "Processing…" : emp.clockedIn ? "Clock Out" : "Clock In"}</Text>
           </TouchableOpacity>
 
@@ -878,7 +879,7 @@ function EmployeesScreen() {
               styles.lunchButton,
               (lunchState === "none" || lunchState === "done" || lunchingIds.has(emp._id)) && { opacity: 0.5 },
               lunchState === "canStart" && { backgroundColor: "#fbbf24" },
-              lunchState === "canEnd" && { backgroundColor: "#3b82f6" },
+              lunchState === "canEnd" && { backgroundColor: Colors.info },
             ]}
             onPress={() => handleLunchToggle(emp)}
             disabled={lunchState === "none" || lunchState === "done" || lunchingIds.has(emp._id)}
@@ -889,7 +890,7 @@ function EmployeesScreen() {
               `Lunch not available`
             }
           >
-            <Ionicons name="fast-food-outline" size={18} color="#fff" />
+            <Ionicons name="fast-food-outline" size={18} color={Colors.white} />
             <Text style={styles.lunchText}>
               {lunchingIds.has(emp._id) ? "Updating…" : lunchState === "canStart" ? "Start Lunch" : lunchState === "canEnd" ? "End Lunch" : "Lunch"}
             </Text>
@@ -987,7 +988,7 @@ function EmployeesScreen() {
         {/* Role */}
         <View style={[styles.webTd, { flex: 1 }]}>
           <View style={[styles.webRoleBadge, emp.role === "admin" ? styles.webRoleAdmin : styles.webRoleStaff]}>
-            <Text style={[styles.webRoleText, emp.role === "admin" ? { color: "#0F9B8E" } : { color: "#065f46" }]} numberOfLines={1}>
+            <Text style={[styles.webRoleText, emp.role === "admin" ? { color: Colors.accent } : { color: "#065f46" }]} numberOfLines={1}>
               {String(emp.role).toUpperCase()}
             </Text>
           </View>
@@ -1007,7 +1008,7 @@ function EmployeesScreen() {
               onPress={() => handleClockInOut(emp)}
               style={[styles.webBtn, active ? styles.webBtnDanger : styles.webBtnSuccess]}
             >
-              <Ionicons name={active ? "time-outline" : "play-circle-outline"} size={16} color="#fff" />
+              <Ionicons name={active ? "time-outline" : "play-circle-outline"} size={16} color={Colors.white} />
               <Text style={styles.webBtnText} numberOfLines={1}>{active ? "Clock Out" : "Clock In"}</Text>
             </TouchableOpacity>
 
@@ -1020,15 +1021,15 @@ function EmployeesScreen() {
                 !active && { opacity: 0.4, cursor: "not-allowed" as any },
               ]}
             >
-              <Ionicons name="fast-food-outline" size={16} color="#fff" />
+              <Ionicons name="fast-food-outline" size={16} color={Colors.white} />
               <Text style={styles.webBtnText} numberOfLines={1}>{lunching ? "End Lunch" : "Start Lunch"}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => openEdit(emp)} style={[styles.webIconBtn]}>
-              <Ionicons name="create-outline" size={18} color="#374151" />
+              <Ionicons name="create-outline" size={18} color={Colors.textSecondary} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => confirmDelete(emp)} style={[styles.webIconBtn]}>
-              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              <Ionicons name="trash-outline" size={18} color={Colors.error} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1045,18 +1046,18 @@ function EmployeesScreen() {
         accessibilityLabel={`Edit ${emp.name}`}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Ionicons name="create-outline" size={20} color="#000" />
+        <Ionicons name="create-outline" size={20} color={Colors.black} />
         <Text style={styles.swipeText}>Edit</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.swipeBtn, { backgroundColor: "#ef4444" }]}
+        style={[styles.swipeBtn, { backgroundColor: Colors.error }]}
         onPress={() => confirmDelete(emp)}
         accessibilityRole="button"
         accessibilityLabel={`Delete ${emp.name}`}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Ionicons name="trash-outline" size={20} color="#fff" />
-        <Text style={[styles.swipeText, { color: "#fff" }]}>
+        <Ionicons name="trash-outline" size={20} color={Colors.white} />
+        <Text style={[styles.swipeText, { color: Colors.white }]}>
           {deletingId === emp._id ? "Deleting…" : "Delete"}
         </Text>
       </TouchableOpacity>
@@ -1080,7 +1081,7 @@ function EmployeesScreen() {
 
   // ---------- Render ----------
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isWeb ? "#fff" : "#fff", ...(isWeb ? { minHeight: 0 } : {}), }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isWeb ? Colors.white : Colors.white, ...(isWeb ? { minHeight: 0 } : {}), }}>
       <KeyboardAvoidingView
         style={{ flex: 1, ...(isWeb ? { minHeight: 0 } : {}) }}
         behavior={isIOS ? "padding" : undefined}
@@ -1137,7 +1138,7 @@ function EmployeesScreen() {
               contentContainerStyle={{
                 padding: 16,
                 paddingBottom: 120 + insets.bottom,
-                backgroundColor: "#fff",
+                backgroundColor: Colors.white,
                 width: "100%",
                 maxWidth: 1200,
                 alignSelf: "center",
@@ -1151,7 +1152,7 @@ function EmployeesScreen() {
               ListEmptyComponent={
                 !loading ? (
                   <View style={{ padding: 24 }}>
-                    <Text style={{ color: "#666" }}>No workers match your filters.</Text>
+                    <Text style={{ color: Colors.textSecondary }}>No workers match your filters.</Text>
                   </View>
                 ) : null
               }
@@ -1167,7 +1168,7 @@ function EmployeesScreen() {
               onPress={() => setAddVisible(true)}
               accessibilityLabel="Add worker"
             >
-              <Ionicons name="add" size={28} color="#fff" />
+              <Ionicons name="add" size={28} color={Colors.white} />
             </TouchableOpacity>
           </View>
         )}
@@ -1218,7 +1219,7 @@ function EmployeesScreen() {
                         onChangeText={validateName}
                         onBlur={() => setTName(true)}
                         placeholder="e.g. Jane Smith"
-                        placeholderTextColor="#777"
+                        placeholderTextColor={Colors.textSecondary}
                         autoCapitalize="words"
                         returnKeyType="next"
                       />
@@ -1236,7 +1237,7 @@ function EmployeesScreen() {
                         autoCapitalize="none"
                         autoCorrect={false}
                         placeholder="name@example.com"
-                        placeholderTextColor="#777"
+                        placeholderTextColor={Colors.textSecondary}
                         returnKeyType="next"
                       />
                       {tEmail && emailError ? <Text style={styles.error}>{emailError}</Text> : <Text style={styles.helper}>Used for login & receipts.</Text>}
@@ -1260,7 +1261,7 @@ function EmployeesScreen() {
                           keyboardType="number-pad"
                           inputMode="numeric"
                           placeholder={callingCode === "1" ? "XXX-XXX-XXXX" : "Phone number"}
-                          placeholderTextColor="#777"
+                          placeholderTextColor={Colors.textSecondary}
                           maxLength={12}
                           style={{ flex: 1, paddingVertical: isIOS ? 14 : 10, paddingLeft: 10 }}
                         />
@@ -1306,7 +1307,7 @@ function EmployeesScreen() {
                           keyboardType={isIOS ? "decimal-pad" : "numeric"}
                           inputMode="decimal"
                           placeholder="e.g. 12.50"
-                          placeholderTextColor="#777"
+                          placeholderTextColor={Colors.textSecondary}
                           maxLength={7}
                         />
                         {tRate && hourlyRateError ? <Text style={styles.error}>{hourlyRateError}</Text> : <Text style={styles.helper}>Up to 3 digits + 3 decimals.</Text>}
@@ -1322,7 +1323,7 @@ function EmployeesScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Add worker"
                     >
-                      <Ionicons name="person-add-outline" size={18} color="#fff" />
+                      <Ionicons name="person-add-outline" size={18} color={Colors.white} />
                       <Text style={styles.primaryBtnText} numberOfLines={1}>{submitting ? "Saving…" : "Add Worker"}</Text>
                     </TouchableOpacity>
 
@@ -1331,7 +1332,7 @@ function EmployeesScreen() {
                     </TouchableOpacity>
 
                     <View style={{ flex: 1 }} />
-                    <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: "#eee" }]} onPress={() => setAddVisible(false)}>
+                    <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: Colors.border }]} onPress={() => setAddVisible(false)}>
                       <Text style={styles.secondaryBtnText} numberOfLines={1}>Close</Text>
                     </TouchableOpacity>
                   </View>
@@ -1374,7 +1375,7 @@ function EmployeesScreen() {
                         onChangeText={validateName}
                         onBlur={() => setTName(true)}
                         placeholder="e.g. Jane Smith"
-                        placeholderTextColor="#777"
+                        placeholderTextColor={Colors.textSecondary}
                         autoCapitalize="words"
                         returnKeyType="next"
                       />
@@ -1392,7 +1393,7 @@ function EmployeesScreen() {
                         autoCapitalize="none"
                         autoCorrect={false}
                         placeholder="name@example.com"
-                        placeholderTextColor="#777"
+                        placeholderTextColor={Colors.textSecondary}
                         returnKeyType="next"
                       />
                       {tEmail && emailError ? <Text style={styles.error}>{emailError}</Text> : <Text style={styles.helper}>Used for login & receipts.</Text>}
@@ -1416,7 +1417,7 @@ function EmployeesScreen() {
                           keyboardType="number-pad"
                           inputMode="numeric"
                           placeholder={callingCode === "1" ? "XXX-XXX-XXXX" : "Phone number"}
-                          placeholderTextColor="#777"
+                          placeholderTextColor={Colors.textSecondary}
                           maxLength={12}
                           style={{ flex: 1, paddingVertical: isIOS ? 14 : 10, paddingLeft: 10 }}
                         />
@@ -1462,7 +1463,7 @@ function EmployeesScreen() {
                           keyboardType={isIOS ? "decimal-pad" : "numeric"}
                           inputMode="decimal"
                           placeholder="e.g. 12.50"
-                          placeholderTextColor="#777"
+                          placeholderTextColor={Colors.textSecondary}
                           maxLength={7}
                         />
                         {tRate && hourlyRateError ? <Text style={styles.error}>{hourlyRateError}</Text> : <Text style={styles.helper}>Up to 3 digits + 3 decimals.</Text>}
@@ -1478,7 +1479,7 @@ function EmployeesScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Add worker"
                     >
-                      <Ionicons name="person-add-outline" size={18} color="#fff" />
+                      <Ionicons name="person-add-outline" size={18} color={Colors.white} />
                       <Text style={styles.primaryBtnText} numberOfLines={1}>{submitting ? "Saving…" : "Add Worker"}</Text>
                     </TouchableOpacity>
 
@@ -1487,7 +1488,7 @@ function EmployeesScreen() {
                     </TouchableOpacity>
 
                     <View style={{ flex: 1 }} />
-                    <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: "#eee" }]} onPress={() => setAddVisible(false)}>
+                    <TouchableOpacity style={[styles.secondaryBtn, { backgroundColor: Colors.border }]} onPress={() => setAddVisible(false)}>
                       <Text style={styles.secondaryBtnText} numberOfLines={1}>Close</Text>
                     </TouchableOpacity>
                   </View>
@@ -1567,11 +1568,11 @@ function EmployeesScreen() {
                             key={r}
                             style={[
                               styles.badgeChoice,
-                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: "#0F9B8E" },
+                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: Colors.accent },
                             ]}
                             onPress={() => setEditing({ ...editing, role: r })}
                           >
-                            <Text style={{ color: "#0F9B8E", fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
+                            <Text style={{ color: Colors.accent, fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1603,7 +1604,7 @@ function EmployeesScreen() {
                           <Text style={styles.secondaryBtnText} numberOfLines={1}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.primaryBtn} onPress={saveEdit}>
-                          <Ionicons name="save-outline" size={18} color="#fff" />
+                          <Ionicons name="save-outline" size={18} color={Colors.white} />
                           <Text style={styles.primaryBtnText} numberOfLines={1}>Save</Text>
                         </TouchableOpacity>
                       </View>
@@ -1673,11 +1674,11 @@ function EmployeesScreen() {
                             key={r}
                             style={[
                               styles.badgeChoice,
-                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: "#0F9B8E" },
+                              editing.role === r && { backgroundColor: "#CCFBF4", borderColor: Colors.accent },
                             ]}
                             onPress={() => setEditing({ ...editing, role: r })}
                           >
-                            <Text style={{ color: "#0F9B8E", fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
+                            <Text style={{ color: Colors.accent, fontWeight: "600" }} numberOfLines={1}>{r.toUpperCase()}</Text>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1709,7 +1710,7 @@ function EmployeesScreen() {
                           <Text style={styles.secondaryBtnText} numberOfLines={1}>Cancel</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.primaryBtn} onPress={saveEdit}>
-                          <Ionicons name="save-outline" size={18} color="#fff" />
+                          <Ionicons name="save-outline" size={18} color={Colors.white} />
                           <Text style={styles.primaryBtnText} numberOfLines={1}>Save</Text>
                         </TouchableOpacity>
                       </View>
@@ -1730,16 +1731,16 @@ export default gestureHandlerRootHOC(EmployeesScreen);
 const styles = StyleSheet.create({
   // Header band (fixed)
   headerBand: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     paddingHorizontal: 16,
     paddingTop: Platform.OS === "web" ? 0 : 0,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: Colors.border,
   },
   headerBandWeb: {
-    backgroundColor: "#ffffff",
-    borderBottomColor: "#e5e7eb",
+    backgroundColor: Colors.white,
+    borderBottomColor: Colors.border,
     paddingTop: 80,
     paddingVertical: 12,
     paddingHorizontal: 24, // WEB: fuller edge padding
@@ -1766,7 +1767,7 @@ const styles = StyleSheet.create({
 
   // --- Sticky mobile header (matches Settings) ---
   stickyHeader: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     paddingTop: 0,
     paddingBottom: 10,
     zIndex: 10,
@@ -1774,20 +1775,20 @@ const styles = StyleSheet.create({
   },
   stickyHeaderElevated: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: Colors.border,
   },
 
   // Cards & text
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     padding: 14,
     marginBottom: 8,
   },
   headerBandElevated: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: Colors.border,
     ...Platform.select({
-      ios: { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+      ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 3 },
       default: { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" } as any,
     }),
@@ -1795,7 +1796,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: { fontSize: 20,
     fontWeight: "800",
-    color: "#0F9B8E",
+    color: Colors.accent,
     marginBottom: 8,
   },
 
@@ -1803,10 +1804,10 @@ const styles = StyleSheet.create({
   largeTitle: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#0F9B8E",
+    color: Colors.accent,
   },
   cardHelper: {
-    color: "#666",
+    color: Colors.textSecondary,
     marginTop: 6,
     marginBottom: 8,
     flexBasis: "100%",
@@ -1820,12 +1821,12 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: Colors.border,
     paddingVertical: 8,
   },
   summaryItem: { flex: 1, alignItems: "center" },
-  summaryNum: { fontSize: 18, fontWeight: "800", color: "#111" },
-  summaryLabel: { color: "#666", marginTop: 4 },
+  summaryNum: { fontSize: 18, fontWeight: "800", color: Colors.black },
+  summaryLabel: { color: Colors.textSecondary, marginTop: 4 },
 
   // Form layout
   row: { gap: 12 },
@@ -1835,63 +1836,63 @@ const styles = StyleSheet.create({
   twoThirds: { flex: 2 },
   third: { flex: 1 },
 
-  label: { marginTop: 8, marginBottom: 6, color: "#333", fontWeight: "600" },
-  helper: { fontSize: 12, color: "#777", marginTop: 4 },
+  label: { marginTop: 8, marginBottom: 6, color: Colors.textPrimary, fontWeight: "600" },
+  helper: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
 
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 1,
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
   },
-  prefix: { marginHorizontal: 8, fontWeight: "600", fontSize: 16, color: "#333", display: "none" },
+  prefix: { marginHorizontal: 8, fontWeight: "600", fontSize: 16, color: Colors.textPrimary, display: "none" },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 10,
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
   },
-  inputError: { borderColor: "#ef4444" },
+  inputError: { borderColor: Colors.error },
   dropdown: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     borderRadius: 8,
-    backgroundColor: "#fafafa",
+    backgroundColor: Colors.surfaceAlt,
     paddingHorizontal: 10,
     paddingVertical: 9,   // smaller vertical padding
     minHeight: 36,        // or height: 36 if you want it fixed
     justifyContent: "center", // keep text vertically centered
   },
   dropdownContainer: {
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     borderWidth: 1,
     borderRadius: 8,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
   },
-  error: { color: "#ef4444", fontSize: 12, marginTop: 4 },
+  error: { color: Colors.error, fontSize: 12, marginTop: 4 },
 
   actions: { flexDirection: "row", gap: 10, marginTop: 14, alignItems: "center" },
   primaryBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#0F9B8E",
+    backgroundColor: Colors.accent,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
   },
-  primaryBtnText: { color: "#fff", fontWeight: "700" },
+  primaryBtnText: { color: Colors.white, fontWeight: "700" },
   secondaryBtn: {
-    backgroundColor: "#eee",
+    backgroundColor: Colors.border,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
   },
-  secondaryBtnText: { color: "#333", fontWeight: "700" },
+  secondaryBtnText: { color: Colors.textPrimary, fontWeight: "700" },
 
   // Worker card (mobile)
   employeeCard: {
@@ -1902,12 +1903,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 12,
     elevation: 1,
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     shadowOpacity: 0.05,
     shadowRadius: 4,
     marginHorizontal: 5,
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: Colors.border,
   },
   // Extra rules for tablet
   employeeCardTablet: {
@@ -1917,12 +1918,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  employeeName: { fontWeight: "800", fontSize: 16, color: "#0F9B8E" },
-  employeeInfo: { fontSize: 14, color: "#333", marginBottom: 2 },
+  employeeName: { fontWeight: "800", fontSize: 16, color: Colors.accent },
+  employeeInfo: { fontSize: 14, color: Colors.textPrimary, marginBottom: 2 },
 
-  statusDot: { width: 10, height: 10, borderRadius: 6, backgroundColor: "#d1d5db" },
-  statusOn: { backgroundColor: "#22c55e" },
-  statusOff: { backgroundColor: "#d1d5db" },
+  statusDot: { width: 10, height: 10, borderRadius: 6, backgroundColor: Colors.border },
+  statusOn: { backgroundColor: Colors.success },
+  statusOff: { backgroundColor: Colors.border },
 
   roleBadge: {
     borderRadius: 999,
@@ -1937,7 +1938,7 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: "row", alignItems: "center", marginTop: 8, gap: 10, flexWrap: "wrap" },
 
   clockButton: { flexDirection: "row", gap: 8, alignItems: "center", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8 },
-  clockText: { color: "#fff", fontWeight: "700" },
+  clockText: { color: Colors.white, fontWeight: "700" },
 
   lunchButton: {
     flexDirection: "row",
@@ -1948,17 +1949,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#fbbf24",
   },
-  lunchText: { color: "#fff", fontWeight: "700" },
+  lunchText: { color: Colors.white, fontWeight: "700" },
 
-  shiftMeta: { color: "#555", fontSize: 12 },
+  shiftMeta: { color: Colors.textSecondary, fontSize: 12 },
 
   toggleHistory: {
-    color: "#0F9B8E",
+    color: Colors.accent,
     fontWeight: "700",
     ...(Platform.OS === "web" ? { cursor: "pointer" } : null),
   },
 
-  history: { marginTop: 8, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#eee" },
+  history: { marginTop: 8, backgroundColor: Colors.white, borderRadius: 8, borderWidth: 1, borderColor: Colors.border },
   historyRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1968,17 +1969,17 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f1f1f1",
     gap: 8,
   },
-  historyDate: { width: 96, color: "#333", fontWeight: "600" },
-  historyDur: { flex: 1, textAlign: "left", color: "#333", fontWeight: "600" },
+  historyDate: { width: 96, color: Colors.textPrimary, fontWeight: "600" },
+  historyDur: { flex: 1, textAlign: "left", color: Colors.textPrimary, fontWeight: "600" },
   historyStatus: { width: 88, textAlign: "center", paddingVertical: 4, borderRadius: 999, overflow: "hidden", fontWeight: "700" },
   statusDone: { backgroundColor: "#EEF2FF", color: "#3730a3" },
-  statusActive: { backgroundColor: "#FEF3C7", color: "#92400e" },
-  historyEmpty: { padding: 10, color: "#666" },
+  statusActive: { backgroundColor: Colors.warningBg, color: "#92400e" },
+  historyEmpty: { padding: 10, color: Colors.textSecondary },
 
   // Swipe actions (mobile)
   swipeActions: { flexDirection: "row", alignItems: "center", gap: 2, padding: 2, marginBottom: 9},
   swipeBtn: { justifyContent: "center", alignItems: "center", borderRadius: 8, width: 85, height: "100%" },
-  swipeText: { fontWeight: "700", color: "#000", marginTop: 4 },
+  swipeText: { fontWeight: "700", color: Colors.black, marginTop: 4 },
 
   // FAB (position only — native)
   fabWrap: {
@@ -1992,10 +1993,10 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#0F9B8E",
+    backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#000",
+    shadowColor: Colors.black,
     ...Platform.select({
       ios: {
         marginBottom: 15,
@@ -2015,12 +2016,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.25)",
   },
   sheet: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 16,
     ...Platform.select({
-      ios: { shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 10 },
+      ios: { shadowColor: Colors.black, shadowOpacity: 0.15, shadowRadius: 10 },
       android: { elevation: 16 },
       default: {},
     }),
@@ -2037,14 +2038,14 @@ const styles = StyleSheet.create({
 
   // (legacy modal styles kept)
   modalWrap: { flex: 1, backgroundColor: "rgba(0,0,0,0.25)", justifyContent: "flex-end" },
-  modalCard: { backgroundColor: "#fff", borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: "85%" },
+  modalCard: { backgroundColor: Colors.white, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 16, maxHeight: "85%" },
   modalActions: { flexDirection: "row", justifyContent: "space-between", marginTop: 16, alignItems: "center" },
   badgeChoice: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: Colors.border,
     backgroundColor: "#f9f9f9",
   },
 
@@ -2055,19 +2056,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#0F9B8E",
+    backgroundColor: Colors.accent,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
     ...(Platform.OS === "web" ? { cursor: "pointer" } : null),
   },
-  webPrimaryBtnText: { color: "#fff", fontWeight: "700" },
+  webPrimaryBtnText: { color: Colors.white, fontWeight: "700" },
 
   // Sticky, compact toolbar
   webToolbarWrap: {
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: Colors.border,
     borderRadius: 12,
     padding: 10,
     marginBottom: 8,
@@ -2089,8 +2090,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#f9fafb",
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 10,
     flexGrow: 1,
     minWidth: 260,
@@ -2105,9 +2106,9 @@ const styles = StyleSheet.create({
   },
   webDropdown: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: Colors.border,
     borderRadius: 10,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     paddingHorizontal: 10,
     paddingVertical: 8,   // 👈 smaller vertical padding
     minHeight: 36,        // or height: 36 if you want it fixed
@@ -2122,43 +2123,43 @@ const styles = StyleSheet.create({
   webChip: {
     paddingVertical: 4,
     paddingHorizontal: 8,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: 999,
   },
   webChipGreen: { backgroundColor: "#ecfdf5" },
   webChipBlue: { backgroundColor: "#eff6ff" },
-  webChipText: { color: "#374151", fontWeight: "700", fontSize: 12 },
+  webChipText: { color: Colors.textSecondary, fontWeight: "700", fontSize: 12 },
 
   webTableHeader: {
     flexDirection: "row",
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#f9fafb",
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceAlt,
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
-  webTh: { fontWeight: "800", color: "#374151", fontSize: 12 },
+  webTh: { fontWeight: "800", color: Colors.textSecondary, fontSize: 12 },
 
   webTr: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderColor: "#f3f4f6",
+    borderColor: Colors.surfaceAlt,
   },
   webTrAlt: { backgroundColor: "#fcfcff" }, // zebra rows
   webTd: { justifyContent: "center" },
-  webName: { fontWeight: "700", color: "#111827" },
-  webCellText: { color: "#111827" },
+  webName: { fontWeight: "700", color: Colors.textPrimary },
+  webCellText: { color: Colors.textPrimary },
 
   webDot: { width: 10, height: 10, borderRadius: 6 },
-  webDotOn: { backgroundColor: "#22c55e" },
-  webDotOff: { backgroundColor: "#d1d5db" },
+  webDotOn: { backgroundColor: Colors.success },
+  webDotOff: { backgroundColor: Colors.border },
 
   webRoleBadge: {
     borderRadius: 999,
@@ -2173,7 +2174,7 @@ const styles = StyleSheet.create({
 
   webStatus: { fontWeight: "700", fontSize: 12 },
   webStatusActive: { color: "#065f46" },
-  webStatusDone: { color: "#6b7280" },
+  webStatusDone: { color: Colors.textSecondary },
 
   // Wrap actions so they don't overflow on mid-width screens
   webActions: { flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" },
@@ -2186,19 +2187,19 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     ...(Platform.OS === "web" ? { cursor: "pointer" } : null),
   },
-  webBtnText: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  webBtnSuccess: { backgroundColor: "#22c55e" },
-  webBtnDanger: { backgroundColor: "#ef4444" },
-  webBtnWarn: { backgroundColor: "#f59e0b" },
-  webBtnInfo: { backgroundColor: "#3b82f6" },
+  webBtnText: { color: Colors.white, fontWeight: "700", fontSize: 12 },
+  webBtnSuccess: { backgroundColor: Colors.success },
+  webBtnDanger: { backgroundColor: Colors.error },
+  webBtnWarn: { backgroundColor: Colors.warning },
+  webBtnInfo: { backgroundColor: Colors.info },
 
   webIconBtn: {
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: Colors.border,
     borderRadius: 8,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.white,
     ...(Platform.OS === "web" ? { cursor: "pointer" } : null),
   },
 });

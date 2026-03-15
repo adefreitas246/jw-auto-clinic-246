@@ -1,4 +1,4 @@
-// app/(tabs)/inventory/index.tsx — Inventory List with Quick-Adjust Steppers
+﻿// app/(tabs)/inventory/index.tsx — Inventory List with Quick-Adjust Steppers
 //
 // Features:
 //   • Live list with green/yellow/red stock indicators
@@ -31,6 +31,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
+import { Colors } from '@/constants/Colors';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -58,9 +59,9 @@ function stockLevel(item: InventoryItem): StockLevel {
 }
 
 const LEVEL_CONFIG: Record<StockLevel, { border: string; badge: string; text: string; label: string }> = {
-  ok:   { border: '#10b981', badge: '#d1fae5', text: '#059669', label: 'In Stock'  },
-  warn: { border: '#f59e0b', badge: '#fef3c7', text: '#d97706', label: 'Watch'     },
-  low:  { border: '#ef4444', badge: '#fee2e2', text: '#dc2626', label: 'Low Stock' },
+  ok:   { border: Colors.success, badge: '#d1fae5', text: Colors.success, label: 'In Stock'  },
+  warn: { border: Colors.warning, badge: Colors.warningBg, text: Colors.warning, label: 'Watch'     },
+  low:  { border: Colors.error, badge: Colors.errorBg, text: Colors.error, label: 'Low Stock' },
   out:  { border: '#7c3aed', badge: '#ede9fe', text: '#7c3aed', label: 'Out'       },
 };
 
@@ -90,7 +91,7 @@ function StockBar({ item }: { item: InventoryItem }) {
       <View style={sb.track}>
         <View style={[sb.fill, { width: `${Math.max(pct * 100, 2)}%`, backgroundColor: cfg.border }]} />
       </View>
-      <Text style={[sb.threshold, { color: '#aaa' }]}>
+      <Text style={[sb.threshold, { color: Colors.textMuted }]}>
         threshold {item.lowStockThreshold} {item.unit}
       </Text>
     </View>
@@ -99,7 +100,7 @@ function StockBar({ item }: { item: InventoryItem }) {
 
 const sb = StyleSheet.create({
   wrap:      { marginTop: 6, marginBottom: 4 },
-  track:     { height: 5, backgroundColor: '#f3f4f6', borderRadius: 3, overflow: 'hidden' },
+  track:     { height: 5, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
   fill:      { height: 5, borderRadius: 3 },
   threshold: { fontSize: 9, marginTop: 3 },
 });
@@ -125,7 +126,7 @@ function Stepper({
 
       <View style={stp.display}>
         {loading
-          ? <ActivityIndicator size="small" color="#6a0dad" />
+          ? <ActivityIndicator size="small" color={Colors.accent} />
           : <Text style={stp.value}>{value % 1 === 0 ? value : value.toFixed(1)}</Text>
         }
         <Text style={stp.unit}>{unit}</Text>
@@ -138,7 +139,7 @@ function Stepper({
         disabled={loading}
         delayLongPress={500}
       >
-        <Text style={[stp.btnText, { color: '#fff' }]}>+</Text>
+        <Text style={[stp.btnText, { color: Colors.white }]}>+</Text>
       </Pressable>
     </View>
   );
@@ -148,17 +149,17 @@ const stp = StyleSheet.create({
   row:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
   btn:     {
     width: 32, height: 32, borderRadius: 8,
-    backgroundColor: '#f3f4f6', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center',
   },
-  btnPlus: { backgroundColor: '#6a0dad' },
+  btnPlus: { backgroundColor: Colors.accent },
   pressed: { opacity: 0.65 },
-  btnText: { fontSize: 18, fontWeight: '700', color: '#6a0dad', lineHeight: 22 },
+  btnText: { fontSize: 18, fontWeight: '700', color: Colors.accent, lineHeight: 22 },
   display: {
     flexDirection: 'row', alignItems: 'baseline', gap: 4,
     minWidth: 80, justifyContent: 'center',
   },
-  value: { fontSize: 16, fontWeight: '800', color: '#1f1f1f' },
-  unit:  { fontSize: 11, color: '#888' },
+  value: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
+  unit:  { fontSize: 11, color: Colors.textMuted },
 });
 
 // ── Inventory Card ────────────────────────────────────────────────────────────
@@ -195,10 +196,10 @@ function InventoryCard({
         {isAdmin && (
           <View style={ic.actions}>
             <Pressable onPress={() => onEdit(item)} hitSlop={8} style={ic.iconBtn}>
-              <Ionicons name="create-outline" size={17} color="#6a0dad" />
+              <Ionicons name="create-outline" size={17} color={Colors.accent} />
             </Pressable>
             <Pressable onPress={() => onDelete(item)} hitSlop={8} style={ic.iconBtn}>
-              <Ionicons name="trash-outline" size={17} color="#dc2626" />
+              <Ionicons name="trash-outline" size={17} color={Colors.error} />
             </Pressable>
           </View>
         )}
@@ -225,23 +226,23 @@ function InventoryCard({
 
 const ic = StyleSheet.create({
   card: {
-    backgroundColor: '#fff', borderRadius: 14,
+    backgroundColor: Colors.white, borderRadius: 14,
     padding: 14, marginBottom: 10,
     borderLeftWidth: 4,
     ...Platform.select({
-      ios:     { shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
       android: { elevation: 2 },
     }),
   },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  name:      { fontSize: 15, fontWeight: '700', color: '#1f1f1f', flex: 1 },
-  category:  { fontSize: 11, color: '#9ca3af', marginTop: 2 },
+  name:      { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
+  category:  { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   badge:     { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
   badgeText: { fontSize: 10, fontWeight: '700' },
   actions:   { flexDirection: 'row', gap: 4 },
   iconBtn:   { padding: 4 },
   footer:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  notes:     { fontSize: 11, color: '#aaa', flex: 1, marginLeft: 12, textAlign: 'right' },
+  notes:     { fontSize: 11, color: Colors.textMuted, flex: 1, marginLeft: 12, textAlign: 'right' },
 });
 
 // ── Low-stock alert flash ──────────────────────────────────────────────────────
@@ -261,7 +262,7 @@ function LowStockBanner({ visible }: { visible: boolean }) {
 
   return (
     <Animated.View style={[lb.wrap, { opacity }]}>
-      <Ionicons name="warning-outline" size={14} color="#fff" />
+      <Ionicons name="warning-outline" size={14} color={Colors.white} />
       <Text style={lb.text}>Low stock alert sent to admin</Text>
     </Animated.View>
   );
@@ -271,15 +272,15 @@ const lb = StyleSheet.create({
   wrap: {
     position: 'absolute', top: 0, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#ef4444', borderRadius: 99,
+    backgroundColor: Colors.error, borderRadius: 99,
     paddingHorizontal: 14, paddingVertical: 7,
     zIndex: 100,
     ...Platform.select({
-      ios:     { shadowColor: '#ef4444', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.error, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 8 },
     }),
   },
-  text: { fontSize: 12, fontWeight: '700', color: '#fff' },
+  text: { fontSize: 12, fontWeight: '700', color: Colors.white },
 });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -415,7 +416,7 @@ export default function InventoryScreen() {
           <Text style={s.sub}>
             {items.length} items
             {lowCount > 0 && ` · `}
-            {lowCount > 0 && <Text style={{ color: '#ef4444' }}>{lowCount} low</Text>}
+            {lowCount > 0 && <Text style={{ color: Colors.error }}>{lowCount} low</Text>}
           </Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -425,7 +426,7 @@ export default function InventoryScreen() {
               onPress={() => router.push('/(tabs)/inventory/service-map')}
               hitSlop={8}
             >
-              <Ionicons name="git-branch-outline" size={16} color="#6a0dad" />
+              <Ionicons name="git-branch-outline" size={16} color={Colors.accent} />
               <Text style={s.headerBtnText}>Mappings</Text>
             </Pressable>
           )}
@@ -442,13 +443,13 @@ export default function InventoryScreen() {
 
       {/* Search */}
       <View style={s.searchWrap}>
-        <Ionicons name="search" size={16} color="#aaa" style={{ marginLeft: 12 }} />
+        <Ionicons name="search" size={16} color={Colors.textMuted} style={{ marginLeft: 12 }} />
         <TextInput
           style={s.searchInput}
           value={search}
           onChangeText={setSearch}
           placeholder="Search items…"
-          placeholderTextColor="#aaa"
+          placeholderTextColor={Colors.textMuted}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -475,7 +476,7 @@ export default function InventoryScreen() {
       {/* Inventory list */}
       {loading ? (
         <View style={s.centered}>
-          <ActivityIndicator size="large" color="#6a0dad" />
+          <ActivityIndicator size="large" color={Colors.accent} />
         </View>
       ) : (
         <FlatList
@@ -484,11 +485,11 @@ export default function InventoryScreen() {
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6a0dad" />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
           ListEmptyComponent={
             <View style={s.empty}>
-              <Ionicons name="cube-outline" size={52} color="#ccc" />
+              <Ionicons name="cube-outline" size={52} color={Colors.border} />
               <Text style={s.emptyTitle}>
                 {search || category !== 'All' ? 'No items match' : 'No inventory items'}
               </Text>
@@ -518,7 +519,7 @@ export default function InventoryScreen() {
           style={({ pressed }) => [s.fab, pressed && { opacity: 0.85 }]}
           onPress={() => openEdit()}
         >
-          <Ionicons name="add" size={26} color="#fff" />
+          <Ionicons name="add" size={26} color={Colors.white} />
         </Pressable>
       )}
     </SafeAreaView>
@@ -528,7 +529,7 @@ export default function InventoryScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = Platform.select({
-  ios:     { shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
+  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
   android: { elevation: 2 },
 }) ?? {};
 
@@ -540,17 +541,17 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 6, paddingBottom: 10,
   },
-  title:       { fontSize: 24, fontWeight: '800', color: '#1f1f1f' },
-  sub:         { fontSize: 12, color: '#888', marginTop: 2 },
+  title:       { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  sub:         { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   headerBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: '#f3eafd', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7,
   },
-  headerBtnText: { fontSize: 12, fontWeight: '700', color: '#6a0dad' },
+  headerBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   offlineBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: '#fef3c7', marginHorizontal: 16, borderRadius: 8,
+    backgroundColor: Colors.warningBg, marginHorizontal: 16, borderRadius: 8,
     paddingHorizontal: 12, paddingVertical: 6, marginBottom: 8,
   },
   offlineText: { fontSize: 12, color: '#92400e', fontWeight: '600' },
@@ -558,23 +559,23 @@ const s = StyleSheet.create({
   // Search
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 12, marginHorizontal: 16, marginBottom: 8,
+    backgroundColor: Colors.white, borderRadius: 12, marginHorizontal: 16, marginBottom: 8,
     ...SHADOW,
   },
   searchInput: {
     flex: 1, paddingHorizontal: 10, paddingVertical: 10,
-    fontSize: 14, color: '#1f1f1f',
+    fontSize: 14, color: Colors.textPrimary,
   },
 
   // Category chips
   catList: { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
   catChip: {
-    borderRadius: 99, borderWidth: 1.5, borderColor: '#e5e7eb',
-    paddingHorizontal: 14, paddingVertical: 6, backgroundColor: '#fff',
+    borderRadius: 99, borderWidth: 1.5, borderColor: Colors.border,
+    paddingHorizontal: 14, paddingVertical: 6, backgroundColor: Colors.white,
   },
-  catChipActive: { borderColor: '#6a0dad', backgroundColor: '#f3eafd' },
-  catText:       { fontSize: 12, fontWeight: '600', color: '#888' },
-  catTextActive: { color: '#6a0dad' },
+  catChipActive: { borderColor: Colors.accent, backgroundColor: '#f3eafd' },
+  catText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  catTextActive: { color: Colors.accent },
 
   // List
   listContent: { paddingHorizontal: 16, paddingBottom: 100 },
@@ -583,15 +584,15 @@ const s = StyleSheet.create({
   fab: {
     position: 'absolute', bottom: 28, right: 20,
     width: 54, height: 54, borderRadius: 27,
-    backgroundColor: '#6a0dad', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
     ...Platform.select({
-      ios:     { shadowColor: '#6a0dad', shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 8 },
     }),
   },
 
   // Empty
   empty:      { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1f1f1f', marginTop: 16, marginBottom: 6 },
-  emptyText:  { fontSize: 13, color: '#888', textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginTop: 16, marginBottom: 6 },
+  emptyText:  { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
 });

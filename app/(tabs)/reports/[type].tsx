@@ -1,4 +1,4 @@
-﻿// app/(tabs)/reports/[type].tsx — Report Viewer + CSV & PDF Export
+// app/(tabs)/reports/[type].tsx — Report Viewer + CSV & PDF Export
 //
 // Reads ?type=revenue|employees|customers|services + ?startDate + ?endDate
 // from route params. Shows a scrollable data table (horizontal scroll) and
@@ -19,6 +19,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
@@ -374,25 +375,36 @@ export default function ReportViewer() {
   return (
     <SafeAreaView style={rv.safe} edges={['top']}>
       {/* ── Header ── */}
-      <View style={rv.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={rv.backBtn}>
+      <Animated.View entering={FadeIn.duration(300)} style={rv.header}>
+        <Pressable
+          onPress={() => router.back()}
+          hitSlop={8}
+          style={rv.backBtn}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={rv.title} numberOfLines={1}>{cfg.title}</Text>
           <Text style={rv.sub}>{startDate} → {endDate}</Text>
         </View>
-        <Pressable onPress={load} hitSlop={8} style={rv.refreshBtn} disabled={loading}>
+        <Pressable
+          onPress={load}
+          hitSlop={8}
+          style={rv.refreshBtn}
+          disabled={loading}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
+        >
           <Ionicons name="refresh" size={20} color={Colors.accent} />
         </Pressable>
-      </View>
+      </Animated.View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={rv.scroll}
       >
         {/* ── Date range picker ── */}
-        <View style={rv.filterCard}>
+        <Animated.View entering={FadeInDown.delay(80).duration(350)} style={rv.filterCard}>
           {/* Preset chips */}
           <View style={rv.chipRow}>
             {(['today', 'week', 'month', 'custom'] as Preset[]).map(p => (
@@ -400,6 +412,7 @@ export default function ReportViewer() {
                 key={p}
                 style={[rv.chip, preset === p && rv.chipActive]}
                 onPress={() => applyPreset(p)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
               >
                 <Text style={[rv.chipText, preset === p && rv.chipTextActive]}>
                   {p === 'today' ? 'Today'
@@ -438,30 +451,34 @@ export default function ReportViewer() {
                 returnKeyType="done"
               />
             </View>
-            <Pressable style={rv.applyBtn} onPress={load}>
+            <Pressable
+              style={rv.applyBtn}
+              onPress={load}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
               <Text style={rv.applyBtnText}>Apply</Text>
             </Pressable>
           </View>
-        </View>
+        </Animated.View>
 
         {/* ── Error ── */}
         {!!error && (
-          <View style={rv.errorBox}>
+          <Animated.View entering={FadeInDown.duration(250)} style={rv.errorBox}>
             <Ionicons name="alert-circle-outline" size={16} color={Colors.error} />
             <Text style={rv.errorText}>{error}</Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* ── Summary stats ── */}
         {stats.length > 0 && !loading && (
-          <View style={rv.statsRow}>
-            {stats.map(s => (
+          <Animated.View entering={FadeInDown.delay(140).duration(350)} style={rv.statsRow}>
+            {stats.map((s, i) => (
               <View key={s.label} style={rv.statCard}>
                 <Text style={rv.statValue}>{s.value}</Text>
                 <Text style={rv.statLabel}>{s.label}</Text>
               </View>
             ))}
-          </View>
+          </Animated.View>
         )}
 
         {/* ── Table or loader ── */}
@@ -477,12 +494,15 @@ export default function ReportViewer() {
             <Text style={rv.emptyText}>No records found for this date range.</Text>
           </View>
         ) : (
-          <View style={rv.tableWrap}>
+          <Animated.View entering={FadeInDown.delay(200).duration(350)} style={rv.tableWrap}>
             {/* Row count badge */}
             <View style={rv.tableHeader}>
-              <Text style={rv.rowCount}>
-                {rows.length} row{rows.length !== 1 ? 's' : ''} (preview up to 200)
-              </Text>
+              <View style={rv.rowCountBadge}>
+                <Ionicons name="list-outline" size={12} color={Colors.accent} />
+                <Text style={rv.rowCount}>
+                  {rows.length} row{rows.length !== 1 ? 's' : ''} (preview up to 200)
+                </Text>
+              </View>
             </View>
 
             {/* Horizontal scroll table */}
@@ -527,7 +547,7 @@ export default function ReportViewer() {
                 Showing first 200 rows. Export for the full dataset.
               </Text>
             )}
-          </View>
+          </Animated.View>
         )}
 
         <View style={{ height: 120 }} />
@@ -540,6 +560,7 @@ export default function ReportViewer() {
             style={({ pressed }) => [rv.exportBtn, rv.csvBtn, pressed && { opacity: 0.8 }]}
             onPress={exportCsv}
             disabled={!!exporting}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
           >
             {exporting === 'csv'
               ? <ActivityIndicator color={Colors.white} size="small" />
@@ -554,6 +575,7 @@ export default function ReportViewer() {
             style={({ pressed }) => [rv.exportBtn, rv.pdfBtn, pressed && { opacity: 0.8 }]}
             onPress={exportPdf}
             disabled={!!exporting}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
           >
             {exporting === 'pdf'
               ? <ActivityIndicator color={Colors.white} size="small" />
@@ -576,16 +598,20 @@ const SHADOW = IS_IOS
   : IS_ANDROID ? { elevation: 2 } : {};
 
 const rv = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    ...SHADOW,
   },
-  backBtn:    { padding: 4 },
-  refreshBtn: { padding: 6 },
+  backBtn:    { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  refreshBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   title:      { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
   sub:        { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 
@@ -593,48 +619,49 @@ const rv = StyleSheet.create({
 
   // Filter card
   filterCard: {
-    marginHorizontal: SCREEN_PADDING, marginBottom: 14,
-    backgroundColor: Colors.surface, borderRadius: 14, padding: 14, ...SHADOW,
+    marginHorizontal: SCREEN_PADDING, marginTop: 14, marginBottom: 14,
+    backgroundColor: Colors.surface, borderRadius: 16, padding: 16, ...SHADOW,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  chipRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  chipRow: { flexDirection: 'row', gap: 8, marginBottom: 14, flexWrap: 'wrap' },
   chip: {
     borderRadius: 99, borderWidth: 1.5, borderColor: Colors.border,
-    paddingHorizontal: 12, paddingVertical: 6,
+    paddingHorizontal: 14, paddingVertical: 7, overflow: 'hidden',
   },
   chipActive:     { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  chipText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  chipText:       { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
   chipTextActive: { color: Colors.accent },
 
   dateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   dateField: { flex: 1 },
-  dateFieldLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', marginBottom: 4 },
+  dateFieldLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
   dateInput: {
-    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 8,
+    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 9,
     fontSize: 13, color: Colors.textPrimary, backgroundColor: Colors.surfaceAlt,
   },
   applyBtn: {
-    backgroundColor: Colors.accent, borderRadius: 8,
-    paddingHorizontal: 14, paddingVertical: 9,
+    backgroundColor: Colors.accent, borderRadius: 10,
+    paddingHorizontal: 16, paddingVertical: 10, overflow: 'hidden',
   },
   applyBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
 
   // Error
   errorBox: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
-    marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: Colors.errorBg, borderRadius: 10, padding: 12,
+    marginHorizontal: SCREEN_PADDING, marginBottom: 12,
+    backgroundColor: Colors.errorBg, borderRadius: 12, padding: 14,
     borderLeftWidth: 3, borderLeftColor: Colors.error,
   },
   errorText: { fontSize: 13, color: Colors.error, flex: 1 },
 
-  // Stats
+  // Stats row
   statsRow: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 10,
-    marginHorizontal: 16, marginBottom: 14,
+    marginHorizontal: SCREEN_PADDING, marginBottom: 14,
   },
   statCard: {
-    backgroundColor: Colors.white, borderRadius: 12, padding: 12,
+    backgroundColor: Colors.surface, borderRadius: 14, padding: 14,
     borderLeftWidth: 3, borderLeftColor: Colors.accent, ...SHADOW,
     minWidth: 90, flex: 1,
   },
@@ -642,18 +669,19 @@ const rv = StyleSheet.create({
   statLabel: { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
 
   // Table
-  tableWrap:   { marginHorizontal: 16 },
-  tableHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
-  rowCount:    { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  tableWrap:   { marginHorizontal: SCREEN_PADDING },
+  tableHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  rowCountBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
+  rowCount:    { fontSize: 11, color: Colors.accent, fontWeight: '700' },
   hScroll:     { borderRadius: 12, ...SHADOW },
   thRow: {
-    flexDirection: 'row', backgroundColor: Colors.accent,
-    paddingVertical: 9, paddingHorizontal: 12,
-    borderTopLeftRadius: 10, borderTopRightRadius: 10,
+    flexDirection: 'row', backgroundColor: Colors.primary,
+    paddingVertical: 10, paddingHorizontal: 12,
+    borderTopLeftRadius: 12, borderTopRightRadius: 12,
   },
-  th: { fontSize: 10, fontWeight: '700', color: Colors.white, letterSpacing: 0.3, textTransform: 'uppercase' },
+  th: { fontSize: 10, fontWeight: '700', color: Colors.white, letterSpacing: 0.4, textTransform: 'uppercase' },
 
-  tdRow:  { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Colors.white },
+  tdRow:  { flexDirection: 'row', paddingVertical: 9, paddingHorizontal: 12, backgroundColor: Colors.white },
   tdEven: { backgroundColor: Colors.surfaceAlt },
   td:     { fontSize: 12, color: Colors.textSecondary },
 
@@ -675,7 +703,7 @@ const rv = StyleSheet.create({
   },
   exportBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, borderRadius: 12, paddingVertical: 14,
+    gap: 8, borderRadius: 12, paddingVertical: 14, overflow: 'hidden',
   },
   csvBtn:        { backgroundColor: Colors.success },
   pdfBtn:        { backgroundColor: Colors.error },

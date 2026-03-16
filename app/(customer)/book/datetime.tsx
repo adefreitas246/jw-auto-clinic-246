@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { BookingProgressBar } from './_layout';
 import { Colors } from '@/constants/Colors';
@@ -115,142 +116,156 @@ export default function BookDateTimeStep() {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Calendar card ── */}
-        <View style={s.calCard}>
-          {/* Month nav */}
-          <View style={s.calHeader}>
-            <Pressable
-              onPress={prevMonth}
-              style={s.calNavBtn}
-              hitSlop={12}
-              android_ripple={{ color: Colors.accent + '12', borderless: false }}
-            >
-              <Ionicons name="chevron-back" size={20} color={Colors.accent} />
-            </Pressable>
-            <Text style={s.calTitle}>{MONTH_NAMES[calMonth]} {calYear}</Text>
-            <Pressable
-              onPress={nextMonth}
-              style={s.calNavBtn}
-              hitSlop={12}
-              android_ripple={{ color: Colors.accent + '12', borderless: false }}
-            >
-              <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
-            </Pressable>
-          </View>
-
-          {/* Day-of-week labels */}
-          <View style={s.calDOW}>
-            {DAY_NAMES.map(d => (
-              <View key={d} style={s.calDOWCell}>
-                <Text style={s.calDOWText}>{d}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Divider */}
-          <View style={s.calDivider} />
-
-          {/* Day grid */}
-          <View style={s.calGrid}>
-            {days.map((day, i) => {
-              if (day === null) return <View key={`null-${i}`} style={s.calDayCell} />;
-              const iso    = isoDate(calYear, calMonth, day);
-              const past   = iso < todayStr;
-              const sel    = iso === selectedDate;
-              const isToday = iso === todayStr;
-              return (
+        <Animated.View entering={FadeIn.duration(300)}>
+          {/* ── Calendar card ── */}
+          <Animated.View entering={FadeInDown.delay(80).duration(300)}>
+            <View style={s.calCard}>
+              {/* Month nav */}
+              <View style={s.calHeader}>
                 <Pressable
-                  key={iso}
-                  style={[
-                    s.calDayCell,
-                    isToday && !sel && s.calDayToday,
-                    sel && s.calDaySel,
-                    past && s.calDayPast,
-                  ]}
-                  onPress={() => handleDayPress(day)}
-                  disabled={past}
-                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
+                  onPress={prevMonth}
+                  style={s.calNavBtn}
+                  hitSlop={12}
+                  android_ripple={{ color: Colors.accent + '20', borderless: false }}
                 >
-                  <Text style={[
-                    s.calDayText,
-                    isToday && !sel && s.calDayTextToday,
-                    sel && s.calDayTextSel,
-                    past && s.calDayTextPast,
-                  ]}>
-                    {day}
-                  </Text>
-                  {isToday && !sel && <View style={s.todayDot} />}
+                  <Ionicons name="chevron-back" size={18} color={Colors.accent} />
                 </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* ── Time slots ── */}
-        {selectedDate ? (
-          <View style={s.slotsSection}>
-            <View style={s.slotsTitleRow}>
-              <Ionicons name="time-outline" size={16} color={Colors.accent} />
-              <Text style={s.slotsTitle}>
-                Available times for{' '}
-                <Text style={s.slotsTitleDate}>{formatDate(selectedDate)}</Text>
-              </Text>
-            </View>
-
-            {loading ? (
-              <View style={s.slotsLoading}>
-                <ActivityIndicator color={Colors.accent} />
-                <Text style={s.slotsLoadingText}>Checking availability…</Text>
+                <Text style={s.calTitle}>{MONTH_NAMES[calMonth]} {calYear}</Text>
+                <Pressable
+                  onPress={nextMonth}
+                  style={s.calNavBtn}
+                  hitSlop={12}
+                  android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                >
+                  <Ionicons name="chevron-forward" size={18} color={Colors.accent} />
+                </Pressable>
               </View>
-            ) : slots.length === 0 ? (
-              <View style={s.noSlotsWrap}>
-                <Ionicons name="calendar-outline" size={32} color={Colors.border} />
-                <Text style={s.noSlotsText}>No availability on this date.</Text>
-                <Text style={s.noSlotsHint}>Try selecting a different day.</Text>
+
+              {/* Day-of-week labels */}
+              <View style={s.calDOW}>
+                {DAY_NAMES.map(d => (
+                  <View key={d} style={s.calDOWCell}>
+                    <Text style={s.calDOWText}>{d}</Text>
+                  </View>
+                ))}
               </View>
-            ) : (
-              <View style={s.slotsGrid}>
-                {slots.map(slot => {
-                  const isSel = slot.time === selectedTime;
+
+              {/* Divider */}
+              <View style={s.calDivider} />
+
+              {/* Day grid */}
+              <View style={s.calGrid}>
+                {days.map((day, i) => {
+                  if (day === null) return <View key={`null-${i}`} style={s.calDayCell} />;
+                  const iso    = isoDate(calYear, calMonth, day);
+                  const past   = iso < todayStr;
+                  const sel    = iso === selectedDate;
+                  const isToday = iso === todayStr;
                   return (
                     <Pressable
-                      key={slot.time}
+                      key={iso}
                       style={[
-                        s.slotBtn,
-                        !slot.available && s.slotBtnUnavail,
-                        isSel && s.slotBtnSel,
+                        s.calDayCell,
+                        isToday && !sel && s.calDayToday,
+                        sel && s.calDaySel,
+                        past && s.calDayPast,
                       ]}
-                      onPress={() => {
-                        if (slot.available) {
-                          Haptics.selectionAsync();
-                          setSelectedTime(slot.time);
-                        }
-                      }}
-                      disabled={!slot.available}
-                      android_ripple={{ color: Colors.accent + '12', borderless: false }}
+                      onPress={() => handleDayPress(day)}
+                      disabled={past}
+                      android_ripple={{ color: Colors.accent + '20', borderless: false }}
                     >
                       <Text style={[
-                        s.slotText,
-                        !slot.available && s.slotTextUnavail,
-                        isSel && s.slotTextSel,
+                        s.calDayText,
+                        isToday && !sel && s.calDayTextToday,
+                        sel && s.calDayTextSel,
+                        past && s.calDayTextPast,
                       ]}>
-                        {slot.time}
+                        {day}
                       </Text>
-                      {isSel && (
-                        <View style={s.slotCheckDot} />
-                      )}
+                      {isToday && !sel && <View style={s.todayDot} />}
                     </Pressable>
                   );
                 })}
               </View>
-            )}
-          </View>
-        ) : (
-          <View style={s.pickDateHintWrap}>
-            <Ionicons name="calendar-outline" size={24} color={Colors.textMuted} />
-            <Text style={s.pickDateHint}>Select a date to see available times</Text>
-          </View>
-        )}
+            </View>
+          </Animated.View>
+
+          {/* ── Time slots ── */}
+          {selectedDate ? (
+            <Animated.View entering={FadeInDown.delay(160).duration(300)} style={s.slotsSection}>
+              <View style={s.slotsTitleRow}>
+                <View style={s.slotsIconCircle}>
+                  <Ionicons name="time-outline" size={14} color={Colors.accent} />
+                </View>
+                <Text style={s.slotsTitle}>
+                  Available for{' '}
+                  <Text style={s.slotsTitleDate}>{formatDate(selectedDate)}</Text>
+                </Text>
+              </View>
+
+              {loading ? (
+                <View style={s.slotsLoading}>
+                  <ActivityIndicator color={Colors.accent} size="small" />
+                  <Text style={s.slotsLoadingText}>Checking availability…</Text>
+                </View>
+              ) : slots.length === 0 ? (
+                <View style={s.noSlotsWrap}>
+                  <View style={s.noSlotsIcon}>
+                    <Ionicons name="calendar-outline" size={28} color={Colors.textMuted} />
+                  </View>
+                  <Text style={s.noSlotsText}>No availability on this date.</Text>
+                  <Text style={s.noSlotsHint}>Try selecting a different day.</Text>
+                </View>
+              ) : (
+                <View style={s.slotsGrid}>
+                  {slots.map((slot, idx) => {
+                    const isSel = slot.time === selectedTime;
+                    return (
+                      <Animated.View
+                        key={slot.time}
+                        entering={FadeInDown.delay(idx * 40).duration(250)}
+                      >
+                        <Pressable
+                          style={[
+                            s.slotBtn,
+                            !slot.available && s.slotBtnUnavail,
+                            isSel && s.slotBtnSel,
+                          ]}
+                          onPress={() => {
+                            if (slot.available) {
+                              Haptics.selectionAsync();
+                              setSelectedTime(slot.time);
+                            }
+                          }}
+                          disabled={!slot.available}
+                          android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                        >
+                          {isSel && (
+                            <Ionicons name="checkmark-circle" size={12} color={Colors.white} style={s.slotCheckIcon} />
+                          )}
+                          <Text style={[
+                            s.slotText,
+                            !slot.available && s.slotTextUnavail,
+                            isSel && s.slotTextSel,
+                          ]}>
+                            {slot.time}
+                          </Text>
+                        </Pressable>
+                      </Animated.View>
+                    );
+                  })}
+                </View>
+              )}
+            </Animated.View>
+          ) : (
+            <Animated.View entering={FadeInDown.delay(160).duration(300)} style={s.pickDateHintWrap}>
+              <View style={s.pickDateHintIcon}>
+                <Ionicons name="calendar-outline" size={22} color={Colors.textMuted} />
+              </View>
+              <Text style={s.pickDateHint}>Select a date above to see available times</Text>
+            </Animated.View>
+          )}
+        </Animated.View>
       </ScrollView>
 
       {/* Footer */}
@@ -271,7 +286,7 @@ export default function BookDateTimeStep() {
           ]}
           onPress={handleNext}
           disabled={!canContinue}
-          android_ripple={{ color: Colors.accent + '12', borderless: false }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
         >
           <Text style={s.nextBtnText}>Next — Location</Text>
           <Ionicons name="arrow-forward" size={17} color={Colors.white} />
@@ -284,15 +299,17 @@ export default function BookDateTimeStep() {
 const CELL = 42;
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 20, paddingBottom: 120 },
 
   // Calendar card
   calCard: {
     backgroundColor: Colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    marginBottom: 20,
+    borderRadius: borderRadius.xl ?? borderRadius.lg,
+    padding: 18,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
     ...cardShadow,
   },
   calHeader: {
@@ -304,30 +321,30 @@ const s = StyleSheet.create({
   calNavBtn: {
     width: 36,
     height: 36,
-    borderRadius: borderRadius.sm,
+    borderRadius: 10,
     backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  calTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  calDOW:   { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 },
+  calTitle:   { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  calDOW:     { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 },
   calDOWCell: { width: CELL, alignItems: 'center' },
-  calDOWText: { fontSize: 11, fontWeight: '700', color: Colors.textMuted },
-  calDivider: { height: 1, backgroundColor: Colors.border, marginBottom: 8, opacity: 0.5 },
-  calGrid:  { flexDirection: 'row', flexWrap: 'wrap' },
+  calDOWText: { fontSize: 11, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase' },
+  calDivider: { height: 1, backgroundColor: Colors.border, marginBottom: 10, opacity: 0.6 },
+  calGrid:    { flexDirection: 'row', flexWrap: 'wrap' },
   calDayCell: {
     width: CELL,
     height: CELL,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: CELL / 2,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   calDaySel:   { backgroundColor: Colors.accent },
   calDayToday: { backgroundColor: Colors.accentMuted },
   calDayPast:  { opacity: 0.25 },
   calDayText:      { fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
-  calDayTextSel:   { color: Colors.white, fontWeight: '700' },
+  calDayTextSel:   { color: Colors.white, fontWeight: '800' },
   calDayTextToday: { color: Colors.accent, fontWeight: '700' },
   calDayTextPast:  { color: Colors.textMuted },
   todayDot: {
@@ -340,41 +357,62 @@ const s = StyleSheet.create({
   },
 
   // Slots section
-  slotsSection: { marginBottom: 20 },
-  slotsTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  slotsTitle:    { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  slotsSection:  { marginBottom: 20 },
+  slotsTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  slotsIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  slotsTitle:     { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
   slotsTitleDate: { color: Colors.accent, fontWeight: '700' },
-  slotsLoading: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  slotsLoading:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16 },
   slotsLoadingText: { fontSize: 13, color: Colors.textMuted },
-  noSlotsWrap: { alignItems: 'center', paddingVertical: 24, gap: 8 },
-  noSlotsText: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  noSlotsWrap:  { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  noSlotsIcon:  {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  noSlotsText: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   noSlotsHint: { fontSize: 13, color: Colors.textMuted },
   slotsGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   slotBtn: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: borderRadius.sm,
+    paddingVertical: 12,
+    borderRadius: borderRadius.md,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: Colors.border,
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
     ...cardShadow,
   },
   slotBtnSel:      { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  slotBtnUnavail:  { backgroundColor: Colors.background, borderColor: Colors.background, opacity: 0.5 },
+  slotBtnUnavail:  { backgroundColor: Colors.background, borderColor: Colors.background, opacity: 0.45 },
   slotText:        { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
   slotTextSel:     { color: Colors.white },
   slotTextUnavail: { color: Colors.textMuted },
-  slotCheckDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: Colors.white,
-    marginTop: 3,
-  },
+  slotCheckIcon:   {},
 
-  pickDateHintWrap: { alignItems: 'center', gap: 8, paddingVertical: 32 },
-  pickDateHint:     { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
+  pickDateHintWrap: { alignItems: 'center', gap: 10, paddingVertical: 36 },
+  pickDateHintIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickDateHint:   { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
 
   // Footer
   footer: {
@@ -386,15 +424,15 @@ const s = StyleSheet.create({
     paddingHorizontal: SCREEN_PADDING,
     paddingTop: 14,
     paddingBottom: IS_IOS ? 32 : 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     borderTopColor: Colors.border,
-    gap: 8,
+    gap: 10,
     ...(IS_IOS
       ? { shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: -4 } }
       : { elevation: 8 }),
   },
   footerSummaryWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  footerSummary: { fontSize: 13, color: Colors.success, fontWeight: '600' },
+  footerSummary:     { fontSize: 13, color: Colors.success, fontWeight: '600' },
   nextBtn: {
     backgroundColor: Colors.accent,
     borderRadius: borderRadius.md,

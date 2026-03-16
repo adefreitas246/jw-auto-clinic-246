@@ -1,31 +1,29 @@
 // app/onboarding-screen.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
-  Image,
   Platform,
+  Pressable,
+  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Animated, {
   Extrapolate,
+  FadeIn,
   interpolate,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   type SharedValue,
 } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
-import { IS_IOS, SUPPORTS_LIQUID_GLASS } from "@/constants/Platform";
-import { Typography } from "@/constants/Typography";
 
 const { width, height } = Dimensions.get("window");
 
@@ -33,86 +31,36 @@ type Slide = {
   key: string;
   title: string;
   subtitle: string;
-  image: any;
-  gradient: [string, string];
+  icon: keyof typeof import("@expo/vector-icons/build/Ionicons").default.glyphMap;
+  gradient: readonly [string, string];
 };
 
 const SLIDES: Slide[] = [
   {
-    key: "home-transactions",
-    title: "Live Dashboard",
-    subtitle: "At-a-glance totals and charts for your day.",
-    image: require("@/assets/images/onboarding/HomeDashboardTransactions.jpeg"),
-    gradient: [Colors.primary, Colors.accent],
+    key: "clean",
+    title: "Your Car, Perfectly Clean",
+    subtitle: "Book a professional wash in seconds",
+    icon: "car-sport",
+    gradient: [Colors.primary, Colors.primaryLight] as const,
   },
   {
-    key: "home-workers",
-    title: "Manage Staff",
-    subtitle: "Filter by role, edit details, export lists.",
-    image: require("@/assets/images/onboarding/HomeDashboardEmployees.jpeg"),
-    gradient: [Colors.primaryDark, Colors.accentLight],
+    key: "track",
+    title: "Track Every Step",
+    subtitle: "Live updates from wash to ready",
+    icon: "location",
+    gradient: [Colors.primaryLight, Colors.accentDark] as const,
   },
   {
-    key: "home-shifts",
-    title: "Shifts & Status",
-    subtitle: "Track active/completed shifts and export.",
-    image: require("@/assets/images/onboarding/HomeDashboardShifts.jpeg"),
-    gradient: [Colors.primary, Colors.accent],
-  },
-  {
-    key: "home-reports",
-    title: "Reports",
-    subtitle: "Revenue, services, and expenses by period.",
-    image: require("@/assets/images/onboarding/HomeDashboardReports.jpeg"),
-    gradient: [Colors.primaryDark, Colors.accentLight],
-  },
-  {
-    key: "add-transactions",
-    title: "Add Transaction",
-    subtitle: "Pick services/specials and calculate instantly.",
-    image: require("@/assets/images/onboarding/AddTransactions.jpeg"),
-    gradient: [Colors.primary, Colors.accent],
-  },
-  {
-    key: "cart-1",
-    title: "Cart & Discounts",
-    subtitle: "Edit items, apply discounts, and charge.",
-    image: require("@/assets/images/onboarding/AddTransactionsCart2.jpeg"),
-    gradient: [Colors.primaryDark, Colors.accentLight],
-  },
-  {
-    key: "cart-2",
-    title: "Share or Clear",
-    subtitle: "Quick actions before checkout.",
-    image: require("@/assets/images/onboarding/AddTransactionsCart3.jpeg"),
-    gradient: [Colors.primary, Colors.accent],
-  },
-  {
-    key: "workers-mgmt-1",
-    title: "Quick Actions",
-    subtitle: "Clock-in, lunch, and history from each card.",
-    image: require("@/assets/images/onboarding/EmployeesManagement.jpeg"),
-    gradient: [Colors.primaryDark, Colors.accentLight],
-  },
-  {
-    key: "workers-mgmt-2",
-    title: "Add Workers",
-    subtitle: "Role-based setup with auto-formatted phone.",
-    image: require("@/assets/images/onboarding/EmployeesManagement2.jpeg"),
-    gradient: [Colors.primary, Colors.accent],
-  },
-  {
-    key: "settings",
-    title: "Settings",
-    subtitle: "Profile, update checks, what's new, and logout.",
-    image: require("@/assets/images/onboarding/Settings.jpeg"),
-    gradient: [Colors.primaryDark, Colors.accentLight],
+    key: "earn",
+    title: "Earn While You Wash",
+    subtitle: "Points, rewards, and exclusive deals",
+    icon: "star",
+    gradient: [Colors.accentDark, Colors.primary] as const,
   },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const flatRef = useRef<Animated.FlatList<Slide>>(null);
 
   const [index, setIndex] = useState(0);
@@ -146,32 +94,14 @@ export default function OnboardingScreen() {
     }
   }, [index, handleDone]);
 
-  const goBack = useCallback(() => {
-    if (index > 0) {
-      flatRef.current?.scrollToIndex({ index: index - 1, animated: true });
-    }
-  }, [index]);
-
   const isLast = index === SLIDES.length - 1;
+
+  // Background gradient interpolated from current slide
+  const currentSlide = SLIDES[index];
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" />
-
-      {/* Nav row */}
-      <View style={[s.navRow, { top: insets.top + 8 }]}>
-        <TouchableOpacity
-          disabled={index === 0}
-          onPress={goBack}
-          style={{ opacity: index === 0 ? 0 : 1 }}
-          hitSlop={12}
-        >
-          <Text style={s.navText}>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleDone} hitSlop={12}>
-          <Text style={[s.navText, s.navSkip]}>Skip</Text>
-        </TouchableOpacity>
-      </View>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
       {/* Slides */}
       <Animated.FlatList
@@ -194,49 +124,47 @@ export default function OnboardingScreen() {
         removeClippedSubviews
       />
 
-      {/* Footer */}
-      <View style={[s.footer, { paddingBottom: insets.bottom + 16 }]}>
-        {SUPPORTS_LIQUID_GLASS && (
-          <BlurView
-            intensity={60}
-            tint="dark"
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-        {!SUPPORTS_LIQUID_GLASS && (
-          <View style={[StyleSheet.absoluteFill, s.footerFallback]} />
-        )}
+      {/* Skip button — top right overlay */}
+      <Animated.View
+        entering={FadeIn.duration(400)}
+        style={s.skipContainer}
+        pointerEvents="box-none"
+      >
+        <SafeAreaView style={s.skipSafe}>
+          <Pressable
+            onPress={handleDone}
+            hitSlop={12}
+            android_ripple={{ color: "rgba(255,255,255,0.2)", borderless: true }}
+            style={s.skipBtn}
+          >
+            <Text style={s.skipText}>Skip</Text>
+          </Pressable>
+        </SafeAreaView>
+      </Animated.View>
 
-        {/* Dots */}
+      {/* Footer */}
+      <View style={s.footer}>
+        {/* Dot indicators */}
         <View style={s.dotsRow}>
           {SLIDES.map((_, i) => (
             <Dot key={i} x={x} index={i} />
           ))}
         </View>
 
-        {/* CTA */}
-        <TouchableOpacity
+        {/* CTA button */}
+        <Pressable
           onPress={goNext}
-          activeOpacity={0.85}
-          style={s.ctaWrapper}
+          android_ripple={{ color: Colors.accentDark, borderless: false }}
+          style={s.ctaBtn}
         >
-          <LinearGradient
-            colors={[Colors.accent, Colors.accentDark]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={s.ctaGradient}
-          >
-            <Text style={s.ctaText}>
-              {isLast ? "Get Started" : "Next"}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+          <Text style={s.ctaText}>{isLast ? "Get Started" : "Next"}</Text>
+        </Pressable>
       </View>
     </View>
   );
 }
 
-// ─── Slide ────────────────────────────────────────────────────────────────────
+// ─── Slide ─────────────────────────────────────────────────────────────────────
 function SlideItem({
   item,
   index,
@@ -252,103 +180,61 @@ function SlideItem({
     (index + 1) * width,
   ];
 
+  const iconStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(x.value, inputRange, [0, 1, 0], Extrapolate.CLAMP),
+    transform: [
+      {
+        scale: interpolate(
+          x.value,
+          inputRange,
+          [0.7, 1, 0.7],
+          Extrapolate.CLAMP
+        ),
+      },
+    ],
+  }));
+
   const titleStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: interpolate(
-          x.value,
-          inputRange,
-          [width * 0.3, 0, -width * 0.3],
-          Extrapolate.CLAMP
-        ),
-      },
-    ],
     opacity: interpolate(x.value, inputRange, [0, 1, 0], Extrapolate.CLAMP),
-  }));
-
-  const subStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        translateX: interpolate(
-          x.value,
-          inputRange,
-          [width * 0.5, 0, -width * 0.5],
-          Extrapolate.CLAMP
-        ),
-      },
-    ],
-    opacity: interpolate(x.value, inputRange, [0, 1, 0], Extrapolate.CLAMP),
-  }));
-
-  const imageStyle = useAnimatedStyle(() => ({
     transform: [
       {
         translateY: interpolate(
           x.value,
           inputRange,
-          [40, 0, -40],
-          Extrapolate.CLAMP
-        ),
-      },
-      {
-        scale: interpolate(
-          x.value,
-          inputRange,
-          [0.95, 1, 0.95],
+          [20, 0, -20],
           Extrapolate.CLAMP
         ),
       },
     ],
-    opacity: interpolate(x.value, inputRange, [0.6, 1, 0.6], Extrapolate.CLAMP),
   }));
 
-  const PHONE_AR = 19.5 / 9;
-  const isSmallScreen = height < 750;
-  const maxImageHeight = height * (isSmallScreen ? 0.4 : 0.55);
-  const baseWidth = width * 0.82;
-  let imgWidth = baseWidth;
-  let imgHeight = baseWidth * PHONE_AR;
-  if (imgHeight > maxImageHeight) {
-    imgHeight = maxImageHeight;
-    imgWidth = imgHeight / PHONE_AR;
-  }
+  const subStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(x.value, inputRange, [0, 0.85, 0], Extrapolate.CLAMP),
+    transform: [
+      {
+        translateY: interpolate(
+          x.value,
+          inputRange,
+          [30, 0, -30],
+          Extrapolate.CLAMP
+        ),
+      },
+    ],
+  }));
 
   return (
     <View style={{ width, height }}>
       <LinearGradient
         colors={item.gradient}
         start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        end={{ x: 0.4, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
 
+      {/* Decorative circle behind icon */}
       <View style={s.slideContent}>
-        {/* Image */}
-        <Animated.View
-          style={[
-            {
-              width: imgWidth,
-              height: imgHeight,
-              borderRadius: 20,
-              overflow: "hidden",
-              backgroundColor: "rgba(255,255,255,0.1)",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.25)",
-            },
-            imageStyle,
-          ]}
-        >
-          {SUPPORTS_LIQUID_GLASS && (
-            <BlurView
-              intensity={8}
-              tint="light"
-              style={StyleSheet.absoluteFill}
-            />
-          )}
-          <Image
-            source={item.image}
-            style={{ width: "100%", height: "100%", resizeMode: "contain" }}
-          />
+        <Animated.View style={[s.iconCircle, iconStyle]}>
+          <Ionicons name={item.icon as any} size={100} color={Colors.white} />
         </Animated.View>
 
         <Animated.Text style={[s.slideTitle, titleStyle]}>
@@ -363,7 +249,7 @@ function SlideItem({
   );
 }
 
-// ─── Animated dot ─────────────────────────────────────────────────────────────
+// ─── Animated dot ──────────────────────────────────────────────────────────────
 function Dot({ x, index }: { x: SharedValue<number>; index: number }) {
   const inputRange = [
     (index - 1) * width,
@@ -372,99 +258,121 @@ function Dot({ x, index }: { x: SharedValue<number>; index: number }) {
   ];
   const rStyle = useAnimatedStyle(() => {
     const w = interpolate(x.value, inputRange, [8, 24, 8], Extrapolate.CLAMP);
-    const o = interpolate(x.value, inputRange, [0.45, 1, 0.45], Extrapolate.CLAMP);
+    const o = interpolate(
+      x.value,
+      inputRange,
+      [0.4, 1, 0.4],
+      Extrapolate.CLAMP
+    );
     return { width: w, opacity: o };
   });
   return (
     <Animated.View
       style={[
-        { height: 8, borderRadius: 999, backgroundColor: Colors.white },
+        { height: 8, borderRadius: 4, backgroundColor: Colors.white },
         rStyle,
       ]}
     />
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.primary },
 
-  navRow: {
+  // Skip overlay
+  skipContainer: {
     position: "absolute",
-    left: 20,
-    right: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    top: 0,
+    right: 0,
     zIndex: 10,
   },
-  navText: { color: Colors.white, fontWeight: "600", fontSize: 15 },
-  navSkip: { fontWeight: "700", opacity: 0.85 },
+  skipSafe: {
+    alignItems: "flex-end",
+  },
+  skipBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: Platform.OS === "android" ? 36 : 0,
+  },
+  skipText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: "700",
+    opacity: 0.8,
+  },
 
+  // Slide
   slideContent: {
     flex: 1,
-    paddingTop: 80,
     alignItems: "center",
-    paddingHorizontal: 24,
+    justifyContent: "center",
+    paddingHorizontal: 32,
     paddingBottom: 160,
   },
+  iconCircle: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 40,
+  },
   slideTitle: {
-    marginTop: 20,
     color: Colors.white,
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "800",
     textAlign: "center",
-    letterSpacing: 0.2,
+    letterSpacing: -0.3,
+    marginBottom: 14,
   },
   slideSubtitle: {
-    marginTop: 10,
-    color: "rgba(255,255,255,0.88)",
+    color: Colors.white,
     fontSize: 16,
-    lineHeight: 23,
+    lineHeight: 24,
     textAlign: "center",
     paddingHorizontal: 8,
+    opacity: 0.85,
   },
 
+  // Footer
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
+    paddingBottom: Platform.OS === "ios" ? 44 : 32,
+    paddingHorizontal: 20,
     paddingTop: 20,
-    overflow: "hidden",
-    borderTopWidth: IS_IOS ? 0.5 : 0,
-    borderTopColor: "rgba(255,255,255,0.25)",
-    zIndex: 5,
+    backgroundColor: "rgba(10,22,40,0.35)",
   },
-  footerFallback: {
-    backgroundColor: "rgba(10,22,40,0.75)",
-  },
-
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 24,
   },
 
-  ctaWrapper: {
+  // CTA
+  ctaBtn: {
+    backgroundColor: Colors.white,
     borderRadius: 14,
-    overflow: "hidden",
-    shadowColor: Colors.accent,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginHorizontal: 0,
+    shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 6,
   },
-  ctaGradient: {
-    paddingVertical: 16,
-    alignItems: "center",
-    borderRadius: 14,
-  },
   ctaText: {
-    color: Colors.white,
+    color: Colors.primary,
     fontSize: 17,
-    fontWeight: "800",
-    letterSpacing: 0.3,
+    fontWeight: "700",
+    letterSpacing: 0.2,
   },
 });

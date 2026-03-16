@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -23,7 +24,8 @@ import Reanimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
+import { SectionHeader } from '@/components/ui';
 
 type ReferralData = {
   _id:               string;
@@ -88,10 +90,10 @@ export default function ReferralScreen() {
       : `$${data.refereeDiscountValue.toFixed(2)} off`;
 
     const message =
-      `🚗 Get ${discount} your first wash at Wash Hub!\n` +
+      `Get ${discount} your first wash at Wash Hub!\n` +
       `Use my referral code: ${data.code}\n` +
       `Book at: washhub.app\n\n` +
-      `(I'll earn loyalty points when you complete your first booking 🎁)`;
+      `(I'll earn loyalty points when you complete your first booking)`;
 
     try {
       if (await Sharing.isAvailableAsync()) {
@@ -145,84 +147,106 @@ export default function ReferralScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero card */}
-        <Reanimated.View entering={FadeIn.duration(300)} style={rf.heroCard}>
-          <Text style={rf.heroEmoji}>🎁</Text>
-          <Text style={rf.heroTitle}>Share & Earn</Text>
-          <Text style={rf.heroDesc}>
-            Give friends <Text style={rf.heroHighlight}>{discountLabel}</Text> on their first wash.{'\n'}
-            You earn <Text style={rf.heroHighlight}>{data.pointsPerReferral} loyalty points</Text> for each friend who books.
-          </Text>
+        <Reanimated.View entering={FadeIn.duration(350)}>
+          <LinearGradient
+            colors={[Colors.accentDark, Colors.primary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={rf.heroCard}
+          >
+            <View style={rf.heroIconWrap}>
+              <Ionicons name="gift" size={48} color={Colors.white} style={{ opacity: 0.9 }} />
+            </View>
+            <Text style={rf.heroTitle}>Refer Friends</Text>
+            <Text style={rf.heroDesc}>
+              Give friends <Text style={rf.heroHighlight}>{discountLabel}</Text> on their first wash.{'\n'}
+              You earn <Text style={rf.heroHighlight}>{data.pointsPerReferral} loyalty points</Text> for each friend who books.
+            </Text>
+          </LinearGradient>
         </Reanimated.View>
 
         {/* Code card */}
-        <Reanimated.View entering={FadeInDown.delay(60).duration(300)} style={rf.codeCard}>
-          <Text style={rf.codeLabel}>Your Referral Code</Text>
-          <Pressable
-            style={rf.codeBox}
-            onPress={handleCopy}
-            android_ripple={{ color: Colors.accent + '20', borderless: false }}
-          >
-            <Text style={rf.code}>{data.code}</Text>
-            <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={22} color={copied ? Colors.success : Colors.accent} />
-          </Pressable>
-          <Text style={rf.codeTip}>Tap to copy · Share with friends</Text>
+        <Reanimated.View entering={FadeInDown.delay(80).duration(320)} style={rf.codeCard}>
+          <Text style={rf.codeLabel}>Your Code</Text>
+          <Text style={rf.code}>{data.code}</Text>
+          <View style={rf.shareButtonsRow}>
+            <Pressable
+              style={rf.shareCircleBtn}
+              onPress={handleCopy}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <View style={rf.shareCircle}>
+                <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={20} color={copied ? Colors.success : Colors.accent} />
+              </View>
+              <Text style={rf.shareCircleLabel}>Copy</Text>
+            </Pressable>
+            <Pressable
+              style={rf.shareCircleBtn}
+              onPress={handleShare}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <View style={rf.shareCircle}>
+                <Ionicons name="logo-whatsapp" size={20} color={Colors.accent} />
+              </View>
+              <Text style={rf.shareCircleLabel}>WhatsApp</Text>
+            </Pressable>
+            <Pressable
+              style={rf.shareCircleBtn}
+              onPress={handleShare}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <View style={rf.shareCircle}>
+                <Ionicons name="chatbubble-outline" size={20} color={Colors.accent} />
+              </View>
+              <Text style={rf.shareCircleLabel}>SMS</Text>
+            </Pressable>
+          </View>
         </Reanimated.View>
 
-        {/* Share buttons */}
-        <Reanimated.View entering={FadeInDown.delay(120).duration(300)} style={rf.shareRow}>
-          <Pressable
-            style={rf.shareBtn}
-            onPress={handleCopy}
-            android_ripple={{ color: Colors.accent + '20', borderless: false }}
-          >
-            <Ionicons name="copy-outline" size={18} color={Colors.accent} />
-            <Text style={rf.shareBtnText}>Copy Code</Text>
-          </Pressable>
-          <Pressable
-            style={[rf.shareBtn, rf.shareBtnPrimary]}
-            onPress={handleShare}
-            android_ripple={{ color: Colors.white + '30', borderless: false }}
-          >
-            <Ionicons name="share-social-outline" size={18} color={Colors.white} />
-            <Text style={[rf.shareBtnText, { color: Colors.white }]}>Share Message</Text>
-          </Pressable>
+        {/* Stats row */}
+        <Reanimated.View entering={FadeInDown.delay(160).duration(320)} style={rf.statsRow}>
+          <View style={rf.statCard}>
+            <Ionicons name="people-outline" size={18} color={Colors.accent} style={{ marginBottom: 6 }} />
+            <Text style={rf.statVal}>{data.totalReferrals}</Text>
+            <Text style={rf.statLbl}>Referred</Text>
+          </View>
+          <View style={rf.statCard}>
+            <Ionicons name="star-outline" size={18} color={Colors.accent} style={{ marginBottom: 6 }} />
+            <Text style={rf.statVal}>{data.totalPointsEarned}</Text>
+            <Text style={rf.statLbl}>Earned</Text>
+          </View>
+          <View style={rf.statCard}>
+            <Ionicons name="time-outline" size={18} color={Colors.accent} style={{ marginBottom: 6 }} />
+            <Text style={rf.statVal}>{Math.max(0, data.referrals.filter(r => !r.pointsAwarded).length)}</Text>
+            <Text style={rf.statLbl}>Pending</Text>
+          </View>
         </Reanimated.View>
 
         {/* How it works */}
-        <Reanimated.View entering={FadeInDown.delay(180).duration(300)} style={rf.howCard}>
-          <Text style={rf.howTitle}>How It Works</Text>
-          {[
-            { icon: 'share-outline',    label: 'Share your code with a friend' },
-            { icon: 'calendar-outline', label: 'Friend uses code on first booking' },
-            { icon: 'gift-outline',     label: `Friend gets ${discountLabel} off automatically` },
-            { icon: 'star-outline',     label: `You earn ${data.pointsPerReferral} points after their wash` },
-          ].map((s, i) => (
-            <View key={i} style={rf.howRow}>
-              <View style={rf.howDot}>
-                <Ionicons name={s.icon as any} size={14} color={Colors.accent} />
-              </View>
-              <Text style={rf.howText}>{s.label}</Text>
-            </View>
-          ))}
-        </Reanimated.View>
+        <SectionHeader title="How It Works" />
 
-        {/* Stats */}
-        <Reanimated.View entering={FadeInDown.delay(240).duration(300)} style={rf.statsRow}>
-          <View style={rf.statBox}>
-            <Text style={rf.statVal}>{data.totalReferrals}</Text>
-            <Text style={rf.statLbl}>Friends Referred</Text>
-          </View>
-          <View style={rf.statDiv} />
-          <View style={rf.statBox}>
-            <Text style={rf.statVal}>{data.totalPointsEarned}</Text>
-            <Text style={rf.statLbl}>Points Earned</Text>
-          </View>
-        </Reanimated.View>
+        {[
+          { icon: 'share-outline',    label: 'Share your code with a friend' },
+          { icon: 'calendar-outline', label: 'Friend uses code on first booking' },
+          { icon: 'gift-outline',     label: `Friend gets ${discountLabel} off automatically` },
+          { icon: 'star-outline',     label: `You earn ${data.pointsPerReferral} points after their wash` },
+        ].map((s, i) => (
+          <Reanimated.View
+            key={i}
+            entering={FadeInDown.delay(240 + i * 60).duration(300)}
+            style={rf.stepCard}
+          >
+            <View style={rf.stepNumber}>
+              <Text style={rf.stepNumberText}>{i + 1}</Text>
+            </View>
+            <Text style={rf.stepText}>{s.label}</Text>
+          </Reanimated.View>
+        ))}
 
         {/* Recent referrals */}
         {data.referrals.length > 0 && (
           <>
-            <Text style={rf.sectionTitle}>Recent Referrals</Text>
+            <SectionHeader title="Recent Referrals" />
             {[...data.referrals].reverse().slice(0, 5).map(r => (
               <View key={r._id} style={rf.refRow}>
                 <Ionicons name="person-circle-outline" size={20} color={Colors.textMuted} />
@@ -254,42 +278,37 @@ export default function ReferralScreen() {
 }
 
 const rf = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING },
+  scroll: { padding: SCREEN_PADDING, paddingTop: 20 },
 
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  heroCard:      { backgroundColor: Colors.accentMuted, borderRadius: 18, padding: 24, alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: Colors.accentLight },
-  heroEmoji:     { fontSize: 44, marginBottom: 10 },
-  heroTitle:     { fontSize: 22, fontWeight: '900', color: Colors.textPrimary, marginBottom: 8 },
-  heroDesc:      { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
-  heroHighlight: { color: Colors.accent, fontWeight: '800' },
+  heroCard:      { borderRadius: 20, padding: 28, alignItems: 'center', marginBottom: 20 },
+  heroIconWrap:  { marginBottom: 16 },
+  heroTitle:     { fontSize: 26, fontWeight: '700', color: Colors.white, marginBottom: 10 },
+  heroDesc:      { fontSize: 14, color: Colors.white, textAlign: 'center', lineHeight: 22, opacity: 0.9 },
+  heroHighlight: { color: Colors.white, fontWeight: '800' },
 
-  codeCard:  { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
-  codeLabel: { fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
-  codeBox:   { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.surfaceAlt, borderRadius: 12, borderWidth: 2, borderColor: Colors.accent, borderStyle: 'dashed', paddingHorizontal: 20, paddingVertical: 12, marginBottom: 8, overflow: 'hidden' },
-  code:      { fontSize: 26, fontWeight: '900', color: Colors.accent, letterSpacing: 3 },
-  codeTip:   { fontSize: 11, color: Colors.textMuted },
+  codeCard:       { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1.5, borderColor: Colors.border, alignItems: 'center', ...cardShadow },
+  codeLabel:      { fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  code:           { fontSize: 24, fontWeight: '800', color: Colors.accent, letterSpacing: 4, fontFamily: IS_IOS ? 'Courier New' : 'monospace', marginBottom: 20 },
+  shareButtonsRow:{ flexDirection: 'row', gap: 24, justifyContent: 'center' },
+  shareCircleBtn: { alignItems: 'center', gap: 6, overflow: 'hidden' },
+  shareCircle:    { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.accentLight },
+  shareCircleLabel: { fontSize: 12, color: Colors.textSecondary, fontWeight: '600' },
 
-  shareRow:        { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  shareBtn:        { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.accent, backgroundColor: Colors.surface, overflow: 'hidden' },
-  shareBtnPrimary: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  shareBtnText:    { fontSize: 13, fontWeight: '700', color: Colors.accent },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  statCard: { flex: 1, backgroundColor: Colors.surface, borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, ...cardShadow },
+  statVal:  { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  statLbl:  { fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
 
-  howCard:  { backgroundColor: Colors.surface, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
-  howTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
-  howRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  howDot:   { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
-  howText:  { fontSize: 13, color: Colors.textSecondary, flex: 1 },
-
-  statsRow: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
-  statBox:  { flex: 1, alignItems: 'center' },
-  statVal:  { fontSize: 28, fontWeight: '900', color: Colors.accent },
-  statLbl:  { fontSize: 11, color: Colors.textMuted, marginTop: 3, textAlign: 'center' },
-  statDiv:  { width: 1, backgroundColor: Colors.border },
+  stepCard:       { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: Colors.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
+  stepNumber:     { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.accentMuted, borderWidth: 1.5, borderColor: Colors.accent, justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+  stepNumberText: { fontSize: 14, fontWeight: '800', color: Colors.accent },
+  stepText:       { fontSize: 14, color: Colors.textSecondary, flex: 1, lineHeight: 20 },
 
   sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
   refRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border },

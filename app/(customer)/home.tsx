@@ -14,8 +14,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Avatar } from '@/components/ui';
+import { SectionHeader } from '@/components/ui';
+import { Card } from '@/components/ui';
 
 type QuickAction = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -91,8 +94,8 @@ export default function CustomerHome() {
           {/* ── Header ── */}
           <View style={s.header}>
             <View style={s.headerText}>
-              <Text style={s.greeting}>{greeting}, {firstName} 👋</Text>
-              <Text style={s.sub}>What would you like to do today?</Text>
+              <Text style={s.greeting}>{greeting},</Text>
+              <Text style={s.userName}>{firstName}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [s.avatarBtn, pressed && { opacity: 0.8 }]}
@@ -102,58 +105,76 @@ export default function CustomerHome() {
                 router.replace('/auth/login');
               }}
               hitSlop={8}
-              android_ripple={{ color: Colors.accentDark, borderless: true }}
+              android_ripple={{ color: Colors.accent + '20', borderless: true }}
             >
-              <Text style={s.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
+              <Avatar name={firstName} size={44} />
             </Pressable>
           </View>
 
           {/* ── Hero card ── */}
-          <Pressable
-            style={({ pressed }) => [s.hero, pressed && { opacity: 0.93 }]}
-            onPress={() => {
-              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              router.push('/(customer)/book');
-            }}
-            android_ripple={{ color: 'rgba(255,255,255,0.15)', borderless: false }}
-          >
-            <View style={s.heroContent}>
-              <Text style={s.heroEyebrow}>READY TO BOOK?</Text>
-              <Text style={s.heroTitle}>Browse Services{'\n'}& Packages</Text>
-              <View style={s.heroCta}>
-                <Text style={s.heroCtaText}>Book a Wash</Text>
-                <Ionicons name="arrow-forward" size={14} color={Colors.white} />
+          <Animated.View entering={FadeInDown.delay(80).duration(300)}>
+            <Pressable
+              style={({ pressed }) => [s.hero, pressed && { opacity: 0.93 }]}
+              onPress={() => {
+                if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/(customer)/book');
+              }}
+              android_ripple={{ color: 'rgba(255,255,255,0.15)', borderless: false }}
+            >
+              <View style={s.heroContent}>
+                <View style={s.heroEyebrowRow}>
+                  <View style={s.heroEyebrowDot} />
+                  <Text style={s.heroEyebrow}>READY TO BOOK?</Text>
+                </View>
+                <Text style={s.heroTitle}>Browse Services{'\n'}& Packages</Text>
+                <View style={s.heroCta}>
+                  <Text style={s.heroCtaText}>Book a Wash</Text>
+                  <Ionicons name="arrow-forward" size={14} color={Colors.white} />
+                </View>
               </View>
-            </View>
-            <Ionicons
-              name="car-sport"
-              size={80}
-              color="rgba(255,255,255,0.12)"
-              style={s.heroIcon}
-            />
-          </Pressable>
+              <Ionicons
+                name="car-sport"
+                size={90}
+                color="rgba(255,255,255,0.10)"
+                style={s.heroIcon}
+              />
+            </Pressable>
+          </Animated.View>
 
           {/* ── Quick actions grid ── */}
-          <Text style={s.sectionTitle}>Quick Access</Text>
+          <View style={s.sectionRow}>
+            <Text style={s.sectionTitle}>Quick Access</Text>
+          </View>
           <View style={s.grid}>
-            {QUICK_ACTIONS.map((action) => (
-              <Pressable
+            {QUICK_ACTIONS.map((action, index) => (
+              <Animated.View
                 key={action.route}
-                style={({ pressed }) => [s.card, pressed && { opacity: 0.82 }]}
-                onPress={() => {
-                  if (IS_IOS) Haptics.selectionAsync();
-                  router.push(action.route as any);
-                }}
-                android_ripple={{ color: Colors.border, borderless: false }}
+                entering={FadeInDown.delay((index + 2) * 80).duration(300)}
+                style={s.cardWrapper}
               >
-                <View style={[s.cardIcon, { backgroundColor: action.bg }]}>
-                  <Ionicons name={action.icon} size={24} color={action.color} />
-                </View>
-                <Text style={s.cardLabel}>{action.label}</Text>
-                <Text style={s.cardSub}>{action.sub}</Text>
-              </Pressable>
+                <Card
+                  variant="default"
+                  onPress={() => {
+                    if (IS_IOS) Haptics.selectionAsync();
+                    router.push(action.route as any);
+                  }}
+                  style={s.cardInner}
+                  padding={16}
+                >
+                  <View style={[s.cardIcon, { backgroundColor: action.bg }]}>
+                    <Ionicons name={action.icon} size={24} color={action.color} />
+                  </View>
+                  <Text style={s.cardLabel}>{action.label}</Text>
+                  <Text style={s.cardSub}>{action.sub}</Text>
+                </Card>
+              </Animated.View>
             ))}
           </View>
+
+          {/* ── Section header placeholder ── */}
+          <Animated.View entering={FadeInDown.delay(560).duration(300)}>
+            <SectionHeader title="Recent Activity" actionLabel="See All" onAction={() => router.push('/(customer)/home')} />
+          </Animated.View>
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
@@ -175,25 +196,19 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 24,
+    paddingHorizontal: 0,
   },
   headerText: { flex: 1 },
-  greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
-  sub: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  greeting: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
+  userName: { fontSize: 28, fontWeight: '800', color: Colors.textPrimary, marginTop: 2 },
   avatarBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...cardShadow,
+    borderRadius: 24,
   },
-  avatarText: { color: Colors.white, fontWeight: '800', fontSize: 16 },
 
   // Hero card
   hero: {
     backgroundColor: Colors.primary,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl ?? borderRadius.lg,
     padding: 24,
     marginBottom: 28,
     overflow: 'hidden',
@@ -202,20 +217,31 @@ const s = StyleSheet.create({
     ...cardShadow,
   },
   heroContent: { flex: 1 },
+  heroEyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  heroEyebrowDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.accent,
+  },
   heroEyebrow: {
     fontSize: 11,
     color: 'rgba(255,255,255,0.6)',
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
-    marginBottom: 6,
   },
   heroTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '800',
     color: Colors.white,
-    lineHeight: 28,
-    marginBottom: 16,
+    lineHeight: 30,
+    marginBottom: 18,
   },
   heroCta: {
     flexDirection: 'row',
@@ -223,45 +249,48 @@ const s = StyleSheet.create({
     gap: 6,
     backgroundColor: Colors.accent,
     alignSelf: 'flex-start',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: borderRadius.full,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: borderRadius.full ?? 999,
   },
   heroCtaText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
-  heroIcon: { position: 'absolute', right: -8, bottom: -10 },
+  heroIcon: { position: 'absolute', right: -12, bottom: -14 },
 
   // Grid
+  sectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: Colors.textPrimary,
-    marginBottom: 14,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginBottom: 28,
   },
-  card: {
+  cardWrapper: {
     width: '47%',
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...cardShadow,
+  },
+  cardInner: {
+    width: '100%',
   },
   cardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.sm,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   cardLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: 2,
   },

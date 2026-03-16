@@ -2,6 +2,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Asset } from 'expo-asset';
 import * as FileSystem from "expo-file-system/legacy";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -9,6 +10,7 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView, Modal, Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +21,7 @@ import {
 } from "react-native";
 import * as Animatable from 'react-native-animatable';
 import DropDownPicker from 'react-native-dropdown-picker';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
@@ -90,14 +93,38 @@ export default function TransactionsScreen() {
   // Sticky header elevation on scroll (matches Settings)
   const [headerElevated, setHeaderElevated] = useState(false);
 
+  const totalRevenue = useMemo(() => tx.reduce((s, t) => s + Number(t.finalPrice ?? t.originalPrice ?? 0), 0), [tx]);
+
   const StickyTxHeader = useMemo(
     () => (
-      <View style={[styles.stickyHeader, headerElevated && styles.stickyHeaderElevated]}>
-        <Text style={styles.stickyHeaderTitle}>Transactions</Text>
+      <LinearGradient
+        colors={[Colors.primary, Colors.primaryLight]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.stickyHeader, headerElevated && styles.stickyHeaderElevated]}
+      >
+        {/* Top row: title + export-icon placeholder */}
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={styles.stickyHeaderTitle}>Transactions</Text>
+        </View>
+
+        {/* Revenue summary card */}
+        <ReAnimated.View entering={FadeInDown.delay(80)} style={styles.revCard}>
+          <View>
+            <Text style={styles.revLabel}>Total Revenue</Text>
+            <Text style={styles.revAmount}>${totalRevenue.toFixed(2)}</Text>
+            <Text style={styles.revSub}>{tx.length} records</Text>
+          </View>
+          <View style={styles.revIconCircle}>
+            <Ionicons name="trending-up-outline" size={22} color={Colors.accent} />
+          </View>
+        </ReAnimated.View>
+
+        {/* Subtitle */}
         <Text style={styles.stickyHeaderSubtitle}>Recent activity</Text>
-      </View>
+      </LinearGradient>
     ),
-    [headerElevated]
+    [headerElevated, totalRevenue, tx.length]
   );
 
   // Transactions list state + pagination
@@ -1779,24 +1806,47 @@ export default function TransactionsScreen() {
                   </Text>
                 ) : null
               }
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => openTransactionDetails(item._id)}
-                  style={{ paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderColor: Colors.border, flexDirection: "row", justifyContent: "space-between" }}
-                  accessibilityLabel="Open transaction details"
-                >
-                  <View style={{ flex: 1, paddingRight: 8, }}>
-                    <Text style={{ fontWeight: "700" }}>{item.serviceType || item.serviceName || "Service"}</Text>
-                    <Text style={{ color: Colors.textSecondary, marginTop: 2 }}>
-                      ${Number(item.finalPrice ?? item.originalPrice ?? 0).toFixed(2)} • {item.paymentMethod || "Cash"}
-                    </Text>
-                    {!!item.customerName && <Text style={{ color: Colors.textSecondary, marginTop: 2 }}>{item.customerName}</Text>}
-                  </View>
-                  <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
-                </TouchableOpacity>
+              renderItem={({ item, index }) => {
+                const SERVICE_ICON_COLORS = [
+                  Colors.accent, Colors.success, Colors.warning, Colors.primary, Colors.error,
+                ];
+                const iconColor = SERVICE_ICON_COLORS[index % SERVICE_ICON_COLORS.length];
+                const amount = Number(item.finalPrice ?? item.originalPrice ?? 0);
+                const timeStr = item.createdAt
+                  ? new Date(item.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+                  : "";
+                return (
+                  <Pressable
+                    onPress={() => openTransactionDetails(item._id)}
+                    android_ripple={{ color: Colors.accent + "20", borderless: false }}
+                    style={styles.txRow}
+                    accessibilityLabel="Open transaction details"
+                  >
+                    {/* Left: colored circle + text */}
+                    <View style={[styles.txIconCircle, { backgroundColor: iconColor + "18" }]}>
+                      <Ionicons name="car-outline" size={20} color={iconColor} />
+                    </View>
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={styles.txServiceName} numberOfLines={1}>
+                        {item.serviceType || item.serviceName || "Service"}
+                      </Text>
+                      <Text style={styles.txCustomerName} numberOfLines={1}>
+                        {item.customerName || "Customer"} • {item.paymentMethod || "Cash"}
+                      </Text>
+                    </View>
+                    {/* Right: amount + time */}
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={styles.txAmount}>+${amount.toFixed(2)}</Text>
+                      {!!timeStr && <Text style={styles.txTime}>{timeStr}</Text>}
+                    </View>
+                  </Pressable>
+                );
+              }}
+              ItemSeparatorComponent={() => (
+                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginLeft: 72 }} />
               )}
-              contentContainerStyle={{ paddingBottom: 100, }}
-              onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}  // ← add
+              contentContainerStyle={{ paddingBottom: 100 }}
+              onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}
               scrollEventThrottle={16}
             />
 
@@ -2856,28 +2906,17 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: Colors.white, flexGrow: 1, paddingBottom: 100, 
-    ...Platform.select({
-      ios: {
-        padding: 20,
-      },
-      android: {
-        paddingTop: 10,
-        paddingBottom: 50,
-        paddingLeft: 20,
-        paddingRight: 20,
-      },
-      default: {
-        padding: 10,
-      },
-    }), 
+  container: {
+    backgroundColor: Colors.background,
+    flexGrow: 1,
+    paddingBottom: 100,
   },
   containerWide: {},
   header: { fontSize: 18, fontWeight: 'bold', color: Colors.accent, marginBottom: 16, },
   logo: { fontSize: 18, fontWeight: 'bold', color: Colors.accent, marginTop: 0, },
   label: { marginTop: 10, marginBottom: 4, color: Colors.textPrimary, fontWeight: '600' },
 
-  posContainer: { flex: 1, backgroundColor: Colors.white },
+  posContainer: { flex: 1, backgroundColor: Colors.background },
   posContainerWide: { flexDirection: "row", gap: 16, padding: 12 },
   posLeft: { flex: 1, padding: 12 },
   posRight: { width: 420, maxWidth: "100%", padding: 12 },
@@ -3025,39 +3064,104 @@ const styles = StyleSheet.create({
   suggestionItem: { paddingVertical: 6, borderBottomWidth: 0.5, borderBottomColor: Colors.border },
   collapsibleHeader: { fontWeight: '700', fontSize: 16, marginTop: 20, marginBottom: 8, color: Colors.accent },
 
-  // Sticky header for Transactions FlatList
+  // ── Sticky gradient header ──────────────────────────────────────────────────
   stickyHeader: {
-    paddingHorizontal: 12,
-    paddingTop: 0,
-    paddingBottom: 6,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 16,
+    paddingTop: Platform.select({ ios: 56, android: 28, default: 80 }),
+    paddingBottom: 14,
     zIndex: 10,
-    ...Platform.select({
-      ios: { paddingTop: 20, marginTop: 0, },
-      android: { paddingTop: 10, marginBottom: 0, marginRight: -44},
-      default: { marginTop: 60, marginBottom: 0, marginRight:-44 },
-    }),
   },
   stickyHeaderElevated: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
     ...Platform.select({
-      android: { elevation: 3 },
       ios: {
         shadowColor: Colors.black,
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
       },
-      default: { boxShadow: '0 2px 6px rgba(0,0,0,0.06)' } as any,
+      android: { elevation: 6 },
     }),
   },
-  stickyHeaderTitle: { 
-    fontSize: 30, 
-    fontWeight: '800', 
-    color: Colors.accent, 
+  stickyHeaderTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: Colors.white,
+    letterSpacing: 0.3,
   },
-  stickyHeaderSubtitle: { color: Colors.textSecondary, marginTop: 4 },
+  stickyHeaderSubtitle: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 12,
+    marginTop: 6,
+  },
+
+  // Revenue summary card inside header
+  revCard: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 12,
+    marginBottom: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.black,
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+      },
+      android: { elevation: 2 },
+    }),
+  },
+  revLabel: { fontSize: 11, fontWeight: "600", color: Colors.textSecondary, textTransform: "uppercase", letterSpacing: 0.5 },
+  revAmount: { fontSize: 22, fontWeight: "800", color: Colors.accent, marginTop: 2 },
+  revSub: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  revIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.accentMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // ── Transaction list rows ──────────────────────────────────────────────────
+  txRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: Colors.white,
+  },
+  txIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  txServiceName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.textPrimary,
+  },
+  txCustomerName: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  txAmount: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: Colors.success,
+  },
+  txTime: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
 
   // Floating Action Button (Transactions speed-dial)
   fabTx: {

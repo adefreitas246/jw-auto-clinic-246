@@ -10,7 +10,6 @@ import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   LayoutAnimation,
@@ -25,6 +24,7 @@ import {
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
@@ -85,7 +85,9 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      <ScreenHeader title="Forgot Password" backButton />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={IS_IOS ? 'padding' : 'height'}
@@ -99,21 +101,22 @@ export default function ForgotPasswordScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Animated.View entering={FadeIn.duration(300)} style={s.container}>
-              {/* Illustration */}
-              <Image
-                source={require('@/assets/images/forgot-illustration.png')}
-                style={s.illustration}
-              />
+            <Animated.View entering={FadeIn.duration(400)} style={s.container}>
+
+              {/* Icon badge */}
+              <View style={s.iconCircle}>
+                <Ionicons name="mail" size={64} color={Colors.accent} />
+              </View>
 
               {/* Heading */}
-              <Text style={s.heading}>Forgot Your Password?</Text>
+              <Text style={s.heading}>Reset your password</Text>
               <Text style={s.subtext}>
-                Enter your email and we'll send you a link to reset it.
+                Enter your email and we'll send you a reset link
               </Text>
 
               {/* Email input */}
-              <View style={s.inputWrapper}>
+              <Text style={s.label}>Email</Text>
+              <View style={[s.inputWrapper, emailError && s.inputWrapperError]}>
                 <Ionicons
                   name="mail-outline"
                   size={18}
@@ -122,9 +125,9 @@ export default function ForgotPasswordScreen() {
                 />
                 <TextInput
                   ref={emailRef}
-                  placeholder="Email Address"
+                  placeholder="you@example.com"
                   placeholderTextColor={Colors.textMuted}
-                  style={[s.input, emailError && s.inputError]}
+                  style={s.input}
                   value={email}
                   onChangeText={(text) => {
                     setEmail(text);
@@ -186,64 +189,82 @@ const s = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingBottom: 100,
+    paddingBottom: 60,
   },
   container: {
     paddingHorizontal: SCREEN_PADDING,
     paddingVertical: 24,
-    justifyContent: 'center',
+    alignItems: 'center',
   },
 
-  illustration: {
-    width: 280,
-    height: 280,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    marginBottom: 20,
+  // Icon circle
+  iconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 28,
+    marginTop: 8,
   },
 
   heading: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     textAlign: 'center',
     color: Colors.textPrimary,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtext: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
+    lineHeight: 21,
+    marginBottom: 36,
+    paddingHorizontal: 8,
+  },
+
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginBottom: 6,
+    alignSelf: 'flex-start',
+    width: '100%',
   },
 
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: Colors.border,
     marginBottom: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+    width: '100%',
     ...cardShadow,
   },
+  inputWrapperError: {
+    borderColor: Colors.error,
+    borderWidth: 1.5,
+    backgroundColor: Colors.errorBg,
+  },
   inputIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.textPrimary,
-  },
-  inputError: {
-    borderColor: Colors.error,
   },
   errorText: {
     fontSize: 12,
     color: Colors.error,
     marginBottom: 16,
+    alignSelf: 'flex-start',
     marginLeft: 4,
   },
 
@@ -256,7 +277,12 @@ const s = StyleSheet.create({
     marginTop: 16,
     marginBottom: 12,
     minHeight: 52,
-    ...cardShadow,
+    width: '100%',
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
   },
   primaryBtnPressed: {
     opacity: 0.85,

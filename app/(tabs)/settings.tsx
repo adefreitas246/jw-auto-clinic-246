@@ -1,4 +1,4 @@
-﻿// settings.tsx
+// settings.tsx
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,7 +11,6 @@ import React, { useEffect, useState } from "react";
 import type { PressableStateCallbackType } from "react-native";
 import {
   Alert,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Linking,
@@ -28,9 +27,14 @@ import {
   useWindowDimensions
 } from "react-native";
 import * as Animatable from "react-native-animatable";
+import ReAnimated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
+import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 type ChangeItem = { type: "New" | "Improved" | "Fixed" | string; text: string };
 type WhatsNewItem = { version: string; date?: string; changes: ChangeItem[] };
@@ -48,21 +52,21 @@ const WHATS_NEW_URL =
         { type: "New", text: "New bottom sheet UI for key flows like Services & Specials and Settings, replacing full-screen modals." },
         { type: "New", text: "Enhanced earnings and payment-method charts with tap-to-filter behavior and active-point display." },
         { type: "New", text: "Chart segment control now resets the detail view until you tap a new point in the current segment." },
-  
+
         { type: "Improved", text: "Tablet layouts refined for Workers, Transactions, Settings, and other screens in portrait and landscape." },
         { type: "Improved", text: "Sticky headers adjusted for better full-width appearance, spacing, and elevation while scrolling." },
         { type: "Improved", text: "Floating action buttons now show correctly on Android landscape and tablet orientations." },
         { type: "Improved", text: "Bottom sheets and modals behave better with the keyboard, keeping content visible while typing." },
         { type: "Improved", text: "Login screen spacing and animations polished, including conditional biometric button display." },
         { type: "Improved", text: "Android launcher icon updated to use the correct light artwork." },
-  
-        { type: "Improved", text: "Browser password reset validation aligned with the app’s strong password rules and messages." },
+
+        { type: "Improved", text: "Browser password reset validation aligned with the app's strong password rules and messages." },
         { type: "Improved", text: "Transaction detail view now falls back to list data if the server returns a 404 for that transaction." },
         { type: "Improved", text: "Distance and matching logic (OSRM) improved for more consistent routing and fallback behavior." },
-  
+
         { type: "Fixed", text: "Fixed bottom sheet bug where closing the keyboard left extra blank space at the bottom." },
         { type: "Fixed", text: "Fixed multiple landscape layout issues where content could be misaligned or partially hidden." },
-        { type: "Fixed", text: "Fixed payment-method chart issue where the previous segment’s highlighted value could remain visible." },
+        { type: "Fixed", text: "Fixed payment-method chart issue where the previous segment's highlighted value could remain visible." },
         { type: "Fixed", text: "Resolved custom tab bar error ('Rendered fewer hooks than expected') that could cause crashes." },
         { type: "Fixed", text: "Long service and transaction labels now wrap correctly instead of overflowing outside their cards." },
       ],
@@ -110,7 +114,7 @@ const WHATS_NEW_URL =
       ],
     },
   ];
-  
+
 
 // ----- Platform helpers + design tokens --------------------------------
 const isWeb = Platform.OS === "web";
@@ -200,145 +204,95 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ListIcon({
-  name,
-  tint = UI.colors.primary,
-}: {
-  name: React.ComponentProps<typeof Ionicons>["name"];
-  tint?: string;
-}) {
-  return (
-    <View style={[styles.glyphWrap, { borderColor: UI.colors.glyphBorder }]}>
-      <Ionicons name={name} size={18} color={tint} />
+// ----- Settings row with new design icon tiles -------------------------
+type RowNewProps = {
+  label: string;
+  value?: string;
+  subtitle?: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  iconBg?: string;
+  iconColor?: string;
+  onPress?: () => void;
+  navigates?: boolean;
+  isDanger?: boolean;
+  childrenRight?: React.ReactNode;
+  isLast?: boolean;
+};
+
+function SettingsRow({
+  label, value, subtitle, icon, iconBg, iconColor,
+  onPress, navigates, isDanger, childrenRight, isLast,
+}: RowNewProps) {
+  const tintColor = isDanger ? Colors.error : (iconColor ?? Colors.accent);
+  const bg        = isDanger ? Colors.errorBg : (iconBg ?? Colors.accentMuted);
+
+  const content = (
+    <View style={styles.rowInner}>
+      <View style={[styles.rowIconCircle, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={18} color={tintColor} />
+      </View>
+
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={[styles.rowLabel, isDanger && { color: Colors.error }]} numberOfLines={1}>
+          {label}
+        </Text>
+        {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
+      </View>
+
+      <View style={styles.rowRight}>
+        {value ? <Text style={styles.rowValue}>{value}</Text> : null}
+        {childrenRight}
+        {navigates && !isDanger ? (
+          <Ionicons
+            name="chevron-forward"
+            size={16}
+            color={Colors.textMuted}
+            style={{ marginLeft: 4 }}
+          />
+        ) : null}
+      </View>
+
+      {!isLast ? <View style={styles.rowDivider} /> : null}
     </View>
+  );
+
+  if (!onPress) return <View style={styles.row}>{content}</View>;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      android_ripple={{ color: Colors.accent + '20', borderless: false }}
+      style={(state: PressableStateCallbackType) => [
+        styles.row,
+        isWeb && (state as any).hovered && ({ backgroundColor: Colors.surfaceAlt, cursor: "pointer" } as any),
+        isIOS && state.pressed && { opacity: 0.75 },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      {content}
+    </Pressable>
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  // Only decorate our custom Row components so arbitrary children (like social card) don't get extra props.
+// ----- Section group ---------------------------------------------------
+function SettingsSection({
+  title, children,
+}: { title: string; children: React.ReactNode }) {
   const kids = React.Children.toArray(children);
   const decorated = kids.map((child, i) => {
     if (!React.isValidElement(child)) return child;
-    if ((child as any).type === Row) {
-      return React.cloneElement(child as any, {
-        isFirst: i === 0,
-        isLast: i === kids.length - 1,
-      });
+    if ((child as any).type === SettingsRow) {
+      return React.cloneElement(child as any, { isLast: i === kids.length - 1 });
     }
     return child;
   });
 
   return (
     <View style={styles.sectionWrap}>
-      <Text style={styles.sectionHeader} accessibilityRole="header">
-        {title}
-      </Text>
-
+      <Text style={styles.sectionHeader}>{title}</Text>
       <View style={styles.sectionBody}>{decorated}</View>
     </View>
-  );
-}
-
-type RowProps = {
-  label: string;
-  value?: string;
-  subtitle?: string;
-  leading?: React.ReactNode; // icon tile
-  childrenRight?: React.ReactNode; // inputs/switches
-  onPress?: () => void;
-  navigates?: boolean; // chevron
-  external?: boolean; // external indicator
-  accessibilityLabel?: string;
-  isFirst?: boolean;
-  isLast?: boolean;
-};
-
-function Row({
-  label,
-  value,
-  subtitle,
-  leading,
-  childrenRight,
-  onPress,
-  navigates,
-  external,
-  accessibilityLabel,
-  isLast,
-}: RowProps) {
-  const Content = (
-    <View style={styles.rowInner}>
-      <View style={styles.rowLeft}>
-        {leading ? <View style={{ marginRight: 12 }}>{leading}</View> : null}
-        <View style={{ flex: 1 }}>
-          {/* no-wrap title */}
-          <Text style={styles.rowLabel} numberOfLines={1} ellipsizeMode="tail">
-            {label}
-          </Text>
-          {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
-        </View>
-      </View>
-
-      <View style={styles.rowRight}>
-        {value ? <Text style={styles.rowValue}>{value}</Text> : null}
-        {childrenRight}
-        {external ? (
-          <Ionicons
-            name="open-outline"
-            size={18}
-            color={Colors.textMuted}
-            style={{ marginLeft: 8 }}
-          />
-        ) : navigates ? (
-          <Ionicons
-            name={isIOS ? "chevron-forward" : "chevron-forward-outline"}
-            size={18}
-            color={Colors.textMuted}
-            style={{ marginLeft: 8 }}
-          />
-        ) : null}
-      </View>
-
-      {/* light divider between rows (hidden on last) */}
-      {!isLast ? <View style={styles.rowDivider} /> : null}
-    </View>
-  );
-
-  if (!onPress)
-    return (
-      <View
-        style={[
-          styles.row,
-          isWeb ? ({ cursor: "default" } as any) : undefined,
-        ]}
-      >
-        {Content}
-      </View>
-    );
-
-  return (
-    <Pressable
-      onPress={onPress}
-      android_ripple={
-        isAndroid ? { color: "rgba(0,0,0,0.06)" } : undefined
-      }
-      style={(state: PressableStateCallbackType) => [
-        styles.row,
-        isWeb &&
-          state.hovered &&
-          ({ backgroundColor: Colors.surfaceAlt, cursor: "pointer" } as any),
-        isIOS && state.pressed && { opacity: 0.75 },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel || label}
-    >
-      {Content}
-    </Pressable>
   );
 }
 
@@ -348,15 +302,11 @@ type BottomSheetProps = {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  keyboardOffset?: number;  // 👈 new
+  keyboardOffset?: number;
 };
 
 function BottomSheet({
-  visible,
-  onClose,
-  title,
-  children,
-  keyboardOffset = 0,      // 👈 default
+  visible, onClose, title, children, keyboardOffset = 0,
 }: BottomSheetProps) {
   if (!visible) return null;
 
@@ -376,7 +326,7 @@ function BottomSheet({
           duration={220}
           style={[
             styles.bsSheet,
-            keyboardOffset ? { marginBottom: keyboardOffset } : null, // 👈 shift above keyboard
+            keyboardOffset ? { marginBottom: keyboardOffset } : null,
           ]}
         >
           <View style={styles.bsHandle} />
@@ -578,7 +528,7 @@ export default function SettingsScreen() {
     } catch (e: any) {
       Alert.alert(
         "Network error",
-        "We’ll open your mail app so you can send the report manually."
+        "We'll open your mail app so you can send the report manually."
       );
       const subject = encodeURIComponent(`[App Support] ${reportSubject}`);
       const body = encodeURIComponent(
@@ -655,7 +605,7 @@ export default function SettingsScreen() {
           await AsyncStorage.setItem("@useBiometrics", "true");
           Alert.alert(
             "Biometric login enabled",
-            "You can now use Face ID, Touch ID, or your device’s biometrics when logging in (where supported)."
+            "You can now use Face ID, Touch ID, or your device's biometrics when logging in (where supported)."
           );
         } else {
           setBiometricEnabled(false);
@@ -664,7 +614,7 @@ export default function SettingsScreen() {
         setBiometricEnabled(false);
         Alert.alert(
           "Biometric error",
-          "We couldn’t complete biometric authentication."
+          "We couldn't complete biometric authentication."
         );
       }
     } else {
@@ -708,7 +658,7 @@ export default function SettingsScreen() {
     } catch {
       setWhatsNew(WHATS_NEW_FALLBACK);
       setWhatsNewError(
-        "Showing local release notes. (Couldn’t fetch from server.)"
+        "Showing local release notes. (Couldn't fetch from server.)"
       );
     } finally {
       setLoadingWhatsNew(false);
@@ -726,9 +676,14 @@ export default function SettingsScreen() {
     }
   }, [user]);
 
+  // Role display
+  const roleLabel = user?.role
+    ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
+    : "Staff";
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: UI.colors.bg }}
+      style={{ flex: 1, backgroundColor: Colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
@@ -738,128 +693,58 @@ export default function SettingsScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           stickyHeaderIndices={[0]}
-          onScroll={(e) =>
-            setHeaderElevated(e.nativeEvent.contentOffset.y > 2)
-          } // NEW
-          scrollEventThrottle={16} // NEW
+          onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}
+          scrollEventThrottle={16}
         >
-          {/* NEW: Sticky Header */}
+          {/* Sticky Header */}
           <View
             style={[
               styles.stickyHeader,
               headerElevated && styles.stickyHeaderElevated,
-              // web-only shadow polish
-              isWeb && headerElevated
-                ? {
-                    shadowColor: Colors.black,
-                    shadowOpacity: 0.05,
-                    shadowRadius: 6,
-                    shadowOffset: { width: 0, height: 4 },
-                  }
-                : null,
             ]}
           >
             <Text style={styles.largeTitle}>Settings</Text>
           </View>
 
-          {/* Profile summary card */}
-          <View style={styles.profileCard}>
-            <TouchableOpacity
-              onPress={pickImage}
-              accessibilityLabel="Edit profile picture"
-            >
-              <Image
-                source={
-                  avatar
-                    ? { uri: avatar }
-                    : require("@/assets/images/avatar-placeholder.png")
-                }
-                style={styles.profileAvatar}
-              />
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}>
+          {/* ── Main content (fade in) ── */}
+          <ReAnimated.View entering={FadeIn.duration(300)}>
+
+          {/* ── Profile card ── */}
+          <ReAnimated.View entering={FadeInDown.delay(0).duration(400)} style={styles.profileCardWrap}>
+            <Card variant="elevated" padding={24} style={styles.profileCard}>
+              <Pressable
+                onPress={pickImage}
+                accessibilityLabel="Edit profile picture"
+                android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 40 }}
+                style={{ alignItems: 'center' }}
+              >
+                <View style={styles.profileAvatarWrap}>
+                  <Avatar name={name || '?'} uri={avatar} size={72} />
+                  <View style={styles.editAvatarBadge}>
+                    <Ionicons name="camera-outline" size={14} color={Colors.white} />
+                  </View>
+                </View>
+              </Pressable>
+
               <Text style={styles.profileName}>{name || "—"}</Text>
-              <Text style={styles.profileEmail}>{email || "—"}</Text>
-              {editSheetVisible ? (
-                <Text style={styles.profileHint}>
-                  Tap Save to keep your changes
-                </Text>
-              ) : null}
-            </View>
-            <TouchableOpacity
-              onPress={() => setEditSheetVisible((v) => !v)}
-              style={styles.editPill}
-              accessibilityLabel={
-                editSheetVisible ? "Close edit profile" : "Edit profile"
-              }
-            >
-              <Ionicons
-                name={editSheetVisible ? "close-outline" : "create-outline"}
-                size={18}
-                color={Colors.white}
+
+              <Badge
+                status={user?.role === 'admin' ? 'active' : 'info'}
+                label={roleLabel}
+                size="sm"
+                style={{ marginTop: 6 }}
               />
-              <Text style={styles.editPillText}>
-                {editSheetVisible ? "Close" : "Edit"}
-              </Text>
-            </TouchableOpacity>
-          </View>
 
-          {/* ====== COLUMN LAYOUT (single column on mobile, two columns on wide web) ====== */}
-          <View style={[styles.columns, isWideWeb && styles.columnsWide]}>
-            {/* LEFT COLUMN */}
-            <View style={[styles.col, isWideWeb && styles.colLeft]}>
-              {/* GENERAL / ACCOUNT */}
-              <Section title="General">
-                <Row
-                  label="Name"
-                  value={name || "—"}
-                  leading={<ListIcon name="person-outline" />}
-                />
-                <Row
-                  label="Phone"
-                  value={phone?.trim() || "—"}
-                  leading={<ListIcon name="call-outline" />}
-                />
-                <Row
-                  label="Email"
-                  value={email || "—"}
-                  leading={<ListIcon name="mail-outline" />}
-                />
-                <Row
-                  label="Notifications"
-                  leading={<ListIcon name="notifications-outline" />}
-                  childrenRight={
-                    <Switch
-                      value={!!notificationsEnabled}
-                      onValueChange={setNotificationsEnabled}
-                    />
-                  }
-                />
-              </Section>
+              <Text style={styles.profileEmail}>{email || "—"}</Text>
 
-              {/* SECURITY */}
-              {!isWeb && (
-                <Section title="Security">
-                  <Row
-                    label="Biometric Login"
-                    subtitle={
-                      checkingBiometric
-                        ? "Checking device security…"
-                        : biometricAvailable
-                        ? getBiometricLabel(biometricTypes)
-                        : "Not available on this device"
-                    }
-                    leading={<ListIcon name="lock-closed-outline" />}
-                    childrenRight={
-                      <Switch
-                        value={biometricEnabled}
-                        onValueChange={handleToggleBiometrics}
-                        disabled={checkingBiometric || !biometricAvailable}
-                      />
-                    }
-                  />
-                </Section>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onPress={() => setEditSheetVisible(v => !v)}
+                style={{ marginTop: 12 }}
+              >
+                Edit Profile
+              </Button>
 
               {showSavedAnim ? (
                 <Animatable.Text
@@ -867,65 +752,150 @@ export default function SettingsScreen() {
                   duration={500}
                   style={styles.savedMessage}
                 >
-                  ✅ Changes saved successfully!
+                  Changes saved successfully!
                 </Animatable.Text>
               ) : null}
+            </Card>
+          </ReAnimated.View>
 
-              {/* SUPPORT */}
-              <Section title="Support">
-                <Row
-                  label="Report an Issue"
-                  leading={<ListIcon name="chatbox-ellipses-outline" />}
-                  navigates
-                  onPress={() => setReportSheetVisible(true)}
-                />
-              </Section>
-            </View>
+          {/* ── Account section ── */}
+          <ReAnimated.View entering={FadeInDown.delay(80).duration(400)}>
+            <SettingsSection title="Account">
+              <SettingsRow
+                label="Name"
+                value={name || "—"}
+                icon="person-outline"
+                iconBg={Colors.accentMuted}
+                iconColor={Colors.accent}
+              />
+              <SettingsRow
+                label="Phone"
+                value={phone?.trim() || "—"}
+                icon="call-outline"
+                iconBg={Colors.accentMuted}
+                iconColor={Colors.accent}
+              />
+              <SettingsRow
+                label="Email"
+                value={email || "—"}
+                icon="mail-outline"
+                iconBg={Colors.accentMuted}
+                iconColor={Colors.accent}
+              />
+              <SettingsRow
+                label="Notifications"
+                icon="notifications-outline"
+                iconBg={Colors.warningBg}
+                iconColor={Colors.warning}
+                childrenRight={
+                  <Switch
+                    value={!!notificationsEnabled}
+                    onValueChange={setNotificationsEnabled}
+                  />
+                }
+              />
+            </SettingsSection>
+          </ReAnimated.View>
 
-            {/* RIGHT COLUMN */}
-            <View style={[styles.col, isWideWeb && styles.colRight]}>
-              {/* UPDATES */}
-              <Section title="Updates">
-                <Row
-                  label="Check for Updates"
-                  leading={<ListIcon name="refresh-outline" />}
-                  onPress={checkForUpdates}
-                  navigates={!checkingUpdate}
-                  value={checkingUpdate ? "Checking…" : undefined}
+          {/* ── Security section (native only) ── */}
+          {!isWeb && (
+            <ReAnimated.View entering={FadeInDown.delay(120).duration(400)}>
+              <SettingsSection title="Security">
+                <SettingsRow
+                  label="Biometric Login"
+                  subtitle={
+                    checkingBiometric
+                      ? "Checking device security…"
+                      : biometricAvailable
+                      ? getBiometricLabel(biometricTypes)
+                      : "Not available on this device"
+                  }
+                  icon="lock-closed-outline"
+                  iconBg={Colors.accentMuted}
+                  iconColor={Colors.accent}
+                  childrenRight={
+                    <Switch
+                      value={biometricEnabled}
+                      onValueChange={handleToggleBiometrics}
+                      disabled={checkingBiometric || !biometricAvailable}
+                    />
+                  }
                 />
-                <Row
-                  label="What’s New"
-                  leading={<ListIcon name="sparkles-outline" />}
-                  onPress={() => setWhatsNewSheetVisible(true)}
-                  navigates
-                />
-              </Section>
+              </SettingsSection>
+            </ReAnimated.View>
+          )}
 
-              {/* ABOUT */}
-              <Section title="About">
-                <Row
-                  label="Powered by"
-                  value="ASD Inova Technologia"
-                  leading={<ListIcon name="hardware-chip-outline" />}
-                />
-                <Row
-                  label="Version"
-                  value={String(Constants.expoConfig?.version || "")}
-                  leading={<ListIcon name="information-circle-outline" />}
-                />
-                <Row
-                  label="Log Out"
-                  onPress={handleLogout}
-                  navigates
-                  leading={<ListIcon name="exit-outline" />}
-                />
-              </Section>
+          {/* ── Support section ── */}
+          <ReAnimated.View entering={FadeInDown.delay(160).duration(400)}>
+            <SettingsSection title="Support">
+              <SettingsRow
+                label="Report an Issue"
+                icon="chatbox-ellipses-outline"
+                iconBg={Colors.accentMuted}
+                iconColor={Colors.accent}
+                navigates
+                onPress={() => setReportSheetVisible(true)}
+              />
+            </SettingsSection>
+          </ReAnimated.View>
 
-              {/* STAY CONNECTED / SOCIAL FOOTER (optional) */}
-              {/* ... (unchanged, still commented out) ... */}
-            </View>
-          </View>
-          {/* ====== /COLUMN LAYOUT ====== */}
+          {/* ── Updates section ── */}
+          <ReAnimated.View entering={FadeInDown.delay(200).duration(400)}>
+            <SettingsSection title="Updates">
+              <SettingsRow
+                label="Check for Updates"
+                icon="refresh-outline"
+                iconBg={Colors.successBg}
+                iconColor={Colors.success}
+                onPress={checkForUpdates}
+                navigates={!checkingUpdate}
+                value={checkingUpdate ? "Checking…" : undefined}
+              />
+              <SettingsRow
+                label="What's New"
+                icon="sparkles-outline"
+                iconBg={Colors.warningBg}
+                iconColor={Colors.warning}
+                onPress={() => setWhatsNewSheetVisible(true)}
+                navigates
+              />
+            </SettingsSection>
+          </ReAnimated.View>
+
+          {/* ── About section ── */}
+          <ReAnimated.View entering={FadeInDown.delay(240).duration(400)}>
+            <SettingsSection title="About">
+              <SettingsRow
+                label="Powered by"
+                value="ASD Inova Technologia"
+                icon="hardware-chip-outline"
+                iconBg={Colors.surfaceAlt}
+                iconColor={Colors.textSecondary}
+              />
+              <SettingsRow
+                label="Version"
+                value={String(Constants.expoConfig?.version || "")}
+                icon="information-circle-outline"
+                iconBg={Colors.surfaceAlt}
+                iconColor={Colors.textSecondary}
+              />
+            </SettingsSection>
+          </ReAnimated.View>
+
+          {/* ── Danger Zone ── */}
+          <ReAnimated.View entering={FadeInDown.delay(280).duration(400)}>
+            <SettingsSection title="Danger Zone">
+              <SettingsRow
+                label="Log Out"
+                icon="exit-outline"
+                isDanger
+                onPress={handleLogout}
+              />
+            </SettingsSection>
+          </ReAnimated.View>
+
+          </ReAnimated.View>{/* end FadeIn wrapper */}
+
         </ScrollView>
 
         {/* === EDIT PROFILE BOTTOM SHEET === */}
@@ -989,7 +959,7 @@ export default function SettingsScreen() {
                 ]}
                 onPress={() => setEditSheetVisible(false)}
               >
-                <Text style={[styles.saveText, { color: Colors.black }]}>
+                <Text style={[styles.saveText, { color: Colors.textPrimary }]}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -1068,7 +1038,7 @@ export default function SettingsScreen() {
         <BottomSheet
           visible={whatsNewSheetVisible}
           onClose={() => setWhatsNewSheetVisible(false)}
-          title="What’s New"
+          title="What's New"
           keyboardOffset={keyboardOffset}
         >
           <ScrollView
@@ -1135,7 +1105,7 @@ export default function SettingsScreen() {
 }
 
 function getBadgeStyle(type: string) {
-  const base = { backgroundColor: Colors.accentMuted, borderColor: UI.colors.border };
+  const base = { backgroundColor: Colors.accentMuted, borderColor: Colors.accentMuted };
   if (type === "New")
     return { backgroundColor: Colors.successBg, borderColor: Colors.successBg };
   if (type === "Improved")
@@ -1152,330 +1122,318 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: UI.maxWidth,
     alignSelf: "center",
-    paddingHorizontal: UI.padX,
-    paddingTop: 14,
+    paddingHorizontal: 0,
+    paddingTop: 0,
     paddingBottom: 80,
   },
-  container: { flexGrow: 1, paddingTop: 25, paddingBottom: 20 },
+  container: { flexGrow: 1, paddingBottom: 40 },
 
-  // NEW: Sticky header
+  // Sticky header
   stickyHeader: {
-    backgroundColor: UI.colors.bg,
+    backgroundColor: Colors.background,
+    paddingHorizontal: UI.padX,
     paddingBottom: 10,
     zIndex: 10,
     ...Platform.select({
-      ios: { paddingTop: 25, },
-      android: { paddingTop: 25 },
-      default: { paddingTop: 60, },
+      ios: { paddingTop: 8 },
+      android: { paddingTop: 8 },
+      default: { paddingTop: 12 },
     }),
   },
   stickyHeaderElevated: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: UI.colors.border,
+    borderBottomColor: Colors.border,
+    ...Platform.select({
+      ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 3 },
+    }),
   },
-
-  // Large title
   largeTitle: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: Colors.accent,
-    letterSpacing: 0.4,
+    fontSize: 28,
+    fontWeight: '800',
+    color: Colors.textPrimary,
   },
 
-  // Profile summary card
+  // Profile card — centered, elevated
+  profileCardWrap: {
+    marginHorizontal: 20,
+    marginVertical: 16,
+  },
   profileCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: UI.colors.card,
-    borderRadius: UI.radius,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: UI.colors.border,
-    padding: 14,
-    marginTop: 14,
-    marginBottom: 14,
+    alignItems: 'center',
   },
-  profileAvatar: { width: 56, height: 56, borderRadius: 12, marginRight: 12 },
-  profileName: { fontSize: 17, fontWeight: "700", color: UI.colors.text },
-  profileEmail: { fontSize: 13, color: UI.colors.sub, marginTop: 2 },
-  profileHint: { fontSize: 12, color: Colors.textMuted, marginTop: 4 },
-  editPill: {
-    backgroundColor: UI.colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  profileAvatarWrap: {
+    position: 'relative',
+    marginBottom: 4,
   },
-  editPillText: { color: Colors.white, fontWeight: "700", marginLeft: 6 },
-
-  // Section container
-  sectionWrap: { marginTop: 14 },
-  sectionHeader: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: Colors.accent,
-    marginBottom: 8,
-  },
-  sectionBody: {
-    backgroundColor: UI.colors.card,
-    borderRadius: UI.radius,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: UI.colors.border,
-    overflow: "hidden",
-  },
-
-  // Row
-  row: { paddingHorizontal: 14, backgroundColor: "transparent" },
-  rowInner: {
-    minHeight: 54,
-    paddingVertical: 10,
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  rowLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    paddingRight: 8,
-  },
-  rowLabel: {
-    fontSize: 16,
-    color: UI.colors.text,
-    fontWeight: "600",
-    flexShrink: 1, // allow truncation
-  },
-  rowSubtitle: { fontSize: 12, color: UI.colors.sub, marginTop: 2 },
-  rowRight: { flexDirection: "row", alignItems: "center" },
-  rowValue: { fontSize: 16, color: Colors.textSecondary },
-  rowDivider: {
-    position: "absolute",
-    left: 14 + 28 + 12, // left padding + glyph + gap
-    right: 0,
+  editAvatarBadge: {
+    position: 'absolute',
     bottom: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: UI.colors.border,
+    right: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white,
   },
-
-  // Icon tile
-  glyphWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    borderWidth: 1,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: "center",
-    justifyContent: "center",
+  profileName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginTop: 12,
   },
-
-  // Inputs (web-friendly)
-  itemInput: {
-    fontSize: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: UI.colors.border,
-    backgroundColor: Colors.background,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    textAlign: Platform.select({
-      web: "left",
-      default: "left",
-    }) as any,
-    minWidth: Platform.select({ web: 750, default: 200 }) as any,
-    maxWidth: Platform.select({ web: 360, default: undefined }) as any,
-    marginLeft: 8,
+  profileEmail: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: 4,
+    textAlign: 'center',
   },
-
-  saveButton: {
-    backgroundColor: UI.colors.primary,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 10,
-    alignSelf: Platform.select({
-      web: "auto",
-      default: "auto",
-    }) as any,
-    minWidth: Platform.select({ web: 220, default: undefined }) as any,
-    paddingHorizontal: Platform.select({
-      web: 18,
-      default: undefined,
-    }) as any,
-  },
-  saveText: {
-    textAlign: "center",
-    color: Colors.white,
-    fontWeight: "800",
-    fontSize: 16,
-  },
-  buttonDisabled: { opacity: 0.6 },
   savedMessage: {
     marginTop: 10,
     fontSize: 13,
     color: Colors.success,
-    textAlign: "center",
-    fontWeight: "700",
+    fontWeight: '600',
+    textAlign: 'center',
   },
 
-  // Support form
-  reportInput: {
+  // Section group
+  sectionWrap: { marginTop: 8 },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 8,
+  },
+  sectionBody: {
     backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: UI.colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    marginBottom: 10,
-    color: UI.colors.text,
+    borderRadius: 16,
+    marginHorizontal: 20,
+    overflow: 'hidden',
+    ...Platform.select({
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
+      android: { elevation: 2 },
+    }),
   },
-  submitReportButton: {
-    backgroundColor: UI.colors.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
+
+  // Row
+  row: {
+    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
   },
-  submitReportText: {
-    color: Colors.white,
-    textAlign: "center",
-    fontWeight: "800",
+  rowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    position: 'relative',
+  },
+  rowIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowLabel: {
     fontSize: 15,
+    color: Colors.textPrimary,
+    fontWeight: '500',
   },
-
-  // What's New
-  whatsNewCard: {
-    marginTop: 12,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
-    borderColor: UI.colors.border,
-    borderRadius: UI.radius,
-    padding: 14,
+  rowSubtitle: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
-  whatsNewHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  whatsNewTitle: { fontSize: 16, fontWeight: "800", color: UI.colors.text },
-  whatsNewRefresh: {
+  rowValue: {
     fontSize: 13,
-    color: UI.colors.primary,
-    fontWeight: "800",
+    color: Colors.textMuted,
+    maxWidth: 160,
+    textAlign: 'right',
   },
-  whatsNewError: { marginTop: 6, color: Colors.warningText, fontSize: 12 },
-  whatsNewLoading: { marginTop: 8, color: Colors.textSecondary, fontSize: 13 },
-  whatsNewItem: {
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: UI.colors.border,
+  rowDivider: {
+    position: 'absolute',
+    bottom: 0,
+    left: 68,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border,
   },
-  whatsNewVersion: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: UI.colors.text,
-  },
-  whatsNewDate: { fontSize: 12, color: UI.colors.sub },
-  whatsNewChangeRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginTop: 6,
-    gap: 8,
-  },
-  badge: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-  },
-  badgeText: { fontSize: 11, fontWeight: "800", color: UI.colors.text },
-  whatsNewChangeText: { flex: 1, fontSize: 14, color: Colors.textPrimary },
 
-  // Social footer (unused / commented in JSX for now)
-  socialWrap: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    alignItems: "center",
-    gap: 12,
-  },
-  socialRow: { flexDirection: "row", gap: 12 },
-  socialButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: UI.colors.glyphBorder,
-  },
-  footerLead: { fontSize: 14, color: UI.colors.sub },
-  footerMeta: { fontSize: 13, color: Colors.textMuted },
+  // Columns (wide web)
+  columns: { flexDirection: 'column' },
+  columnsWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
+  col: { flex: 1 },
+  colLeft: { flex: 1 },
+  colRight: { flex: 1 },
 
-  // Columns for web desktop
-  columns: {
-    // mobile default (stacked)
-  },
-  columnsWide: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 16,
-  },
-  col: {
-    flex: 1,
-    minWidth: 0,
-  },
-  colLeft: {},
-  colRight: {},
-
-  // Bottom sheet styles
-  bsWrapper: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.35)",
-  },
+  // Bottom Sheet
+  bsWrapper: { flex: 1, justifyContent: 'flex-end' },
   bsBackdrop: {
     ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   bsSheet: {
-    backgroundColor: UI.colors.bg,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: Platform.select({ ios: 24, default: 16 }) as number,
-    width: "100%",
-    maxHeight: "82%",
-    alignSelf: "center",
-    maxWidth: isWeb ? UI.maxWidth : undefined,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 12,
-  } as any,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxWidth: 720,
+    width: '100%',
+    alignSelf: 'center',
+    maxHeight: '85%',
+    ...Platform.select({
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: -4 } },
+      android: { elevation: 16 },
+    }),
+  },
   bsHandle: {
-    alignSelf: "center",
-    width: 38,
-    height: 4,
-    borderRadius: 999,
-    backgroundColor: Colors.borderStrong,
+    width: 36, height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginTop: 12,
     marginBottom: 8,
   },
   bsTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: UI.colors.text,
-    marginBottom: 10,
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 8,
   },
-  bsContent: {
-    paddingBottom: 4,
-  },
+  bsContent: { paddingHorizontal: 20, paddingBottom: 32 },
+
+  // Edit form
   sheetLabel: {
     fontSize: 13,
-    fontWeight: "600",
-    color: UI.colors.sub,
+    fontWeight: '600',
+    color: Colors.textSecondary,
     marginBottom: 4,
+  },
+  itemInput: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: isIOS ? 14 : 10,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+  },
+
+  saveButton: {
+    backgroundColor: Colors.accent,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  saveText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  buttonDisabled: { opacity: 0.6 },
+
+  // Report form
+  reportInput: {
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.background,
+    marginBottom: 12,
+  },
+  submitReportButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  submitReportText: {
+    color: Colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  // What's New
+  whatsNewCard: { gap: 16 },
+  whatsNewHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  whatsNewTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  whatsNewRefresh: {
+    fontSize: 13,
+    color: Colors.accent,
+    fontWeight: '600',
+  },
+  whatsNewError: {
+    fontSize: 12,
+    color: Colors.error,
+    fontStyle: 'italic',
+  },
+  whatsNewLoading: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
+  whatsNewItem: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+    paddingTop: 12,
+    gap: 8,
+  },
+  whatsNewVersion: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.accent,
+  },
+  whatsNewDate: {
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  whatsNewChangeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  badge: {
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    alignSelf: 'flex-start',
     marginTop: 2,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  whatsNewChangeText: {
+    flex: 1,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 18,
   },
 });

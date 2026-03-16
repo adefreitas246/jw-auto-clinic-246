@@ -11,8 +11,10 @@ export { EmptyState } from './EmptyState';
 export { Input } from './Input';
 export { ListItem } from './ListItem';
 export { LoadingSpinner } from './LoadingSpinner';
+export { ScreenHeader } from './ScreenHeader';
 export { SectionHeader } from './SectionHeader';
 export { Skeleton, SkeletonCard, SkeletonList } from './Skeleton';
+export { StatCard } from './StatCard';
 export { ToastProvider, showToast } from './Toast';
 
 // Cross-platform app components (iOS glass / Android M3)

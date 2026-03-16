@@ -13,13 +13,16 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader, Button } from '@/components/ui';
 
 type SetupStep = {
   num:   string;
@@ -56,13 +59,26 @@ const SETUP_STEPS: SetupStep[] = [
   },
 ];
 
+// Recipient options
+type RecipientOption = 'all' | 'loyalty' | 'subscribers';
+const RECIPIENT_OPTIONS: { key: RecipientOption; label: string; count: number }[] = [
+  { key: 'all',         label: 'All Customers',    count: 342 },
+  { key: 'loyalty',     label: 'Loyalty Members',  count: 118 },
+  { key: 'subscribers', label: 'Subscribers',       count: 89 },
+];
+
 export default function SmsScreen() {
   const { token } = useAuth();
   const router    = useRouter();
-  const [triggering, setTriggering] = useState(false);
-  const [lastResult, setLastResult] = useState<{ sent: number; total: number } | null>(null);
+  const [triggering,  setTriggering]  = useState(false);
+  const [lastResult,  setLastResult]  = useState<{ sent: number; total: number } | null>(null);
+  const [recipient,   setRecipient]   = useState<RecipientOption>('all');
+  const [messageText, setMessageText] = useState('');
 
   const headers = { Authorization: `Bearer ${token}` };
+
+  const MAX_CHARS = 160;
+  const charCount = messageText.length;
 
   async function handleTrigger() {
     Alert.alert(
@@ -93,61 +109,96 @@ export default function SmsScreen() {
     );
   }
 
+  const selectedOption = RECIPIENT_OPTIONS.find(o => o.key === recipient);
+
   return (
-    <SafeAreaView style={sm.safe}>
-      {/* Header */}
-      <View style={sm.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={sm.backBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.border, radius: 20, borderless: true }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={sm.headerTitle}>SMS Reminders</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <SafeAreaView style={sm.safe} edges={['top']}>
+      <ScreenHeader title="Send SMS" backButton />
 
       <ScrollView contentContainerStyle={sm.scroll} showsVerticalScrollIndicator={false}>
-        {/* Status banner */}
-        <View style={sm.statusBanner}>
-          <View style={sm.statusIcon}>
-            <Ionicons name="construct-outline" size={20} color={Colors.warning} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={sm.statusTitle}>Setup Required</Text>
-            <Text style={sm.statusDesc}>
-              Complete the steps below to activate 24h appointment SMS reminders.
-            </Text>
-          </View>
-        </View>
 
-        {/* How it works */}
-        <View style={sm.section}>
-          <Text style={sm.sectionTitle}>How It Works</Text>
-          <View style={sm.flowCard}>
-            {[
-              { icon: 'alarm-outline',          label: 'Cron fires daily at 09:00' },
-              { icon: 'search-outline',          label: 'Finds bookings for tomorrow' },
-              { icon: 'chatbox-outline',         label: 'Sends SMS to each customer' },
-              { icon: 'checkmark-done-outline',  label: 'Marks reminderScheduled = true' },
-            ].map((step, i, arr) => (
-              <View key={step.label} style={sm.flowStep}>
-                <View style={sm.flowDot}>
-                  <Ionicons name={step.icon as any} size={16} color={Colors.accent} />
-                </View>
-                <Text style={sm.flowLabel}>{step.label}</Text>
-                {i < arr.length - 1 && <View style={sm.flowLine} />}
-              </View>
+        {/* Recipient picker — segmented control */}
+        <ReAnimated.View entering={FadeInDown.delay(60).springify()} style={sm.segmentCard}>
+          <View style={sm.segmentRow}>
+            {RECIPIENT_OPTIONS.map(opt => (
+              <Pressable
+                key={opt.key}
+                style={[sm.segmentBtn, recipient === opt.key && sm.segmentBtnActive]}
+                onPress={() => setRecipient(opt.key)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <Text style={[sm.segmentText, recipient === opt.key && sm.segmentTextActive]}>
+                  {opt.label}
+                </Text>
+              </Pressable>
             ))}
           </View>
-        </View>
+        </ReAnimated.View>
 
-        {/* Setup steps */}
+        {/* Message compose */}
+        <ReAnimated.View entering={FadeInDown.delay(120).springify()} style={sm.composeCard}>
+          <Text style={sm.composeLabel}>Message</Text>
+          <TextInput
+            style={sm.composeInput}
+            value={messageText}
+            onChangeText={setMessageText}
+            placeholder="Type your SMS message here…"
+            placeholderTextColor={Colors.textMuted}
+            multiline
+            maxLength={MAX_CHARS}
+            textAlignVertical="top"
+          />
+          <Text style={[sm.charCounter, charCount > MAX_CHARS * 0.9 && { color: Colors.error }]}>
+            {charCount}/{MAX_CHARS}
+          </Text>
+        </ReAnimated.View>
+
+        {/* Preview */}
+        {messageText.trim().length > 0 && (
+          <ReAnimated.View entering={FadeIn.duration(300)} style={sm.previewCard}>
+            <Text style={sm.previewLabel}>Preview</Text>
+            <View style={sm.smsBubble}>
+              <Text style={sm.smsSender}>Wash Hub</Text>
+              <Text style={sm.smsBody}>{messageText}</Text>
+            </View>
+          </ReAnimated.View>
+        )}
+
+        {/* Recipient count label + send button */}
+        <ReAnimated.View entering={FadeInDown.delay(200).springify()}>
+          <Text style={sm.recipientCount}>
+            Sending to {selectedOption?.count ?? 0} recipients
+          </Text>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={triggering}
+            onPress={handleTrigger}
+            icon={<Ionicons name="send" size={18} color={Colors.white} />}
+          >
+            Send SMS
+          </Button>
+        </ReAnimated.View>
+
+        {/* Last result */}
+        {lastResult && (
+          <ReAnimated.View entering={FadeIn.duration(300)} style={sm.lastResult}>
+            <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
+            <Text style={sm.lastResultText}>
+              Last run: {lastResult.sent} sent / {lastResult.total} total
+            </Text>
+          </ReAnimated.View>
+        )}
+
+        {/* Setup section */}
         <Text style={sm.sectionTitle}>Setup Checklist</Text>
-        {SETUP_STEPS.map(step => (
-          <View key={step.num} style={sm.stepCard}>
+        {SETUP_STEPS.map((step, i) => (
+          <ReAnimated.View
+            key={step.num}
+            entering={FadeInDown.delay(i * 60 + 300).springify()}
+            style={sm.stepCard}
+          >
             <View style={[sm.stepNum, step.done && sm.stepNumDone]}>
               {step.done
                 ? <Ionicons name="checkmark" size={14} color={Colors.white} />
@@ -158,7 +209,7 @@ export default function SmsScreen() {
               <Text style={sm.stepTitle}>{step.title}</Text>
               <Text style={sm.stepDesc}>{step.desc}</Text>
             </View>
-          </View>
+          </ReAnimated.View>
         ))}
 
         {/* Provider options */}
@@ -213,36 +264,6 @@ export default function SmsScreen() {
           </Text>
         </View>
 
-        {/* Manual trigger */}
-        <Text style={sm.sectionTitle}>Manual Trigger</Text>
-        <View style={sm.triggerCard}>
-          <Text style={sm.triggerDesc}>
-            Test the endpoint manually. It will log to the server console until a real provider is configured.
-          </Text>
-          {lastResult && (
-            <View style={sm.lastResult}>
-              <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
-              <Text style={sm.lastResultText}>
-                Last run: {lastResult.sent} sent / {lastResult.total} total
-              </Text>
-            </View>
-          )}
-          <Pressable
-            style={[sm.triggerBtn, triggering && { opacity: 0.6 }]}
-            onPress={handleTrigger}
-            disabled={triggering}
-            android_ripple={{ color: Colors.accentDark }}
-          >
-            {triggering
-              ? <ActivityIndicator color={Colors.white} size="small" />
-              : <>
-                  <Ionicons name="play-circle-outline" size={18} color={Colors.white} />
-                  <Text style={sm.triggerBtnText}>Run Reminder Job Now</Text>
-                </>
-            }
-          </Pressable>
-        </View>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -251,95 +272,88 @@ export default function SmsScreen() {
 
 const sm = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
+  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 12, paddingBottom: 100 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+  // Segmented control
+  segmentCard: {
     backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 4, marginBottom: 12,
+  },
+  segmentRow: { flexDirection: 'row', gap: 4 },
+  segmentBtn: {
+    flex: 1, paddingVertical: 10, borderRadius: borderRadius.lg,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  segmentBtnActive: { backgroundColor: Colors.accent },
+  segmentText:       { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  segmentTextActive: { color: Colors.white },
+
+  // Compose card
+  composeCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.xl,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 16, marginBottom: 12,
     ...cardShadow,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
+  composeLabel: { fontSize: 13, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  composeInput: {
+    fontSize: 14, color: Colors.textPrimary,
+    minHeight: 120, textAlignVertical: 'top',
+    borderWidth: 1, borderColor: Colors.border,
+    borderRadius: borderRadius.md,
+    padding: 12,
+    backgroundColor: Colors.background,
+  },
+  charCounter: { fontSize: 12, color: Colors.textMuted, textAlign: 'right', marginTop: 6 },
+
+  // Preview
+  previewCard: {
     backgroundColor: Colors.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: borderRadius.xl,
+    borderWidth: 1, borderColor: Colors.border,
+    padding: 16, marginBottom: 12,
   },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-
-  statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.warningBg,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.warningBg,
-  },
-  statusIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.warning + '22',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusTitle: { fontSize: 14, fontWeight: '700', color: Colors.warningText, marginBottom: 2 },
-  statusDesc:  { fontSize: 12, color: Colors.warningText, lineHeight: 18 },
-
-  section:      { marginBottom: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
-
-  flowCard: {
+  previewLabel: { fontSize: 12, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  smsBubble: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...cardShadow,
+    padding: 12, maxWidth: 280,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  flowStep:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  flowDot: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.accentMuted,
-    justifyContent: 'center',
-    alignItems: 'center',
+  smsSender: { fontSize: 12, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  smsBody:   { fontSize: 14, color: Colors.textSecondary, lineHeight: 20 },
+
+  // Recipient + send
+  recipientCount: {
+    fontSize: 13, color: Colors.textMuted, textAlign: 'center',
+    marginBottom: 10, fontWeight: '600',
   },
-  flowLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', flex: 1 },
-  flowLine:  { position: 'absolute', left: 17, top: 36, width: 2, height: 20, backgroundColor: Colors.border },
+
+  lastResult: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.successBg, borderRadius: borderRadius.md,
+    padding: 12, marginTop: 12,
+  },
+  lastResultText: { fontSize: 13, color: Colors.success, fontWeight: '600' },
+
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12, marginTop: 20 },
 
   stepCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    backgroundColor: Colors.surface, borderRadius: borderRadius.lg,
+    padding: 14, marginBottom: 8,
+    borderWidth: 1, borderColor: Colors.border,
     ...cardShadow,
   },
   stepNum: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 28, height: 28, borderRadius: 14,
     backgroundColor: Colors.accentMuted,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.accent,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1.5, borderColor: Colors.accent,
   },
   stepNumDone: { backgroundColor: Colors.success, borderColor: Colors.success },
   stepNumText: { fontSize: 13, fontWeight: '800', color: Colors.accent },
@@ -347,80 +361,41 @@ const sm = StyleSheet.create({
   stepDesc:    { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
 
   providerCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: Colors.surface, borderRadius: borderRadius.lg,
+    padding: 16, marginBottom: 10,
+    borderWidth: 1, borderColor: Colors.border,
     ...cardShadow,
   },
-  providerRow:  { flexDirection: 'row', gap: 12 },
-  providerIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  providerRow:   { flexDirection: 'row', gap: 12 },
+  providerIcon:  {
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: Colors.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
   providerEmoji: { fontSize: 20 },
   providerName:  { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   providerDesc:  { fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginBottom: 8 },
-  envChips:   { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  envChip:    {
+  envChips:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  envChip:       {
     backgroundColor: Colors.primaryDark,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 4,
+    paddingHorizontal: 7, paddingVertical: 3, borderRadius: 4,
   },
   envChipText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: Colors.accentMuted,
+    fontSize: 9, fontWeight: '700', color: Colors.accentMuted,
     fontFamily: IS_IOS ? 'Courier' : 'monospace',
   },
 
   codeRef: {
-    flexDirection: 'row',
-    gap: 10,
+    flexDirection: 'row', gap: 10,
     backgroundColor: Colors.accentMuted,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.accentLight,
+    borderRadius: borderRadius.lg,
+    padding: 14, marginBottom: 20,
+    borderWidth: 1, borderColor: Colors.accentLight,
     alignItems: 'flex-start',
   },
   codeRefText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 20, flex: 1 },
   codeRefFile: {
     fontFamily: IS_IOS ? 'Courier' : 'monospace',
-    color: Colors.accent,
-    fontWeight: '700',
+    color: Colors.accent, fontWeight: '700',
   },
-
-  triggerCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 10,
-    ...cardShadow,
-  },
-  triggerDesc:    { fontSize: 13, color: Colors.textSecondary, marginBottom: 12 },
-  lastResult:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
-  lastResultText: { fontSize: 12, color: Colors.success, fontWeight: '600' },
-  triggerBtn: {
-    backgroundColor: Colors.accent,
-    borderRadius: 12,
-    padding: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    overflow: 'hidden',
-    ...cardShadow,
-  },
-  triggerBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
 });

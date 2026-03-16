@@ -8,7 +8,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -23,6 +22,7 @@ import {
 import * as Animatable from 'react-native-animatable';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 const API =
   process.env.EXPO_PUBLIC_API_URL || 'https://jw-auto-clinic-246.onrender.com';
@@ -183,7 +183,9 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={s.safe}>
+    <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      <ScreenHeader title="New Password" backButton />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={IS_IOS ? 'padding' : 'height'}
@@ -197,38 +199,39 @@ export default function ResetPasswordScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Animated.View entering={FadeIn.duration(300)} style={s.container}>
+            <Animated.View entering={FadeIn.duration(400)} style={s.container}>
               {showSuccess ? (
                 <Animatable.View
                   animation="zoomIn"
                   duration={700}
                   style={s.successBox}
                 >
-                  <Image
-                    source={require('@/assets/images/success.png')}
-                    style={s.illustration}
-                  />
+                  {/* Success icon circle */}
+                  <View style={s.successIconCircle}>
+                    <Ionicons name="checkmark-circle" size={64} color={Colors.success} />
+                  </View>
+                  <Text style={s.successHeading}>Password Reset!</Text>
                   <View style={s.successBadge}>
-                    <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                    <Ionicons name="checkmark-circle" size={16} color={Colors.success} />
                     <Text style={s.successText}>Password Reset Successfully</Text>
                   </View>
                   <Text style={s.successSub}>Redirecting you to login…</Text>
                 </Animatable.View>
               ) : (
                 <>
-                  <Image
-                    source={require('@/assets/images/reset-password-illustration.png')}
-                    style={s.illustration}
-                  />
+                  {/* Lock icon badge */}
+                  <View style={s.iconCircle}>
+                    <Ionicons name="lock-closed" size={64} color={Colors.accent} />
+                  </View>
 
-                  <Text style={s.heading}>Reset Your Password</Text>
+                  <Text style={s.heading}>Create a new password</Text>
                   <Text style={s.subtext}>
                     Choose a strong password with uppercase, lowercase, a number, and a special character.
                   </Text>
 
                   {/* New password field */}
                   <Text style={s.label}>New Password</Text>
-                  <Animatable.View ref={passwordRef}>
+                  <Animatable.View ref={passwordRef} style={{ width: '100%' }}>
                     <View style={[s.inputWrapper, passwordError && s.inputWrapperError]}>
                       <Ionicons
                         name="lock-closed-outline"
@@ -249,6 +252,7 @@ export default function ResetPasswordScreen() {
                         style={s.eyeBtn}
                         accessibilityLabel="Toggle password visibility"
                         hitSlop={8}
+                        android_ripple={{ color: Colors.accentMuted, borderless: true }}
                       >
                         <Ionicons
                           name={showPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -285,7 +289,7 @@ export default function ResetPasswordScreen() {
 
                   {/* Confirm password field */}
                   <Text style={[s.label, { marginTop: 16 }]}>Confirm Password</Text>
-                  <Animatable.View ref={confirmRef}>
+                  <Animatable.View ref={confirmRef} style={{ width: '100%' }}>
                     <View
                       style={[
                         s.inputWrapper,
@@ -326,6 +330,7 @@ export default function ResetPasswordScreen() {
                         style={s.eyeBtn}
                         accessibilityLabel="Toggle confirm password visibility"
                         hitSlop={8}
+                        android_ripple={{ color: Colors.accentMuted, borderless: true }}
                       >
                         <Ionicons
                           name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
@@ -356,7 +361,7 @@ export default function ResetPasswordScreen() {
                     {loading ? (
                       <ActivityIndicator size="small" color={Colors.white} />
                     ) : (
-                      <Text style={s.primaryBtnText}>Reset Password</Text>
+                      <Text style={s.primaryBtnText}>Update Password</Text>
                     )}
                   </Pressable>
                 </>
@@ -377,34 +382,40 @@ const s = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingBottom: 100,
+    paddingBottom: 60,
   },
   container: {
     paddingHorizontal: SCREEN_PADDING,
     paddingVertical: 24,
+    alignItems: 'center',
   },
 
-  illustration: {
-    width: 260,
-    height: 260,
-    resizeMode: 'contain',
-    alignSelf: 'center',
-    marginBottom: 20,
+  // Icon circle
+  iconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 28,
+    marginTop: 8,
   },
 
   heading: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   subtext: {
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: 21,
+    marginBottom: 28,
+    paddingHorizontal: 8,
   },
 
   label: {
@@ -412,34 +423,39 @@ const s = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textSecondary,
     marginBottom: 6,
+    alignSelf: 'flex-start',
+    width: '100%',
   },
 
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: Colors.border,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     marginBottom: 8,
+    width: '100%',
     ...cardShadow,
   },
   inputWrapperError: {
     borderColor: Colors.error,
     borderWidth: 1.5,
+    backgroundColor: Colors.errorBg,
   },
   inputWrapperSuccess: {
     borderColor: Colors.success,
     borderWidth: 1.5,
+    backgroundColor: Colors.successBg,
   },
   inputIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   input: {
     flex: 1,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.textPrimary,
   },
   eyeBtn: {
@@ -448,6 +464,7 @@ const s = StyleSheet.create({
 
   meterContainer: {
     marginBottom: 4,
+    width: '100%',
   },
   meterTrack: {
     height: 5,
@@ -469,12 +486,14 @@ const s = StyleSheet.create({
     fontSize: 11,
     color: Colors.textMuted,
     marginBottom: 4,
+    alignSelf: 'flex-start',
   },
 
   mismatchText: {
     fontSize: 12,
     color: Colors.error,
     marginBottom: 8,
+    alignSelf: 'flex-start',
     marginLeft: 4,
   },
   matchText: {
@@ -482,6 +501,7 @@ const s = StyleSheet.create({
     color: Colors.success,
     fontWeight: '600',
     marginBottom: 8,
+    alignSelf: 'flex-start',
     marginLeft: 4,
   },
 
@@ -493,7 +513,12 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
     minHeight: 52,
-    ...cardShadow,
+    width: '100%',
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
   },
   primaryBtnPressed: {
     opacity: 0.85,
@@ -505,29 +530,45 @@ const s = StyleSheet.create({
     fontWeight: '700',
   },
 
+  // Success state
   successBox: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 40,
+  },
+  successIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: Colors.successBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  successHeading: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    marginBottom: 16,
   },
   successBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: Colors.successBg,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    marginTop: 16,
+    marginBottom: 12,
   },
   successText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: Colors.successText,
   },
   successSub: {
     fontSize: 13,
     color: Colors.textMuted,
-    marginTop: 12,
+    marginTop: 4,
   },
 });

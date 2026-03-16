@@ -6,6 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import { LinearGradient } from "expo-linear-gradient";
 import * as MailComposer from "expo-mail-composer";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -37,10 +38,13 @@ import {
   en,
   registerTranslation,
 } from "react-native-paper-dates";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import ReAnimated, { FadeIn, FadeInDown, FadeInUp } from "react-native-reanimated";
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID, IS_WEB } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
+
+// Keep backward compat alias
+const Animated = ReAnimated;
 
 const { width: screenWidth } = Dimensions.get("window");
 const isTablet = screenWidth >= 600 && screenWidth < 1024;
@@ -2157,62 +2161,95 @@ const earningsChartConfig = {
 };
 
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
+
+  const todayLabel = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.white }}
+      style={{ flex: 1, backgroundColor: Colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
       <ScrollView
-        style={[styles.container]} // keep bg + flex only (no padding here)
-        contentContainerStyle={styles.contentContainer} // <-- new
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[0]}
         onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}
         scrollEventThrottle={16}
       >
-        {/* STICKY HEADER (full-bleed) */}
-        <View
+        {/* ── STICKY GRADIENT HEADER ── */}
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={[
             styles.stickyHeaderWrap,
             headerElevated && styles.stickyHeaderElevated,
-            isWeb && headerElevated
-              ? { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 4 } }
-              : null,
           ]}
         >
-          <View style={styles.headerRow}>
-            <Text style={styles.logo}>Dashboard</Text>
+          {/* Top row: brand + date */}
+          <View style={styles.headerTopRow}>
+            <Text style={styles.logo}>Wash Hub</Text>
+            <Text style={styles.headerDate}>{todayLabel}</Text>
           </View>
 
-          {/* Tabs live INSIDE the sticky area */}
-          <View style={styles.filters}>
-            {visibleTabs.map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                style={selectedTab === tab ? styles.filterActive : styles.filter}
-                onPress={() => setSelectedTab(tab as any)}
-              >
-                <Text style={selectedTab === tab ? styles.filterTextActive : styles.filterText}>
-                  {tab}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+          {/* Greeting */}
+          <Text style={styles.greeting}>
+            {greeting}, {user?.name?.split(" ")[0] ?? "there"}
+          </Text>
+
+          {/* Tab pills */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersScrollContent}
+          >
+            <View style={styles.filters}>
+              {visibleTabs.map((tab) => (
+                <Pressable
+                  key={tab}
+                  style={selectedTab === tab ? styles.filterActive : styles.filter}
+                  onPress={() => setSelectedTab(tab as any)}
+                  android_ripple={{ color: Colors.accent + "20", borderless: false }}
+                >
+                  <Text style={selectedTab === tab ? styles.filterTextActive : styles.filterText}>
+                    {tab}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+        </LinearGradient>
 
         {selectedTab === "Transactions" && (
           <>
             {user?.role === "admin" && (
-              <View style={styles.summaryRow}>
+              <ReAnimated.View entering={FadeInDown.delay(80)} style={styles.summaryRow}>
                 <View style={styles.card}>
-                  <Text style={styles.cardTitle}>Total Earned Today</Text>
+                  <View style={styles.cardIconCircle}>
+                    <Ionicons name="today-outline" size={18} color={Colors.accent} />
+                  </View>
+                  <Text style={styles.cardTitle}>Today's Earnings</Text>
                   <Text style={styles.cardAmount}>
                     ${(todayEarnings || 0).toFixed(2)}
                   </Text>
                   <Text style={styles.cardSub}>Updated periodically</Text>
                 </View>
                 <View style={styles.card}>
+                  <View style={styles.cardIconCircle}>
+                    <Ionicons name="trending-up-outline" size={18} color={Colors.accent} />
+                  </View>
                   <Text style={styles.cardTitle}>Total Earnings</Text>
                   <Text style={styles.cardAmount}>
                     ${(earnings || 0).toFixed(2)}
@@ -2221,11 +2258,11 @@ const earningsChartConfig = {
                     {transactions?.length || 0} transactions
                   </Text>
                 </View>
-              </View>
+              </ReAnimated.View>
             )}
 
             {user?.role === "admin" && (
-              <View style={styles.chartCard}>
+              <ReAnimated.View entering={FadeInDown.delay(160)} style={styles.chartCard}>
                 <View
                   style={[
                     styles.chartHeaderRow,
@@ -2572,10 +2609,10 @@ const earningsChartConfig = {
                   </View>
                 )}
 
-              </View>
+              </ReAnimated.View>
             )}
 
-            <View style={styles.recentCard}>
+            <ReAnimated.View entering={FadeInDown.delay(240)} style={styles.recentCard}>
               <View style={styles.recentHeaderRow}>
                 <Text style={styles.recentTitle}>Transactions</Text>
                 {user?.role === "admin" && (
@@ -2843,7 +2880,7 @@ const earningsChartConfig = {
                   ))}
                 </View>
               )}
-            </View>
+            </ReAnimated.View>
 
             {/* Filters bottom sheet */}
             <BottomSheet
@@ -2997,7 +3034,7 @@ const earningsChartConfig = {
         )}
 
         {selectedTab === "Workers" && (
-          <View style={styles.recentCard}>
+          <ReAnimated.View entering={FadeInDown.delay(80)} style={styles.recentCard}>
             {/* HEADER: Title, result count, clear filters */}
             <View style={{ marginBottom: 12 }}>
               <View
@@ -3446,7 +3483,7 @@ const earningsChartConfig = {
                 ))}
               </ScrollView>
             )}
-          </View>
+          </ReAnimated.View>
         )}
 
         <BottomSheet
@@ -3564,7 +3601,7 @@ const earningsChartConfig = {
 
         <GestureHandlerRootView style={{ flex: 1 }}>
           {selectedTab === "Shifts" && (
-            <View style={styles.recentCard}>
+            <ReAnimated.View entering={FadeInDown.delay(80)} style={styles.recentCard}>
               {/* HEADER: Filters + Result count */}
               <View style={{ marginBottom: 12 }}>
                 <View
@@ -4207,12 +4244,12 @@ const earningsChartConfig = {
                   })}
                 </ScrollView>
               )}
-            </View>
+            </ReAnimated.View>
           )}
         </GestureHandlerRootView>
 
         {selectedTab === "Reports" && (
-          <View style={styles.reportsContainer}>
+          <ReAnimated.View entering={FadeInDown.delay(80)} style={styles.reportsContainer}>
             <View style={{ marginBottom: 16 }}>
               {/* REPORTS TOOLBAR */}
               <View style={styles.reportToolbar}>
@@ -4462,7 +4499,7 @@ const earningsChartConfig = {
                 </View>
               </View>
             </View>
-          </View>
+          </ReAnimated.View>
         )}
 
         <DatePickerModal
@@ -4576,7 +4613,7 @@ const earningsChartConfig = {
 
         {/* ── Manage tab (admin only) ── */}
         {selectedTab === "Manage" && (
-          <View style={styles.manageContainer}>
+          <ReAnimated.View entering={FadeInDown.delay(80)} style={styles.manageContainer}>
             <Text style={styles.manageSectionTitle}>Catalog</Text>
 
             <TouchableOpacity
@@ -4612,7 +4649,7 @@ const earningsChartConfig = {
               </View>
               <Ionicons name="chevron-forward" size={18} color={Colors.border} />
             </TouchableOpacity>
-          </View>
+          </ReAnimated.View>
         )}
 
       </ScrollView>
@@ -4622,46 +4659,55 @@ const earningsChartConfig = {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
     flex: 1,
   },
   contentContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 100,
-  },  
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 16,
   },
-  // --- Sticky header that spans the full width
+  // ── Sticky gradient header ──────────────────────────────────────────────
   stickyHeaderWrap: {
-    backgroundColor: Colors.white,
-    // Full-bleed: cancel the ScrollView content padding (which is 20)
-    marginHorizontal: -20,
-    paddingHorizontal: 20,   // keep inner content aligned with page
-    paddingTop: Platform.select({ ios: 40, android: 20, default: 80 }),
-    paddingBottom: 10,
+    marginHorizontal: -16,
+    paddingHorizontal: 20,
+    paddingTop: Platform.select({ ios: 56, android: 28, default: 80 }),
+    paddingBottom: 14,
     zIndex: 10,
   },
-
   stickyHeaderElevated: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
     ...Platform.select({
       ios: {
         shadowColor: Colors.black,
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
         shadowOffset: { width: 0, height: 4 },
       },
-      android: { elevation: 2 },
+      android: { elevation: 6 },
       default: {},
     }),
   },
-
-  // Optional: keep header row semantics (you can also reuse existing .header)
+  headerTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  headerDate: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.65)",
+    fontWeight: "500",
+  },
+  greeting: {
+    fontSize: 15,
+    color: "rgba(255,255,255,0.85)",
+    marginBottom: 12,
+  },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -4669,36 +4715,40 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   logo: {
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: "800",
-    color: Colors.accent,
-    marginTop: Platform.OS === "web" ? 10 : 10,
+    color: Colors.white,
+    letterSpacing: 0.5,
+  },
+  filtersScrollContent: {
+    paddingBottom: 2,
   },
   filters: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
-    marginBottom: 20,
   },
   filter: {
-    backgroundColor: Colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
   },
   filterActive: {
-    backgroundColor: Colors.accentMuted,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: Colors.white,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
   },
   filterText: {
-    color: Colors.textSecondary,
+    color: "rgba(255,255,255,0.85)",
     fontSize: 13,
+    fontWeight: "500",
   },
   filterTextActive: {
-    color: Colors.accent,
-    fontWeight: "600",
+    color: Colors.primary,
+    fontWeight: "700",
     fontSize: 13,
   },
   summaryRow: {
@@ -4706,43 +4756,65 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: 10,
-    marginBottom: 20,
+    marginTop: 16,
+    marginBottom: 16,
   },
   card: {
     flexGrow: 1,
     flexBasis: "48%",
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 12,
-    padding: 12,
-    elevation: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 14,
     maxWidth: "48%",
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.black,
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+      },
+      android: { elevation: 2 },
+    }),
   },
-  cardTitle: { color: Colors.textSecondary, fontSize: 13 },
+  cardIconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.accentMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  cardTitle: { color: Colors.textSecondary, fontSize: 12, fontWeight: "600" },
   cardAmount: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "800",
     color: Colors.accent,
-    marginTop: 4,
+    marginTop: 3,
   },
-  cardSub: { fontSize: 12, color: Colors.textMuted },
+  cardSub: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 
   chartHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },  
+  },
   chartCard: {
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.white,
     borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    marginBottom: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    marginBottom: 16,
     width: "100%",
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 1, // Android shadow
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+      },
+      android: { elevation: 2 },
+    }),
   },
 
 
@@ -4844,8 +4916,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   reportsContainer: {
-    padding: 20,
-    backgroundColor: Colors.white,
+    paddingTop: 16,
     paddingBottom: 100,
   },
   reportCards: {
@@ -4858,15 +4929,24 @@ const styles = StyleSheet.create({
   reportCard: {
     flexGrow: 1,
     flexBasis: "48%",
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 12,
+    backgroundColor: Colors.white,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     minWidth: "47%",
     maxWidth: "100%",
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.black,
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+      },
+      android: { elevation: 2 },
+    }),
   },
   performanceCard: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
     padding: 20,
     borderRadius: 12,
     marginTop: 20,
@@ -4924,14 +5004,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   recentCard: {
-    marginTop: 20,
+    marginTop: 16,
     paddingBottom: 100,
   },
   recentTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     marginBottom: 12,
-    color: Colors.accent,
+    color: Colors.textPrimary,
   },
   transactionCard: {
     backgroundColor: Colors.white,
@@ -5293,17 +5373,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.white,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     ...Platform.select({
       ios: {
         shadowColor: Colors.black,
-        shadowOpacity: 0.06,
+        shadowOpacity: 0.07,
         shadowRadius: 10,
         shadowOffset: { width: 0, height: 2 },
       },
-      android: { elevation: 2 },
+      android: { elevation: 3 },
     }),
   },
   manageCardIcon: {

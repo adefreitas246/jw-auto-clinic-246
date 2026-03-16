@@ -14,12 +14,14 @@ import {
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated2, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
 import { useVehicles } from '@/hooks/useVehicles';
 import { Vehicle } from '@/types/vehicle';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { EmptyState, ScreenHeader } from '@/components/ui';
 
 // ─── Swipeable right actions ────────────────────────────────────────────────
 function RightActions({
@@ -40,7 +42,7 @@ function RightActions({
       <Pressable
         style={[styles.actionBtn, styles.editBtn]}
         onPress={onEdit}
-        android_ripple={{ color: Colors.accent + '12', borderless: false }}
+        android_ripple={{ color: Colors.accent + '20', borderless: false }}
       >
         <Ionicons name="create-outline" size={20} color={Colors.white} />
         <Text style={styles.actionText}>Edit</Text>
@@ -48,7 +50,7 @@ function RightActions({
       <Pressable
         style={[styles.actionBtn, styles.deleteBtn]}
         onPress={onDelete}
-        android_ripple={{ color: Colors.accent + '12', borderless: false }}
+        android_ripple={{ color: Colors.accent + '20', borderless: false }}
       >
         <Ionicons name="trash-outline" size={20} color={Colors.white} />
         <Text style={styles.actionText}>Delete</Text>
@@ -80,10 +82,12 @@ function VehicleCard({
   vehicle,
   onEdit,
   onDelete,
+  index,
 }: {
   vehicle: Vehicle;
   onEdit: () => void;
   onDelete: () => void;
+  index: number;
 }) {
   const swipeRef = useRef<Swipeable>(null);
 
@@ -110,46 +114,52 @@ function VehicleCard({
   };
 
   return (
-    <Swipeable
-      ref={swipeRef}
-      renderRightActions={(progress) => (
-        <RightActions progress={progress} onEdit={handleEdit} onDelete={handleDelete} />
-      )}
-      overshootRight={false}
-    >
-      <View style={styles.card}>
-        {/* Icon */}
-        <View style={styles.cardIconWrap}>
-          <Ionicons name="car-sport-outline" size={26} color={Colors.accent} />
-        </View>
+    <Animated2.View entering={FadeInDown.delay(index * 80).duration(300)}>
+      <Swipeable
+        ref={swipeRef}
+        renderRightActions={(progress) => (
+          <RightActions progress={progress} onEdit={handleEdit} onDelete={handleDelete} />
+        )}
+        overshootRight={false}
+      >
+        <View style={styles.card}>
+          {/* Icon circle */}
+          <View style={styles.cardIconWrap}>
+            <Ionicons name="car-sport-outline" size={24} color={Colors.accent} />
+          </View>
 
-        {/* Body */}
-        <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>
-            {vehicle.make} {vehicle.model}
-          </Text>
+          {/* Body */}
+          <View style={styles.cardBody}>
+            <View style={styles.cardTitleRow}>
+              <Text style={styles.cardTitle}>
+                {vehicle.make} {vehicle.model}
+              </Text>
+            </View>
 
-          <View style={styles.cardTagRow}>
-            {!!vehicle.size && <SizeTag size={vehicle.size} />}
-            {!!vehicle.color && (
-              <Text style={styles.cardColor}>{vehicle.color}</Text>
+            <View style={styles.cardMetaRow}>
+              {!!vehicle.size && <SizeTag size={vehicle.size} />}
+              {!!vehicle.color && (
+                <Text style={styles.cardColor}>{vehicle.color}</Text>
+              )}
+            </View>
+
+            {!!vehicle.licensePlate && (
+              <PlateBadge plate={vehicle.licensePlate} />
+            )}
+
+            {!!vehicle.notes && (
+              <Text style={styles.cardNotes} numberOfLines={1}>
+                {vehicle.notes}
+              </Text>
             )}
           </View>
 
-          {!!vehicle.licensePlate && (
-            <PlateBadge plate={vehicle.licensePlate} />
-          )}
-
-          {!!vehicle.notes && (
-            <Text style={styles.cardNotes} numberOfLines={1}>
-              {vehicle.notes}
-            </Text>
-          )}
+          <View style={styles.chevronCircle}>
+            <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+          </View>
         </View>
-
-        <Ionicons name="chevron-forward" size={16} color={Colors.border} />
-      </View>
-    </Swipeable>
+      </Swipeable>
+    </Animated2.View>
   );
 }
 
@@ -168,6 +178,10 @@ export default function VehicleListScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <ScreenHeader
+          title="My Vehicles"
+          rightAction={{ label: 'Add', icon: 'add', onPress: () => router.push('/(customer)/vehicles/add') }}
+        />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={Colors.accent} />
         </View>
@@ -177,13 +191,21 @@ export default function VehicleListScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+      <ScreenHeader
+        title="My Vehicles"
+        rightAction={{ label: 'Add', icon: 'add', onPress: () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push('/(customer)/vehicles/add');
+        }}}
+      />
+
       {error && (
         <View style={styles.errorBanner}>
           <Ionicons name="alert-circle-outline" size={16} color={Colors.error} />
           <Text style={styles.errorText}>{error}</Text>
           <Pressable
             onPress={refresh}
-            android_ripple={{ color: Colors.accent + '12', borderless: false }}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
           >
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
@@ -191,30 +213,23 @@ export default function VehicleListScreen() {
       )}
 
       {vehicles.length === 0 && !error ? (
-        <View style={styles.center}>
-          <View style={styles.emptyIconWrap}>
-            <Ionicons name="car-outline" size={40} color={Colors.accent} />
-          </View>
-          <Text style={styles.emptyTitle}>No vehicles yet</Text>
-          <Text style={styles.emptySubtitle}>
-            Add your car to speed up future bookings.
-          </Text>
-          <Pressable
-            style={styles.emptyAddBtn}
-            onPress={() => router.push('/(customer)/vehicles/add')}
-            android_ripple={{ color: Colors.accent + '12', borderless: false }}
-          >
-            <Ionicons name="add" size={18} color={Colors.white} />
-            <Text style={styles.emptyAddText}>Add Vehicle</Text>
-          </Pressable>
+        <View style={styles.emptyContainer}>
+          <EmptyState
+            icon={<Ionicons name="car-outline" size={40} color={Colors.accent} />}
+            title="No Vehicles Added"
+            subtitle="Add your first vehicle to start booking"
+            actionLabel="Add Vehicle"
+            onAction={() => router.push('/(customer)/vehicles/add')}
+          />
         </View>
       ) : (
         <Animated.FlatList
           data={vehicles}
           keyExtractor={(v) => v._id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <VehicleCard
               vehicle={item}
+              index={index}
               onEdit={() => router.push(`/(customer)/vehicles/${item._id}`)}
               onDelete={() => handleDelete(item._id)}
             />
@@ -234,7 +249,7 @@ export default function VehicleListScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push('/(customer)/vehicles/add');
         }}
-        android_ripple={{ color: Colors.accent + '12', borderless: false }}
+        android_ripple={{ color: Colors.accent + '20', borderless: false }}
       >
         <Ionicons name="add" size={28} color={Colors.white} />
       </Pressable>
@@ -244,34 +259,49 @@ export default function VehicleListScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: Colors.surfaceAlt },
-  center:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SCREEN_PADDING },
-  list:     { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
-  separator: { height: 8 },
+  safeArea:       { flex: 1, backgroundColor: Colors.background },
+  center:         { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SCREEN_PADDING },
+  emptyContainer: { flex: 1, justifyContent: 'center', paddingHorizontal: SCREEN_PADDING },
+  list:           { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
+  separator:      { height: 10 },
 
   // Card
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
     ...cardShadow,
   },
   cardIconWrap: {
     width: 48,
     height: 48,
-    borderRadius: borderRadius.sm,
+    borderRadius: 14,
     backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 14,
+    flexShrink: 0,
   },
-  cardBody:   { flex: 1 },
-  cardTitle:  { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  cardTagRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  cardColor:  { fontSize: 12, color: Colors.textSecondary },
-  cardNotes:  { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  cardBody:      { flex: 1 },
+  cardTitleRow:  { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  cardTitle:     { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  cardMetaRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  cardColor:     { fontSize: 12, color: Colors.textSecondary },
+  cardNotes:     { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  chevronCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    flexShrink: 0,
+  },
 
   // Plate badge
   plateBadge: {
@@ -294,7 +324,7 @@ const styles = StyleSheet.create({
   // Size tag
   sizeTag: {
     backgroundColor: Colors.accentMuted,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
@@ -351,27 +381,4 @@ const styles = StyleSheet.create({
   },
   errorText:  { flex: 1, color: Colors.errorText, fontSize: 13 },
   retryText:  { color: Colors.accent, fontWeight: '700', fontSize: 13 },
-
-  // Empty state
-  emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle:    { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginBottom: 24 },
-  emptyAddBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.accent,
-    borderRadius: borderRadius.md,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-  },
-  emptyAddText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
@@ -149,29 +149,28 @@ export default function BookConfirmedStep() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
-      <View style={s.container}>
+      <ScrollView
+        contentContainerStyle={s.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Success header ── */}
+        <View style={s.successSection}>
+          {/* Animated check circle */}
+          <Animated.View style={[s.checkCircleOuter, { transform: [{ scale: scaleAnim }] }]}>
+            <View style={s.checkCircleInner}>
+              <Ionicons name="checkmark" size={48} color={Colors.white} />
+            </View>
+          </Animated.View>
 
-        {/* Animated check circle */}
-        <Animated.View style={[s.checkCircleOuter, { transform: [{ scale: scaleAnim }] }]}>
-          <View style={s.checkCircleInner}>
-            <Ionicons name="checkmark" size={52} color={Colors.white} />
-          </View>
-        </Animated.View>
+          <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
+            <Text style={s.title}>Booking Confirmed!</Text>
+            <Text style={s.sub}>Your wash is scheduled</Text>
+          </Animated.View>
+        </View>
 
-        <Animated.View style={[s.textBlock, { opacity: fadeAnim }]}>
-          <Text style={s.title}>Booking Confirmed!</Text>
-          <Text style={s.sub}>
-            Your{' '}
-            <Text style={s.highlight}>{draft.selectedPackage?.name ?? 'service'}</Text>
-            {' '}is booked for{'\n'}
-            <Text style={s.highlight}>{draft.appointmentDate}</Text>
-            {'  at  '}
-            <Text style={s.highlight}>{draft.appointmentTime}</Text>
-          </Text>
-        </Animated.View>
+        <Animated.View style={[s.bodyContent, { opacity: fadeAnim }]}>
 
-        {/* Notification status badge */}
-        <Animated.View style={{ opacity: fadeAnim, width: '100%' }}>
+          {/* Notification status badge */}
           <View style={[
             s.notifBadge,
             notifStatus === 'granted' ? s.notifBadgeGranted : s.notifBadgeDenied,
@@ -193,6 +192,7 @@ export default function BookConfirmedStep() {
 
           {/* Summary card */}
           <View style={s.summaryCard}>
+            <Text style={s.summaryCardTitle}>Booking Details</Text>
             {[
               {
                 icon: 'layers-outline' as const,
@@ -234,7 +234,7 @@ export default function BookConfirmedStep() {
                     reset();
                     router.replace({ pathname: '/(customer)/booking/[id]', params: { id: bookingId } });
                   }}
-                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
+                  android_ripple={{ color: Colors.accent + '20', borderless: false }}
                 >
                   <Ionicons name="qr-code-outline" size={18} color={Colors.white} />
                   <Text style={s.qrBtnText}>View Check-In QR</Text>
@@ -246,7 +246,7 @@ export default function BookConfirmedStep() {
                     reset();
                     router.replace({ pathname: '/(customer)/track/[id]', params: { id: bookingId } });
                   }}
-                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
+                  android_ripple={{ color: Colors.accent + '20', borderless: false }}
                 >
                   <Ionicons name="navigate-outline" size={18} color={Colors.accent} />
                   <Text style={s.trackBtnText}>Track My Job</Text>
@@ -257,79 +257,96 @@ export default function BookConfirmedStep() {
             <Pressable
               style={({ pressed }) => [s.doneBtn, pressed && { opacity: 0.88 }]}
               onPress={handleDone}
-              android_ripple={{ color: Colors.accent + '12', borderless: false }}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
             >
               <Text style={s.doneBtnText}>Back to Home</Text>
             </Pressable>
           </View>
         </Animated.View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: Colors.surface },
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+  safe:   { flex: 1, backgroundColor: Colors.background },
+  scroll: { flexGrow: 1 },
+
+  // Success header section
+  successSection: {
+    backgroundColor: Colors.successBg,
+    paddingTop: 48,
+    paddingBottom: 40,
     paddingHorizontal: SCREEN_PADDING,
-    paddingVertical: 24,
+    alignItems: 'center',
+    gap: 16,
   },
 
   // Check circle
   checkCircleOuter: {
-    width: 108,
-    height: 108,
-    borderRadius: 54,
-    backgroundColor: Colors.accent + '20',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.success + '20',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
   },
   checkCircleInner: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: Colors.accent,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.success,
     alignItems: 'center',
     justifyContent: 'center',
     ...(IS_IOS
-      ? { shadowColor: Colors.accent, shadowOpacity: 0.45, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } }
-      : { elevation: 12 }),
+      ? { shadowColor: Colors.success, shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } }
+      : { elevation: 10 }),
   },
 
-  textBlock: { alignItems: 'center', marginBottom: 20, width: '100%' },
-  title:     { fontSize: 26, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10, textAlign: 'center' },
-  sub:       { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
-  highlight: { color: Colors.accent, fontWeight: '700' },
+  title: { fontSize: 26, fontWeight: '800', color: Colors.successText, textAlign: 'center' },
+  sub:   { fontSize: 15, color: Colors.textSecondary, textAlign: 'center' },
+
+  bodyContent: {
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 24,
+    paddingBottom: 40,
+    gap: 16,
+  },
 
   // Notif badge
   notifBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignSelf: 'center',
-    marginBottom: 20,
   },
   notifBadgeGranted: { backgroundColor: Colors.successBg },
-  notifBadgeDenied:  { backgroundColor: Colors.background },
+  notifBadgeDenied:  { backgroundColor: Colors.surfaceAlt },
   notifText:         { fontSize: 13, fontWeight: '600' },
   notifTextGranted:  { color: Colors.successText },
   notifTextDenied:   { color: Colors.textMuted },
 
   // Summary card
   summaryCard: {
-    width: '100%',
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: borderRadius.md,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
     ...cardShadow,
+  },
+  summaryCardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -343,9 +360,9 @@ const s = StyleSheet.create({
     borderBottomColor: Colors.border,
   },
   summaryIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: borderRadius.sm,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
@@ -355,7 +372,7 @@ const s = StyleSheet.create({
   summaryRowValue:  { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginTop: 1 },
 
   // Actions
-  actions: { width: '100%', gap: 10 },
+  actions: { gap: 10 },
   qrBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -363,9 +380,9 @@ const s = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.accent,
     borderRadius: borderRadius.md,
-    paddingVertical: 15,
+    paddingVertical: 16,
   },
-  qrBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
+  qrBtnText:   { color: Colors.white, fontSize: 15, fontWeight: '700' },
   trackBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -373,13 +390,13 @@ const s = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.accentMuted,
     borderRadius: borderRadius.md,
-    paddingVertical: 15,
-    borderWidth: 1,
+    paddingVertical: 16,
+    borderWidth: 1.5,
     borderColor: Colors.accent + '40',
   },
-  trackBtnText:{ color: Colors.accent, fontSize: 15, fontWeight: '700' },
+  trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
   doneBtn: {
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surface,
     borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',

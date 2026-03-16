@@ -20,6 +20,7 @@ import {
   Alert,
   Animated,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -28,13 +29,14 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated2, { FadeIn } from 'react-native-reanimated';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -61,12 +63,23 @@ function stockLevel(item: InventoryItem): StockLevel {
   return 'ok';
 }
 
-const LEVEL_CONFIG: Record<StockLevel, { border: string; badge: string; text: string; label: string }> = {
-  ok:   { border: Colors.success, badge: Colors.successBg, text: Colors.successText, label: 'In Stock'  },
-  warn: { border: Colors.warning, badge: Colors.warningBg, text: Colors.warningText, label: 'Watch'     },
-  low:  { border: Colors.error,   badge: Colors.errorBg,   text: Colors.errorText,   label: 'Low Stock' },
-  out:  { border: Colors.accent,  badge: Colors.accentMuted, text: Colors.accent,    label: 'Out'       },
-};
+function stockFillColor(level: StockLevel): string {
+  switch (level) {
+    case 'ok':   return Colors.success;
+    case 'warn': return Colors.warning;
+    case 'low':  return Colors.error;
+    case 'out':  return Colors.error;
+  }
+}
+
+function stockBadgeColor(level: StockLevel): { bg: string; text: string; label: string } {
+  switch (level) {
+    case 'ok':   return { bg: Colors.successBg, text: Colors.successText, label: 'In Stock' };
+    case 'warn': return { bg: Colors.warningBg, text: Colors.warningText, label: 'Watch' };
+    case 'low':  return { bg: Colors.errorBg,   text: Colors.errorText,   label: 'Low Stock' };
+    case 'out':  return { bg: Colors.accentMuted, text: Colors.accent,    label: 'Out' };
+  }
+}
 
 const ALL_CATEGORIES = [
   'All',
@@ -78,197 +91,6 @@ const ALL_CATEGORIES = [
   'Equipment',
   'Other',
 ];
-
-// ── Stock bar ─────────────────────────────────────────────────────────────────
-
-function StockBar({ item }: { item: InventoryItem }) {
-  const level  = stockLevel(item);
-  const cfg    = LEVEL_CONFIG[level];
-  // Bar fills to 100% when stock = threshold × 2; capped at 100%
-  const pct    = item.lowStockThreshold > 0
-    ? Math.min(item.currentStock / (item.lowStockThreshold * 2), 1)
-    : 1;
-
-  return (
-    <View style={sb.wrap}>
-      <View style={sb.track}>
-        <View style={[sb.fill, { width: `${Math.max(pct * 100, 2)}%`, backgroundColor: cfg.border }]} />
-      </View>
-      <Text style={sb.threshold}>
-        threshold {item.lowStockThreshold} {item.unit}
-      </Text>
-    </View>
-  );
-}
-
-const sb = StyleSheet.create({
-  wrap:      { marginTop: 8, marginBottom: 4 },
-  track:     { height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
-  fill:      { height: 6, borderRadius: 3 },
-  threshold: { fontSize: 10, marginTop: 4, color: Colors.textMuted },
-});
-
-// ── Stepper ───────────────────────────────────────────────────────────────────
-
-function Stepper({
-  value, unit, loading, onDelta,
-}: {
-  value: number; unit: string; loading: boolean; onDelta: (delta: number) => void;
-}) {
-  return (
-    <View style={stp.row}>
-      <Pressable
-        style={({ pressed }) => [stp.btn, pressed && stp.pressed]}
-        onPress={() => {
-          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onDelta(-1);
-        }}
-        onLongPress={() => {
-          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onDelta(-10);
-        }}
-        android_ripple={{ color: Colors.border }}
-        disabled={loading}
-        delayLongPress={500}
-      >
-        <Text style={stp.btnText}>−</Text>
-      </Pressable>
-
-      <View style={stp.display}>
-        {loading
-          ? <ActivityIndicator size="small" color={Colors.accent} />
-          : <Text style={stp.value}>{value % 1 === 0 ? value : value.toFixed(1)}</Text>
-        }
-        <Text style={stp.unit}>{unit}</Text>
-      </View>
-
-      <Pressable
-        style={({ pressed }) => [stp.btn, stp.btnPlus, pressed && stp.pressedPlus]}
-        onPress={() => {
-          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onDelta(1);
-        }}
-        onLongPress={() => {
-          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          onDelta(10);
-        }}
-        android_ripple={{ color: Colors.accentDark }}
-        disabled={loading}
-        delayLongPress={500}
-      >
-        <Text style={[stp.btnText, { color: Colors.white }]}>+</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-const stp = StyleSheet.create({
-  row:       { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  btn: {
-    width: 36, height: 36, borderRadius: borderRadius.sm,
-    backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  btnPlus:    { backgroundColor: Colors.accent },
-  pressed:    { opacity: 0.65 },
-  pressedPlus:{ opacity: 0.8 },
-  btnText:    { fontSize: 18, fontWeight: '700', color: Colors.accent, lineHeight: 22 },
-  display: {
-    flexDirection: 'row', alignItems: 'baseline', gap: 4,
-    minWidth: 80, justifyContent: 'center',
-  },
-  value: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  unit:  { fontSize: 11, color: Colors.textMuted },
-});
-
-// ── Inventory Card ────────────────────────────────────────────────────────────
-
-function InventoryCard({
-  item,
-  isAdmin,
-  adjusting,
-  onAdjust,
-  onEdit,
-  onDelete,
-}: {
-  item:      InventoryItem;
-  isAdmin:   boolean;
-  adjusting: boolean;
-  onAdjust:  (id: string, delta: number) => void;
-  onEdit:    (item: InventoryItem) => void;
-  onDelete:  (item: InventoryItem) => void;
-}) {
-  const level = stockLevel(item);
-  const cfg   = LEVEL_CONFIG[level];
-
-  return (
-    <View style={[ic.card, { borderLeftColor: cfg.border }]}>
-      {/* Header row */}
-      <View style={ic.headerRow}>
-        <View style={{ flex: 1 }}>
-          <Text style={ic.name} numberOfLines={1}>{item.name}</Text>
-          <Text style={ic.category}>{item.category}</Text>
-        </View>
-        <View style={[ic.badge, { backgroundColor: cfg.badge }]}>
-          <Text style={[ic.badgeText, { color: cfg.text }]}>{cfg.label}</Text>
-        </View>
-        {isAdmin && (
-          <View style={ic.actions}>
-            <Pressable
-              onPress={() => onEdit(item)}
-              hitSlop={8}
-              style={ic.iconBtn}
-              android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 16 }}
-            >
-              <Ionicons name="create-outline" size={17} color={Colors.accent} />
-            </Pressable>
-            <Pressable
-              onPress={() => onDelete(item)}
-              hitSlop={8}
-              style={ic.iconBtn}
-              android_ripple={{ color: Colors.errorBg, borderless: true, radius: 16 }}
-            >
-              <Ionicons name="trash-outline" size={17} color={Colors.error} />
-            </Pressable>
-          </View>
-        )}
-      </View>
-
-      {/* Stock bar */}
-      <StockBar item={item} />
-
-      {/* Stepper */}
-      <View style={ic.footer}>
-        <Stepper
-          value={item.currentStock}
-          unit={item.unit}
-          loading={adjusting}
-          onDelta={delta => onAdjust(item._id, delta)}
-        />
-        {item.notes ? (
-          <Text style={ic.notes} numberOfLines={1}>{item.notes}</Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
-
-const ic = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.white, borderRadius: borderRadius.md,
-    padding: 14, borderLeftWidth: 4,
-    ...cardShadow,
-  },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  name:      { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  category:  { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  badge:     { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  actions:   { flexDirection: 'row', gap: 4 },
-  iconBtn:   { width: 32, height: 32, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  footer:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
-  notes:     { fontSize: 11, color: Colors.textMuted, flex: 1, marginLeft: 12, textAlign: 'right' },
-});
 
 // ── Low-stock alert flash ──────────────────────────────────────────────────────
 
@@ -308,9 +130,171 @@ const lb = StyleSheet.create({
   text: { fontSize: 12, fontWeight: '700', color: Colors.white },
 });
 
-// ── Screen ────────────────────────────────────────────────────────────────────
+// ── Inventory Card ────────────────────────────────────────────────────────────
 
-import { Platform } from 'react-native';
+function InventoryCard({
+  item,
+  isAdmin,
+  adjusting,
+  onAdjust,
+  onEdit,
+  onDelete,
+  index,
+}: {
+  item:      InventoryItem;
+  isAdmin:   boolean;
+  adjusting: boolean;
+  onAdjust:  (id: string, delta: number) => void;
+  onEdit:    (item: InventoryItem) => void;
+  onDelete:  (item: InventoryItem) => void;
+  index:     number;
+}) {
+  const level  = stockLevel(item);
+  const fill   = stockFillColor(level);
+  const badge  = stockBadgeColor(level);
+  const pct    = item.lowStockThreshold > 0
+    ? Math.min(item.currentStock / (item.lowStockThreshold * 2), 1)
+    : 1;
+
+  return (
+    <ReAnimated.View entering={FadeInDown.delay(index * 50).springify()}>
+      <View style={ic.card}>
+        {/* Header row */}
+        <View style={ic.headerRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={ic.name} numberOfLines={1}>{item.name}</Text>
+          </View>
+          <View style={[ic.badge, { backgroundColor: badge.bg }]}>
+            <Text style={[ic.badgeText, { color: badge.text }]}>{badge.label}</Text>
+          </View>
+          {isAdmin && (
+            <View style={ic.actions}>
+              <Pressable
+                onPress={() => onEdit(item)}
+                hitSlop={8}
+                style={ic.iconBtn}
+                android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 16 }}
+              >
+                <Ionicons name="create-outline" size={17} color={Colors.accent} />
+              </Pressable>
+              <Pressable
+                onPress={() => onDelete(item)}
+                hitSlop={8}
+                style={ic.iconBtn}
+                android_ripple={{ color: Colors.errorBg, borderless: true, radius: 16 }}
+              >
+                <Ionicons name="trash-outline" size={17} color={Colors.error} />
+              </Pressable>
+            </View>
+          )}
+        </View>
+
+        {/* Category row */}
+        <Text style={ic.category}>{item.category}</Text>
+
+        {/* Stock progress bar */}
+        <View style={ic.barTrack}>
+          <View style={[ic.barFill, { width: `${Math.max(pct * 100, 2)}%`, backgroundColor: fill }]} />
+        </View>
+        <Text style={ic.stockLabel}>
+          {item.currentStock % 1 === 0 ? item.currentStock : item.currentStock.toFixed(1)} {item.unit} remaining
+        </Text>
+
+        {/* +/- stepper */}
+        <View style={ic.stepperRow}>
+          {/* minus */}
+          <Pressable
+            style={ic.stepBtn}
+            onPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onAdjust(item._id, -1);
+            }}
+            onLongPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onAdjust(item._id, -10);
+            }}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            disabled={adjusting}
+            delayLongPress={500}
+          >
+            <Text style={ic.stepBtnText}>−</Text>
+          </Pressable>
+
+          <View style={ic.stepDisplay}>
+            {adjusting
+              ? <ActivityIndicator size="small" color={Colors.accent} />
+              : <Text style={ic.stepValue}>
+                  {item.currentStock % 1 === 0 ? item.currentStock : item.currentStock.toFixed(1)}
+                </Text>
+            }
+            <Text style={ic.stepUnit}>{item.unit}</Text>
+          </View>
+
+          {/* plus */}
+          <Pressable
+            style={[ic.stepBtn, ic.stepBtnPlus]}
+            onPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onAdjust(item._id, 1);
+            }}
+            onLongPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onAdjust(item._id, 10);
+            }}
+            android_ripple={{ color: Colors.accentDark, borderless: false }}
+            disabled={adjusting}
+            delayLongPress={500}
+          >
+            <Text style={[ic.stepBtnText, { color: Colors.white }]}>+</Text>
+          </Pressable>
+        </View>
+
+        {item.notes ? (
+          <Text style={ic.notes} numberOfLines={1}>{item.notes}</Text>
+        ) : null}
+      </View>
+    </ReAnimated.View>
+  );
+}
+
+const ic = StyleSheet.create({
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 2 },
+  name:      { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  category:  { fontSize: 12, color: Colors.textMuted, marginBottom: 10 },
+  badge:     { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
+  badgeText: { fontSize: 10, fontWeight: '700' },
+  actions:   { flexDirection: 'row', gap: 4 },
+  iconBtn:   { width: 32, height: 32, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+
+  barTrack:   { height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden', marginBottom: 4 },
+  barFill:    { height: 6, borderRadius: 3 },
+  stockLabel: { fontSize: 12, color: Colors.textMuted, marginBottom: 12 },
+
+  stepperRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
+  stepBtn: {
+    width: 36, height: 36,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+  },
+  stepBtnPlus: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  stepBtnText: { fontSize: 18, fontWeight: '700', color: Colors.accent, lineHeight: 22 },
+  stepDisplay: { flexDirection: 'row', alignItems: 'baseline', gap: 4, minWidth: 70, justifyContent: 'center' },
+  stepValue:   { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
+  stepUnit:    { fontSize: 11, color: Colors.textMuted },
+  notes:       { fontSize: 11, color: Colors.textMuted, marginTop: 8 },
+});
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function InventoryScreen() {
   const { user } = useAuth();
@@ -436,34 +420,28 @@ export default function InventoryScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <LowStockBanner visible={showAlert} />
 
-      {/* Header */}
-      <View style={s.header}>
-        <View>
-          <Text style={s.title}>Inventory</Text>
-          <View style={s.subRow}>
-            <Text style={s.sub}>{items.length} items</Text>
-            {lowCount > 0 && (
-              <View style={s.lowBadge}>
-                <Ionicons name="warning-outline" size={11} color={Colors.errorText} />
-                <Text style={s.lowBadgeText}>{lowCount} low</Text>
-              </View>
-            )}
-          </View>
+      <ScreenHeader
+        title="Inventory"
+        rightAction={
+          isAdmin
+            ? {
+                label: 'Add',
+                icon: 'add-outline',
+                onPress: () => openEdit(),
+              }
+            : undefined
+        }
+      />
+
+      {/* Low stock alert banner */}
+      {lowCount > 0 && (
+        <View style={s.lowBanner}>
+          <Ionicons name="warning" size={16} color={Colors.error} />
+          <Text style={s.lowBannerText}>
+            {lowCount} item{lowCount !== 1 ? 's' : ''} running low — tap to review
+          </Text>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {isAdmin && (
-            <Pressable
-              style={s.headerBtn}
-              onPress={() => router.push('/(tabs)/inventory/service-map')}
-              android_ripple={{ color: Colors.accentMuted }}
-              hitSlop={8}
-            >
-              <Ionicons name="git-branch-outline" size={16} color={Colors.accent} />
-              <Text style={s.headerBtnText}>Mappings</Text>
-            </Pressable>
-          )}
-        </View>
-      </View>
+      )}
 
       {/* Offline banner */}
       {isOffline && (
@@ -501,7 +479,7 @@ export default function InventoryScreen() {
               if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setCategory(cat);
             }}
-            android_ripple={{ color: Colors.accentMuted }}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
           >
             <Text style={[s.catText, category === cat && s.catTextActive]}>{cat}</Text>
           </Pressable>
@@ -525,7 +503,7 @@ export default function InventoryScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
           ListEmptyComponent={
-            <Animated2.View entering={FadeIn.duration(300)} style={s.empty}>
+            <ReAnimated.View entering={FadeIn.duration(300)} style={s.empty}>
               <View style={s.emptyIconWrap}>
                 <Ionicons name="cube-outline" size={36} color={Colors.textMuted} />
               </View>
@@ -537,9 +515,9 @@ export default function InventoryScreen() {
                   ? 'Tap + to add your first item.'
                   : 'Ask an admin to add inventory items.'}
               </Text>
-            </Animated2.View>
+            </ReAnimated.View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <InventoryCard
               item={item}
               isAdmin={isAdmin}
@@ -547,6 +525,7 @@ export default function InventoryScreen() {
               onAdjust={handleAdjust}
               onEdit={openEdit}
               onDelete={handleDelete}
+              index={index}
             />
           )}
         />
@@ -560,7 +539,7 @@ export default function InventoryScreen() {
             if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             openEdit();
           }}
-          android_ripple={{ color: Colors.accentDark }}
+          android_ripple={{ color: Colors.accentDark, borderless: false }}
         >
           <Ionicons name="add" size={26} color={Colors.white} />
         </Pressable>
@@ -572,28 +551,17 @@ export default function InventoryScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 12,
+  // Low stock alert banner
+  lowBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.errorBg,
+    paddingHorizontal: 20, paddingVertical: 12,
+    borderRadius: 0,
   },
-  title:  { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
-  subRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
-  sub:    { fontSize: 12, color: Colors.textMuted },
-  lowBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.errorBg, borderRadius: borderRadius.full,
-    paddingHorizontal: 7, paddingVertical: 2,
-  },
-  lowBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.errorText },
-  headerBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
-    paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden',
-  },
-  headerBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
+  lowBannerText: { fontSize: 13, fontWeight: '600', color: Colors.errorText, flex: 1 },
 
   offlineBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -606,9 +574,11 @@ const s = StyleSheet.create({
   // Search
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white, borderRadius: borderRadius.md,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
     marginHorizontal: SCREEN_PADDING, marginBottom: 8,
-    ...cardShadow,
+    marginTop: 8,
+    borderWidth: 1, borderColor: Colors.border,
   },
   searchInput: {
     flex: 1, paddingHorizontal: 10, paddingVertical: 12,
@@ -619,7 +589,7 @@ const s = StyleSheet.create({
   catList: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 8 },
   catChip: {
     borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: Colors.border,
-    paddingHorizontal: 14, paddingVertical: 7, backgroundColor: Colors.white,
+    paddingHorizontal: 14, paddingVertical: 7, backgroundColor: Colors.surface,
     overflow: 'hidden',
   },
   catChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
@@ -632,7 +602,7 @@ const s = StyleSheet.create({
 
   // FAB
   fab: {
-    position: 'absolute', bottom: 28, right: SCREEN_PADDING,
+    position: 'absolute', bottom: 24, right: 24,
     width: 56, height: 56, borderRadius: borderRadius.full,
     backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',

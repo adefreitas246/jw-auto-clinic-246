@@ -5,21 +5,23 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, {
   useCallback, useEffect, useRef, useState,
 } from 'react';
 import {
-  ActivityIndicator, Animated, Platform, Pressable,
-  StyleSheet, Text, View,
+  ActivityIndicator, Animated, Dimensions, Platform, Pressable,
+  ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated2, { FadeIn } from 'react-native-reanimated';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { Avatar, Badge, SectionHeader } from '@/components/ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +38,7 @@ interface FleetMember {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const POLL_MS = 30_000;
+const SCREEN_H = Dimensions.get('window').height;
 
 // Default region when no techs are visible yet (broad view)
 const DEFAULT_REGION: Region = {
@@ -109,79 +112,22 @@ function TechMarker({
   );
 }
 
-// ─── Detail card (slide-up) ───────────────────────────────────────────────────
+// ─── Technician list row ──────────────────────────────────────────────────────
 
-function DetailCard({
-  member,
-  onClose,
-  slideAnim,
-}: {
-  member: FleetMember | null;
-  onClose: () => void;
-  slideAnim: Animated.Value;
-}) {
-  if (!member) return null;
-
+function TechRow({ member, onPress }: { member: FleetMember; onPress: () => void }) {
   return (
-    <Animated.View
-      style={[
-        fl.detailCard,
-        { transform: [{ translateY: slideAnim }] },
-      ]}
+    <Pressable
+      style={fl.techRow}
+      onPress={onPress}
+      android_ripple={{ color: Colors.accent + '20', borderless: false }}
     >
-      {/* Handle */}
-      <View style={fl.handle} />
-
-      {/* Avatar + name row */}
-      <View style={fl.detailRow}>
-        <View style={fl.detailAvatar}>
-          <Text style={fl.detailInitials}>{initials(member.name)}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={fl.detailName}>{member.name}</Text>
-          <View style={fl.detailBadgeRow}>
-            <View style={fl.onlineDot} />
-            <Text style={fl.onlineText}>Online</Text>
-            <View style={fl.rolePill}>
-              <Text style={fl.rolePillText}>{member.role}</Text>
-            </View>
-          </View>
-        </View>
-        <Pressable
-          style={fl.closeBtn}
-          onPress={onClose}
-          android_ripple={{ color: Colors.border, borderless: true, radius: 18 }}
-          hitSlop={10}
-        >
-          <Ionicons name="close" size={18} color={Colors.textMuted} />
-        </Pressable>
+      <Avatar name={member.name} size={40} />
+      <View style={{ flex: 1 }}>
+        <Text style={fl.techName}>{member.name}</Text>
+        <Text style={fl.techLastSeen}>Last seen {formatAgo(member.locationUpdatedAt)}</Text>
       </View>
-
-      {/* Coordinates row */}
-      <View style={fl.detailInfoRow}>
-        <View style={fl.detailInfoIcon}>
-          <Ionicons name="location-outline" size={15} color={Colors.accent} />
-        </View>
-        <Text style={fl.detailInfoText}>
-          {member.currentLat.toFixed(5)}°, {member.currentLng.toFixed(5)}°
-        </Text>
-        {member.locationAccuracy != null && (
-          <View style={fl.accuracyChip}>
-            <Text style={fl.accuracyChipText}>±{Math.round(member.locationAccuracy)} m</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Last seen row */}
-      <View style={fl.detailInfoRow}>
-        <View style={fl.detailInfoIcon}>
-          <Ionicons name="time-outline" size={15} color={Colors.textMuted} />
-        </View>
-        <Text style={fl.detailInfoSub}>
-          Last seen {formatAgo(member.locationUpdatedAt)}
-        </Text>
-      </View>
-    </Animated.View>
+      <View style={fl.techStatusDot} />
+    </Pressable>
   );
 }
 
@@ -331,59 +277,49 @@ export default function FleetScreen() {
         </MapView>
       )}
 
-      {/* ── Floating header overlay ── */}
+      {/* ── Fixed header overlay with LinearGradient ── */}
       <SafeAreaView style={fl.headerOverlay} edges={['top']} pointerEvents="box-none">
-        <View style={fl.header}>
-          {/* Back */}
-          <Pressable
-            style={fl.headerBtn}
-            onPress={() => router.back()}
-            android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
-            hitSlop={8}
-          >
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </Pressable>
-
-          {/* Title + count */}
-          <View style={fl.headerCenter}>
-            <Text style={fl.headerTitle}>Fleet Map</Text>
-            <View style={fl.countChip}>
-              <View style={fl.chipDot} />
-              <Text style={fl.countText}>{fleet.length} active</Text>
-            </View>
+        <LinearGradient
+          colors={[Colors.primary, Colors.primary + 'CC', 'transparent']}
+          style={fl.gradientOverlay}
+          pointerEvents="none"
+        />
+        <View style={fl.header} pointerEvents="box-none">
+          <View style={fl.headerContent}>
+            <Text style={fl.headerTitle}>Fleet Tracking</Text>
+            <Badge status="active" label={`${fleet.length} active`} size="sm" />
           </View>
-
-          {/* Refresh + fit */}
+          {/* Actions */}
           <View style={fl.headerActions}>
             <Pressable
-              style={fl.headerBtn}
+              style={fl.headerIconBtn}
               onPress={() => {
                 if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 fetchFleet(true);
               }}
-              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
+              android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 22 }}
               hitSlop={8}
               disabled={refreshing}
             >
               {refreshing
-                ? <ActivityIndicator size="small" color={Colors.accent} />
-                : <Ionicons name="refresh" size={20} color={Colors.accent} />
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Ionicons name="refresh" size={20} color={Colors.white} />
               }
             </Pressable>
             <Pressable
-              style={fl.headerBtn}
+              style={fl.headerIconBtn}
               onPress={fitAll}
-              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
+              android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 22 }}
               hitSlop={8}
             >
-              <Ionicons name="expand-outline" size={20} color={Colors.accent} />
+              <Ionicons name="expand-outline" size={20} color={Colors.white} />
             </Pressable>
           </View>
         </View>
 
         {/* Last refreshed */}
         {lastRefresh && (
-          <View style={fl.refreshedBadge}>
+          <View style={fl.refreshedBadge} pointerEvents="none">
             <View style={fl.refreshedDot} />
             <Text style={fl.refreshedText}>
               Updated {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
@@ -411,12 +347,93 @@ export default function FleetScreen() {
         </View>
       )}
 
-      {/* ── Detail card (bottom slide-up) ── */}
-      <DetailCard
-        member={selected}
-        onClose={() => setSelected(null)}
-        slideAnim={slideAnim}
-      />
+      {/* ── Bottom sheet with technician list ── */}
+      <View style={fl.bottomSheet} pointerEvents="box-none">
+        {/* Handle bar */}
+        <View style={fl.handle} />
+        <SectionHeader
+          title={`Active Technicians (${fleet.length})`}
+        />
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {fleet.map((member, index) => (
+            <ReAnimated.View key={member._id} entering={FadeInDown.delay(index * 50).springify()}>
+              <TechRow
+                member={member}
+                onPress={() => handleMarkerPress(member)}
+              />
+            </ReAnimated.View>
+          ))}
+          {fleet.length === 0 && (
+            <Text style={fl.noTechText}>No technicians currently active</Text>
+          )}
+        </ScrollView>
+      </View>
+
+      {/* ── Detail card (bottom slide-up) when marker selected ── */}
+      <Animated.View
+        style={[
+          fl.detailCard,
+          { transform: [{ translateY: slideAnim }] },
+        ]}
+        pointerEvents={selected ? 'auto' : 'none'}
+      >
+        {/* Handle */}
+        <View style={fl.detailHandle} />
+
+        {selected && (
+          <>
+            {/* Avatar + name row */}
+            <View style={fl.detailRow}>
+              <View style={fl.detailAvatar}>
+                <Text style={fl.detailInitials}>{initials(selected.name)}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={fl.detailName}>{selected.name}</Text>
+                <View style={fl.detailBadgeRow}>
+                  <View style={fl.onlineDot} />
+                  <Text style={fl.onlineText}>Online</Text>
+                  <View style={fl.rolePill}>
+                    <Text style={fl.rolePillText}>{selected.role}</Text>
+                  </View>
+                </View>
+              </View>
+              <Pressable
+                style={fl.closeBtn}
+                onPress={() => setSelected(null)}
+                android_ripple={{ color: Colors.border, borderless: true, radius: 18 }}
+                hitSlop={10}
+              >
+                <Ionicons name="close" size={18} color={Colors.textMuted} />
+              </Pressable>
+            </View>
+
+            {/* Coordinates row */}
+            <View style={fl.detailInfoRow}>
+              <View style={fl.detailInfoIcon}>
+                <Ionicons name="location-outline" size={15} color={Colors.accent} />
+              </View>
+              <Text style={fl.detailInfoText}>
+                {selected.currentLat.toFixed(5)}°, {selected.currentLng.toFixed(5)}°
+              </Text>
+              {selected.locationAccuracy != null && (
+                <View style={fl.accuracyChip}>
+                  <Text style={fl.accuracyChipText}>±{Math.round(selected.locationAccuracy)} m</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Last seen row */}
+            <View style={fl.detailInfoRow}>
+              <View style={fl.detailInfoIcon}>
+                <Ionicons name="time-outline" size={15} color={Colors.textMuted} />
+              </View>
+              <Text style={fl.detailInfoSub}>
+                Last seen {formatAgo(selected.locationUpdatedAt)}
+              </Text>
+            </View>
+          </>
+        )}
+      </Animated.View>
     </View>
   );
 }
@@ -428,7 +445,7 @@ const fl = StyleSheet.create({
   centered:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: SCREEN_PADDING },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
 
-  // ── Centered empty states ──
+  // Centered empty states
   emptyIconWrap: {
     width: 72, height: 72, borderRadius: borderRadius.full,
     backgroundColor: Colors.surfaceAlt,
@@ -437,53 +454,35 @@ const fl = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
   emptyText:  { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
 
-  // ── Floating header ──
-  headerOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0,
+  // Floating header with gradient
+  headerOverlay: { position: 'absolute', top: 0, left: 0, right: 0 },
+  gradientOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: 140,
   },
   header: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
-    marginHorizontal: 12,
-    marginTop:        8,
-    backgroundColor: Colors.white,
-    borderRadius:    borderRadius.lg,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    ...cardShadow,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 12,
   },
-  headerBtn: {
-    width: 40, height: 40,
-    alignItems: 'center', justifyContent: 'center',
+  headerContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  headerTitle:   { fontSize: 20, fontWeight: '700', color: Colors.white },
+  headerActions: { flexDirection: 'row', gap: 4 },
+  headerIconBtn: {
+    width: 40, height: 40, alignItems: 'center', justifyContent: 'center',
     borderRadius: borderRadius.full,
   },
-  headerCenter: { flex: 1, alignItems: 'center', gap: 4 },
-  headerTitle:  { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  headerActions:{ flexDirection: 'row', alignItems: 'center' },
-
-  countChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.successBg, borderRadius: borderRadius.full,
-    paddingHorizontal: 10, paddingVertical: 3,
-  },
-  chipDot:    { width: 7, height: 7, borderRadius: borderRadius.full, backgroundColor: Colors.success },
-  countText:  { fontSize: 12, fontWeight: '700', color: Colors.success },
 
   refreshedBadge: {
-    alignSelf: 'center', marginTop: 8,
+    alignSelf: 'center', marginTop: 4,
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: 'rgba(255,255,255,0.9)',
     borderRadius: borderRadius.full, paddingHorizontal: 12, paddingVertical: 4,
   },
-  refreshedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
+  refreshedDot:  { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
   refreshedText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
 
-  // ── Markers ──
-  markerWrap: {
-    alignItems: 'center',
-  },
-  markerWrapSel: {},
+  // Markers
+  markerWrap:         { alignItems: 'center' },
+  markerWrapSel:      {},
   markerAvatar: {
     width: 38, height: 38, borderRadius: borderRadius.full,
     backgroundColor: Colors.accent,
@@ -502,31 +501,60 @@ const fl = StyleSheet.create({
     fontSize: 11, fontWeight: '700', color: Colors.textPrimary,
     backgroundColor: 'rgba(255,255,255,0.92)',
     borderRadius: borderRadius.sm, paddingHorizontal: 5, paddingVertical: 1,
-    marginTop: 2, maxWidth: 72,
-    textAlign: 'center',
+    marginTop: 2, maxWidth: 72, textAlign: 'center',
   },
   markerNameSel: { color: Colors.accent },
   markerNib: {
     width: 0, height: 0,
     borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 7,
-    borderLeftColor: Colors.transparent, borderRightColor: Colors.transparent,
+    borderLeftColor: 'transparent', borderRightColor: 'transparent',
     borderTopColor: Colors.accent,
   },
   markerNibSel: { borderTopColor: Colors.primary },
 
-  // ── Detail card ──
-  detailCard: {
-    position:       'absolute',
-    bottom:         0, left: 0, right: 0,
-    backgroundColor: Colors.white,
-    borderTopLeftRadius:  borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    paddingHorizontal: SCREEN_PADDING,
-    paddingTop:   12,
-    paddingBottom: 40,
-    ...cardShadow,
+  // Bottom sheet
+  bottomSheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: SCREEN_H * 0.5,
+    borderTopWidth: 1, borderColor: Colors.border,
+    ...Platform.select({
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },
+      android: { elevation: 12 },
+    }),
   },
   handle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center', marginBottom: 16,
+  },
+
+  // Tech row in bottom sheet
+  techRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
+    padding: 12, marginBottom: 8,
+    borderWidth: 1, borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  techName:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  techLastSeen: { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  techStatusDot:{ width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
+  noTechText:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', paddingVertical: 16 },
+
+  // Detail card (slide-up over bottom sheet)
+  detailCard: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 12, paddingBottom: 40,
+    ...cardShadow,
+  },
+  detailHandle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: Colors.border,
     alignSelf: 'center', marginBottom: 20,
@@ -538,11 +566,11 @@ const fl = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: Colors.accent,
   },
-  detailInitials: { fontSize: 18, fontWeight: '800', color: Colors.accent },
-  detailName:     { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
-  detailBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  onlineDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
-  onlineText:     { fontSize: 12, color: Colors.success, fontWeight: '700' },
+  detailInitials:  { fontSize: 18, fontWeight: '800', color: Colors.accent },
+  detailName:      { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
+  detailBadgeRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  onlineDot:       { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
+  onlineText:      { fontSize: 12, color: Colors.success, fontWeight: '700' },
   rolePill: {
     backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
     paddingHorizontal: 8, paddingVertical: 2,
@@ -552,6 +580,7 @@ const fl = StyleSheet.create({
     width: 36, height: 36, borderRadius: borderRadius.full,
     backgroundColor: Colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
   detailInfoRow: {
     flexDirection: 'row', alignItems: 'center',
@@ -570,7 +599,7 @@ const fl = StyleSheet.create({
   },
   accuracyChipText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
 
-  // ── Error toast ──
+  // Error toast
   errorToast: {
     position: 'absolute', bottom: 100, left: 16, right: 16,
     backgroundColor: Colors.errorBg,
@@ -581,7 +610,7 @@ const fl = StyleSheet.create({
   },
   errorText: { flex: 1, fontSize: 13, color: Colors.error, fontWeight: '600' },
 
-  // ── Empty state overlay ──
+  // Empty state overlay
   emptyOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',

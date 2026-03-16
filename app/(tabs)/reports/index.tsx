@@ -8,6 +8,7 @@
 //   • 5 report-type cards → navigate to /(tabs)/reports/[type]
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -22,11 +23,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -115,31 +117,14 @@ function dayLabel(iso: string): string {
   return day.slice(0, 3);
 }
 
-// ── KPI Card ──────────────────────────────────────────────────────────────────
+// ── Section label ─────────────────────────────────────────────────────────────
 
-function KpiCard({
-  label, value, sub, icon, color,
-}: {
-  label: string; value: string; sub?: string; icon: string; color: string;
-}) {
-  return (
-    <View style={[rd.kpiCard, { borderTopColor: color }]}>
-      <View style={[rd.kpiIconWrap, { backgroundColor: color + '1a' }]}>
-        <Ionicons name={icon as any} size={18} color={color} />
-      </View>
-      <Text style={rd.kpiValue}>{value}</Text>
-      <Text style={rd.kpiLabel}>{label}</Text>
-      {sub ? <Text style={rd.kpiSub}>{sub}</Text> : null}
-    </View>
-  );
-}
-
-// ── Section header ────────────────────────────────────────────────────────────
-
-function SectionHeader({ title, icon }: { title: string; icon: string }) {
+function SectionLabel({ title, icon }: { title: string; icon: string }) {
   return (
     <View style={rd.sectionRow}>
-      <Ionicons name={icon as any} size={15} color={Colors.accent} />
+      <View style={rd.sectionIconWrap}>
+        <Ionicons name={icon as any} size={13} color={Colors.accent} />
+      </View>
       <Text style={rd.sectionTitle}>{title}</Text>
     </View>
   );
@@ -204,24 +189,11 @@ export default function ReportsDashboard() {
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
+  const now = new Date();
+  const periodLabel = now.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+
   return (
     <SafeAreaView style={rd.safe} edges={['top']}>
-      {/* Header */}
-      <View style={rd.header}>
-        <View>
-          <Text style={rd.title}>Reports</Text>
-          <Text style={rd.sub}>Admin Dashboard</Text>
-        </View>
-        <Pressable
-          onPress={() => fetch(false)}
-          style={rd.refreshBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.accentMuted, radius: 20, borderless: true }}
-        >
-          <Ionicons name="refresh" size={20} color={Colors.accent} />
-        </Pressable>
-      </View>
-
       {loading ? (
         <View style={rd.centered}>
           <ActivityIndicator size="large" color={Colors.accent} />
@@ -239,38 +211,58 @@ export default function ReportsDashboard() {
             />
           }
         >
-          {/* KPI strip */}
-          <SectionHeader title="Overview" icon="stats-chart-outline" />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-            <View style={rd.kpiRow}>
-              <KpiCard
-                label="Today's Revenue"
-                value={fmtMoney(data?.todayRevenue ?? 0)}
-                icon="today-outline"
-                color={Colors.accent}
-                sub={`${data?.todayTransactions ?? 0} jobs`}
-              />
-              <KpiCard
-                label="Total Revenue"
-                value={fmtMoney(data?.totalRevenue ?? 0)}
-                icon="cash-outline"
-                color={Colors.success}
-                sub={`${data?.totalServices ?? 0} all-time`}
-              />
-              <KpiCard
-                label="Staff On-clock"
-                value={String(data?.activeNow ?? 0)}
-                icon="people-outline"
-                color={Colors.info}
-                sub={`of ${data?.totalEmployees ?? 0} staff`}
-              />
-            </View>
-          </ScrollView>
+          {/* ── Gradient header ── */}
+          <Animated.View entering={FadeIn.duration(400)}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={rd.gradientHeader}
+            >
+              <View style={rd.gradientHeaderRow}>
+                <View>
+                  <Text style={rd.gradientTitle}>Reports</Text>
+                  <Text style={rd.gradientSub}>Admin Dashboard</Text>
+                </View>
+                <View style={rd.headerRight}>
+                  <View style={rd.periodBadge}>
+                    <Text style={rd.periodBadgeText}>{periodLabel}</Text>
+                  </View>
+                  <Pressable
+                    onPress={() => fetch(false)}
+                    style={rd.refreshBtn}
+                    hitSlop={8}
+                    android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                  >
+                    <Ionicons name="refresh" size={20} color={Colors.white} />
+                  </Pressable>
+                </View>
+              </View>
 
-          {/* Bar chart: 7-day */}
+              {/* 2x2 stat grid */}
+              <View style={rd.kpiGrid}>
+                {[
+                  { label: "Today's Revenue", value: fmtMoney(data?.todayRevenue ?? 0), icon: 'today-outline', color: Colors.white },
+                  { label: 'Total Revenue',   value: fmtMoney(data?.totalRevenue ?? 0), icon: 'cash-outline',  color: Colors.white },
+                  { label: 'Staff On-clock',  value: String(data?.activeNow ?? 0),       icon: 'people-outline', color: Colors.white },
+                  { label: 'All-time Jobs',   value: String(data?.totalServices ?? 0),   icon: 'layers-outline', color: Colors.white },
+                ].map((kpi, i) => (
+                  <View key={i} style={rd.kpiCard}>
+                    <View style={rd.kpiIconWrap}>
+                      <Ionicons name={kpi.icon as any} size={16} color={Colors.primary} />
+                    </View>
+                    <Text style={rd.kpiValue}>{kpi.value}</Text>
+                    <Text style={rd.kpiLabel}>{kpi.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* ── Bar chart: 7-day ── */}
           {barData && (
-            <View style={rd.chartCard}>
-              <SectionHeader title="Last 7 Days — Daily Revenue" icon="bar-chart-outline" />
+            <Animated.View entering={FadeInDown.delay(100).duration(400)} style={rd.chartCard}>
+              <SectionLabel title="Last 7 Days — Daily Revenue" icon="bar-chart-outline" />
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <BarChart
                   data={barData}
@@ -286,13 +278,13 @@ export default function ReportsDashboard() {
                   withInnerLines
                 />
               </ScrollView>
-            </View>
+            </Animated.View>
           )}
 
-          {/* Line chart: 4-week */}
+          {/* ── Line chart: 4-week ── */}
           {lineData && (
-            <View style={rd.chartCard}>
-              <SectionHeader title="Weekly Revenue Trend (4 Weeks)" icon="trending-up-outline" />
+            <Animated.View entering={FadeInDown.delay(180).duration(400)} style={rd.chartCard}>
+              <SectionLabel title="Weekly Revenue Trend (4 Weeks)" icon="trending-up-outline" />
               <LineChart
                 data={lineData}
                 width={CHART}
@@ -307,13 +299,13 @@ export default function ReportsDashboard() {
                 yAxisSuffix=""
                 withInnerLines
               />
-            </View>
+            </Animated.View>
           )}
 
-          {/* Pie chart: top services */}
+          {/* ── Pie chart: top services ── */}
           {pieData && pieData.length > 0 && (
-            <View style={rd.chartCard}>
-              <SectionHeader title="Top Services by Revenue" icon="pie-chart-outline" />
+            <Animated.View entering={FadeInDown.delay(260).duration(400)} style={rd.chartCard}>
+              <SectionLabel title="Top Services by Revenue" icon="pie-chart-outline" />
               <PieChart
                 data={pieData}
                 width={CHART}
@@ -325,13 +317,13 @@ export default function ReportsDashboard() {
                 style={rd.chart}
                 absolute={false}
               />
-            </View>
+            </Animated.View>
           )}
 
-          {/* Service legend list */}
+          {/* ── Service legend list ── */}
           {data?.serviceChart && data.serviceChart.length > 0 && (
-            <View style={rd.chartCard}>
-              <SectionHeader title="Service Revenue Breakdown" icon="list-outline" />
+            <Animated.View entering={FadeInDown.delay(320).duration(400)} style={rd.chartCard}>
+              <SectionLabel title="Service Revenue Breakdown" icon="list-outline" />
               {data.serviceChart.map((s, i) => {
                 const maxRev = data.serviceChart[0].revenue || 1;
                 return (
@@ -353,35 +345,36 @@ export default function ReportsDashboard() {
                   </View>
                 );
               })}
-            </View>
+            </Animated.View>
           )}
 
-          {/* Report cards */}
-          <SectionHeader title="Detailed Reports" icon="document-text-outline" />
-          {REPORT_CARDS.map(card => (
-            <Pressable
-              key={card.type}
-              style={({ pressed }) => [rd.reportCard, pressed && IS_IOS && { opacity: 0.85 }]}
-              onPress={() => openReport(card.type)}
-              android_ripple={{ color: Colors.surfaceAlt }}
-            >
-              <View style={[rd.reportIcon, { backgroundColor: card.color + '18' }]}>
-                <Ionicons name={card.icon as any} size={22} color={card.color} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={rd.reportTitle}>{card.title}</Text>
-                <Text style={rd.reportDesc}>{card.desc}</Text>
-              </View>
-              <View style={rd.exportBadges}>
-                <View style={rd.badge}>
-                  <Text style={rd.badgeText}>CSV</Text>
+          {/* ── Report cards ── */}
+          <SectionLabel title="Detailed Reports" icon="document-text-outline" />
+          {REPORT_CARDS.map((card, i) => (
+            <Animated.View key={card.type} entering={FadeInDown.delay(380 + i * 70).duration(350)}>
+              <Pressable
+                style={({ pressed }) => [rd.reportCard, pressed && IS_IOS && { opacity: 0.85 }]}
+                onPress={() => openReport(card.type)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <View style={[rd.reportIconCircle, { backgroundColor: card.color + '18' }]}>
+                  <Ionicons name={card.icon as any} size={22} color={card.color} />
                 </View>
-                <View style={[rd.badge, rd.badgePdf]}>
-                  <Text style={[rd.badgeText, { color: Colors.white }]}>PDF</Text>
+                <View style={{ flex: 1, marginLeft: 14 }}>
+                  <Text style={rd.reportTitle}>{card.title}</Text>
+                  <Text style={rd.reportDesc}>{card.desc}</Text>
                 </View>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.border} style={{ marginLeft: 6 }} />
-            </Pressable>
+                <View style={rd.exportBadges}>
+                  <View style={rd.badge}>
+                    <Text style={rd.badgeText}>CSV</Text>
+                  </View>
+                  <View style={[rd.badge, rd.badgePdf]}>
+                    <Text style={[rd.badgeText, { color: Colors.white }]}>PDF</Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.border} style={{ marginLeft: 6 }} />
+              </Pressable>
+            </Animated.View>
           ))}
 
           <View style={{ height: 32 }} />
@@ -397,55 +390,55 @@ const rd = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header: {
+  scroll: { paddingBottom: 100 },
+
+  // Gradient header
+  gradientHeader: {
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 20,
+    paddingBottom: 24,
+    marginBottom: 16,
+  },
+  gradientHeaderRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    ...cardShadow,
+    marginBottom: 20,
   },
-  title:      { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
-  sub:        { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
-  refreshBtn: { padding: 8 },
+  gradientTitle: { fontSize: 26, fontWeight: '800', color: Colors.white },
+  gradientSub:   { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 },
+  headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  periodBadge:   { backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 99, paddingHorizontal: 12, paddingVertical: 5 },
+  periodBadgeText: { fontSize: 12, fontWeight: '600', color: Colors.white },
+  refreshBtn:    { padding: 6 },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
-
-  // Section
-  sectionRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, marginTop: 4 },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.accent,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-
-  // KPI
-  kpiRow: { flexDirection: 'row', gap: 12, paddingRight: 20 },
+  // 2x2 KPI grid
+  kpiGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   kpiCard: {
-    width: 144,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderTopWidth: 3,
-    ...cardShadow,
+    width: '47.5%',
+    backgroundColor: Colors.white,
+    borderRadius: 14,
+    padding: 14,
+    ...( IS_IOS
+      ? { shadowColor: Colors.black, shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }
+      : { elevation: 3 }),
   },
   kpiIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  kpiValue: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  kpiLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
-  kpiSub:   { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
+  kpiValue: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
+  kpiLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 3 },
+
+  // Section
+  sectionRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12, marginTop: 8, paddingHorizontal: SCREEN_PADDING },
+  sectionIconWrap: { width: 22, height: 22, borderRadius: 6, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle:  { fontSize: 12, fontWeight: '700', color: Colors.textPrimary, textTransform: 'uppercase', letterSpacing: 0.6 },
 
   // Charts
   chartCard: {
@@ -453,6 +446,7 @@ const rd = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
+    marginHorizontal: SCREEN_PADDING,
     ...cardShadow,
   },
   chart: { borderRadius: 10, marginTop: 12 },
@@ -479,12 +473,13 @@ const rd = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    marginHorizontal: SCREEN_PADDING,
     overflow: 'hidden',
     ...cardShadow,
   },
-  reportIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  reportTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
-  reportDesc:  { fontSize: 12, color: Colors.textMuted, lineHeight: 17 },
+  reportIconCircle: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  reportTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
+  reportDesc:  { fontSize: 13, color: Colors.textMuted, lineHeight: 17 },
 
   exportBadges: { flexDirection: 'row', gap: 4 },
   badge: {

@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { BookingProgressBar } from './_layout';
 import { Colors } from '@/constants/Colors';
@@ -13,6 +14,7 @@ import VehiclePicker from '@/components/VehiclePicker';
 import { Vehicle } from '@/types/vehicle';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { Card, ScreenHeader } from '@/components/ui';
 
 export default function BookVehicleStep() {
   const { draft, setVehicle } = useBooking();
@@ -34,78 +36,93 @@ export default function BookVehicleStep() {
     <SafeAreaView style={s.safe} edges={['bottom']}>
       <BookingProgressBar step={1} />
 
-      <View style={s.container}>
-        <Text style={s.heading}>Which vehicle are we washing?</Text>
-        <Text style={s.sub}>Select a saved vehicle or skip to continue without one.</Text>
+      <Animated.View style={s.container} entering={FadeIn.duration(300)}>
+        {/* Heading */}
+        <Animated.View entering={FadeInDown.delay(80).duration(300)}>
+          <Text style={s.heading}>Which vehicle are we washing?</Text>
+          <Text style={s.sub}>Select a saved vehicle or skip to continue without one.</Text>
+        </Animated.View>
 
         {/* Vehicle selector card */}
-        <Pressable
-          style={({ pressed }) => [s.vehicleCard, pressed && { opacity: 0.9 }]}
-          onPress={openPicker}
-          android_ripple={{ color: Colors.accent + '12', borderless: false }}
-        >
-          {draft.vehicle ? (
-            <>
-              <View style={s.vehicleIconWrap}>
-                <Ionicons name="car-sport" size={26} color={Colors.accent} />
-              </View>
-              <View style={s.vehicleBody}>
-                <Text style={s.vehicleName}>
-                  {draft.vehicle.make} {draft.vehicle.model}
-                </Text>
-                <View style={s.vehicleMetaRow}>
-                  {!!draft.vehicle.size && (
-                    <View style={s.vehicleSizeTag}>
-                      <Text style={s.vehicleSizeTagText}>{draft.vehicle.size}</Text>
-                    </View>
-                  )}
-                  {!!draft.vehicle.licensePlate && (
-                    <View style={s.vehiclePlateBadge}>
-                      <Text style={s.vehiclePlateBadgeText}>{draft.vehicle.licensePlate}</Text>
-                    </View>
-                  )}
-                  {!!draft.vehicle.color && (
-                    <Text style={s.vehicleColorText}>{draft.vehicle.color}</Text>
-                  )}
+        <Animated.View entering={FadeInDown.delay(160).duration(300)}>
+          <Pressable
+            style={({ pressed }) => [
+              s.vehicleCard,
+              draft.vehicle && s.vehicleCardSelected,
+              pressed && { opacity: 0.9 },
+            ]}
+            onPress={openPicker}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
+            {draft.vehicle ? (
+              <>
+                <View style={s.vehicleIconWrap}>
+                  <Ionicons name="car-sport" size={26} color={Colors.accent} />
                 </View>
-              </View>
-              <View style={s.selectedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={[s.vehicleIconWrap, s.vehicleIconEmpty]}>
-                <Ionicons name="car-outline" size={26} color={Colors.textMuted} />
-              </View>
-              <View style={s.vehicleBody}>
-                <Text style={s.vehicleNameEmpty}>No vehicle selected</Text>
-                <Text style={s.vehicleMetaEmpty}>Tap to choose a saved vehicle</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.border} />
-            </>
-          )}
-        </Pressable>
+                <View style={s.vehicleBody}>
+                  <Text style={s.vehicleName}>
+                    {draft.vehicle.make} {draft.vehicle.model}
+                  </Text>
+                  <View style={s.vehicleMetaRow}>
+                    {!!draft.vehicle.size && (
+                      <View style={s.vehicleSizeTag}>
+                        <Text style={s.vehicleSizeTagText}>{draft.vehicle.size}</Text>
+                      </View>
+                    )}
+                    {!!draft.vehicle.licensePlate && (
+                      <View style={s.vehiclePlateBadge}>
+                        <Text style={s.vehiclePlateBadgeText}>{draft.vehicle.licensePlate}</Text>
+                      </View>
+                    )}
+                    {!!draft.vehicle.color && (
+                      <Text style={s.vehicleColorText}>{draft.vehicle.color}</Text>
+                    )}
+                  </View>
+                </View>
+                <View style={s.selectedCheck}>
+                  <Ionicons name="checkmark-circle" size={22} color={Colors.accent} />
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={[s.vehicleIconWrap, s.vehicleIconEmpty]}>
+                  <Ionicons name="car-outline" size={26} color={Colors.textMuted} />
+                </View>
+                <View style={s.vehicleBody}>
+                  <Text style={s.vehicleNameEmpty}>No vehicle selected</Text>
+                  <Text style={s.vehicleMetaEmpty}>Tap to choose a saved vehicle</Text>
+                </View>
+                <View style={s.chevronWrap}>
+                  <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+                </View>
+              </>
+            )}
+          </Pressable>
+        </Animated.View>
 
         {draft.vehicle && (
-          <Pressable
-            style={s.clearBtn}
-            onPress={() => setVehicle(null)}
-            android_ripple={{ color: Colors.accent + '12', borderless: false }}
-          >
-            <Ionicons name="close-circle-outline" size={16} color={Colors.textMuted} />
-            <Text style={s.clearText}>Continue without a vehicle</Text>
-          </Pressable>
+          <Animated.View entering={FadeInDown.delay(240).duration(300)}>
+            <Pressable
+              style={s.clearBtn}
+              onPress={() => setVehicle(null)}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <Ionicons name="close-circle-outline" size={16} color={Colors.textMuted} />
+              <Text style={s.clearText}>Continue without a vehicle</Text>
+            </Pressable>
+          </Animated.View>
         )}
 
         {/* Info note */}
-        <View style={s.infoNote}>
-          <Ionicons name="information-circle-outline" size={16} color={Colors.info} />
-          <Text style={s.infoNoteText}>
-            Adding a vehicle helps us apply the right pricing and services.
-          </Text>
-        </View>
-      </View>
+        <Animated.View entering={FadeInDown.delay(draft.vehicle ? 320 : 240).duration(300)}>
+          <View style={s.infoNote}>
+            <Ionicons name="information-circle-outline" size={16} color={Colors.info} />
+            <Text style={s.infoNoteText}>
+              Adding a vehicle helps us apply the right pricing and services.
+            </Text>
+          </View>
+        </Animated.View>
+      </Animated.View>
 
       <VehiclePicker
         visible={pickerOpen}
@@ -123,7 +140,7 @@ export default function BookVehicleStep() {
           ]}
           onPress={() => router.push('/(customer)/book/services')}
           disabled={!canContinue}
-          android_ripple={{ color: Colors.accent + '12', borderless: false }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
         >
           <Text style={s.nextBtnText}>Next — Choose Services</Text>
           <Ionicons name="arrow-forward" size={18} color={Colors.white} />
@@ -134,7 +151,7 @@ export default function BookVehicleStep() {
 }
 
 const s = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:      { flex: 1, backgroundColor: Colors.background },
   container: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: 24 },
   heading:   { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
   sub:       { fontSize: 14, color: Colors.textMuted, marginBottom: 24, lineHeight: 20 },
@@ -144,24 +161,28 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     padding: 16,
     borderWidth: 2,
-    borderColor: Colors.accent,
+    borderColor: Colors.border,
     ...cardShadow,
     marginBottom: 12,
+  },
+  vehicleCardSelected: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accentMuted,
   },
   vehicleIconWrap: {
     width: 52,
     height: 52,
-    borderRadius: borderRadius.sm,
+    borderRadius: 14,
     backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 14,
   },
   vehicleIconEmpty: {
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surfaceAlt,
   },
   vehicleBody: { flex: 1 },
   vehicleName: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 6 },
@@ -170,7 +191,7 @@ const s = StyleSheet.create({
   vehicleMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   vehicleSizeTag: {
     backgroundColor: Colors.accentMuted,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
@@ -185,7 +206,8 @@ const s = StyleSheet.create({
   },
   vehiclePlateBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.textPrimary, letterSpacing: 1.2 },
   vehicleColorText: { fontSize: 12, color: Colors.textSecondary },
-  selectedBadge: { marginLeft: 8 },
+  selectedCheck: { marginLeft: 8 },
+  chevronWrap: { marginLeft: 4 },
 
   // Clear button
   clearBtn: {
@@ -204,7 +226,7 @@ const s = StyleSheet.create({
     gap: 8,
     backgroundColor: Colors.infoBg,
     borderRadius: borderRadius.md,
-    padding: 12,
+    padding: 14,
     marginTop: 20,
     borderWidth: 1,
     borderColor: Colors.info + '30',
@@ -217,7 +239,7 @@ const s = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: IS_IOS ? 32 : 20,
     backgroundColor: Colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
   nextBtn: {

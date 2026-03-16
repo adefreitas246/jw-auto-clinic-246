@@ -14,6 +14,7 @@ import {
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 
 import {
@@ -26,7 +27,8 @@ import VoiceNoteRecorder    from '@/components/VoiceNoteRecorder';
 import VoiceNotePlayer, { VoiceNoteMeta } from '@/components/VoiceNotePlayer';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader, SectionHeader, Button, Input } from '@/components/ui';
 
 // ─── Photo item type ──────────────────────────────────────────────────────────
 interface PhotoItem {
@@ -53,18 +55,55 @@ async function copyToCache(uri: string, id: string): Promise<string> {
   return dest;
 }
 
-// ─── Animated step dot ────────────────────────────────────────────────────────
-function StepDot({ done, active }: { done: boolean; active: boolean }) {
-  const scale = useRef(new Animated.Value(done || active ? 1 : 0.7)).current;
+// ─── Step indicator circle ────────────────────────────────────────────────────
+function StepCircle({
+  done, active, number,
+}: {
+  done: boolean; active: boolean; number: number;
+}) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
-    Animated.spring(scale, { toValue: done || active ? 1 : 0.7, useNativeDriver: true }).start();
-  }, [done, active]);
-  const bg = done ? Colors.accent : active ? Colors.accent : Colors.border;
+    if (active) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.25, duration: 700, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [active]);
+
+  if (done) {
+    return (
+      <View style={[wf.stepCircle, { backgroundColor: Colors.success }]}>
+        <Ionicons name="checkmark" size={16} color={Colors.white} />
+      </View>
+    );
+  }
+
+  if (active) {
+    return (
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Animated.View
+          style={[
+            wf.stepCirclePulse,
+            { transform: [{ scale: pulseAnim }] },
+          ]}
+        />
+        <View style={[wf.stepCircle, { backgroundColor: Colors.accent, position: 'absolute' }]}>
+          <Text style={wf.stepCircleNum}>{number}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <Animated.View style={[wf.dot, { backgroundColor: bg, transform: [{ scale }] }]}>
-      {done  ? <Ionicons name="checkmark" size={12} color={Colors.white} /> : null}
-      {active && !done ? <View style={wf.dotPulse} /> : null}
-    </Animated.View>
+    <View style={[wf.stepCircle, { backgroundColor: Colors.surfaceAlt, borderWidth: 1.5, borderColor: Colors.border }]}>
+      <Text style={[wf.stepCircleNum, { color: Colors.textMuted }]}>{number}</Text>
+    </View>
   );
 }
 
@@ -72,28 +111,37 @@ function StepDot({ done, active }: { done: boolean; active: boolean }) {
 function JobStepper({ status }: { status: JobStatus }) {
   const idx = JOB_STEPS.findIndex(s => s.status === status);
   return (
-    <View>
+    <View style={wf.stepperWrap}>
       {JOB_STEPS.map((step, i) => {
         const done   = i < idx;
         const active = i === idx;
         return (
           <View key={step.status}>
             <View style={wf.stepRow}>
-              <StepDot done={done} active={active} />
-              <Text style={[wf.stepLabel, (done || active) && wf.stepLabelOn]}>
-                {STAFF_STATUS_LABELS[step.status]}
-              </Text>
-              {active && (
-                <View style={[wf.activePill, { backgroundColor: STAFF_STATUS_COLORS[step.status].bg }]}>
-                  <Text style={[wf.activePillText, { color: STAFF_STATUS_COLORS[step.status].text }]}>
-                    Current
-                  </Text>
-                </View>
-              )}
+              {/* Left indicator */}
+              <View style={wf.stepIndicatorCol}>
+                <StepCircle done={done} active={active} number={i + 1} />
+                {i < JOB_STEPS.length - 1 && (
+                  <View style={[wf.stepConnector, done && { backgroundColor: Colors.success }]} />
+                )}
+              </View>
+              {/* Right content */}
+              <View style={wf.stepContent}>
+                <Text style={[
+                  wf.stepLabel,
+                  active && wf.stepLabelActive,
+                  done && wf.stepLabelDone,
+                ]}>
+                  {STAFF_STATUS_LABELS[step.status]}
+                </Text>
+                {active && (
+                  <Text style={wf.stepTimestamp}>Current step</Text>
+                )}
+                {done && (
+                  <Text style={wf.stepTimestamp}>Completed</Text>
+                )}
+              </View>
             </View>
-            {i < JOB_STEPS.length - 1 && (
-              <View style={[wf.connector, done && wf.connectorDone]} />
-            )}
           </View>
         );
       })}
@@ -432,19 +480,7 @@ export default function JobWorkflowScreen() {
 
   return (
     <SafeAreaView style={wf.safe} edges={['top']}>
-      {/* ── Header ── */}
-      <View style={wf.header}>
-        <Pressable
-          style={wf.headerIconBtn}
-          onPress={() => router.back()}
-          hitSlop={8}
-          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={wf.headerTitle} numberOfLines={1}>{job.serviceLabel}</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="Job Details" backButton />
 
       <ScrollView
         style={wf.scroll}
@@ -452,89 +488,33 @@ export default function JobWorkflowScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Job summary card ── */}
-        <View style={wf.card}>
-          <Text style={wf.svcName}>{job.serviceLabel}</Text>
-          <View style={wf.divider} />
-
-          <View style={wf.infoRow}>
-            <View style={wf.infoIconWrap}>
-              <Ionicons name="car-outline" size={14} color={Colors.accent} />
-            </View>
-            <Text style={wf.infoText}>{job.vehicleLabel || 'No vehicle info'}</Text>
+        {/* ── Vehicle info Card ── */}
+        <ReAnimated.View entering={FadeInDown.delay(60).springify()} style={wf.vehicleCard}>
+          <View style={wf.vehicleIconCircle}>
+            <Ionicons name="car-sport-outline" size={24} color={Colors.accent} />
           </View>
-          <View style={wf.infoRow}>
-            <View style={wf.infoIconWrap}>
-              <Ionicons name="time-outline" size={14} color={Colors.accent} />
-            </View>
-            <Text style={wf.infoText}>
+          <View style={{ flex: 1 }}>
+            <Text style={wf.vehicleName}>{job.vehicleLabel || 'No vehicle'}</Text>
+            <Text style={wf.vehicleSub}>
               {job.appointmentDate} · {job.appointmentTime}
             </Text>
           </View>
-          <View style={wf.infoRow}>
-            <View style={wf.infoIconWrap}>
-              <Ionicons
-                name={job.locationType === 'mobile' ? 'navigate' : 'business'}
-                size={14} color={Colors.accent}
-              />
-            </View>
-            <Text style={wf.infoText}>
-              {job.locationType === 'mobile'
-                ? (job.mobileAddress || 'Mobile service')
-                : (job.bayLabel || 'Bay service')}
+          <View style={wf.plateBadge}>
+            <Text style={wf.plateBadgeText}>
+              {job.locationType === 'mobile' ? 'Mobile' : (job.bayLabel || 'Bay')}
             </Text>
           </View>
-          <View style={[wf.infoRow, { marginBottom: 0 }]}>
-            <View style={wf.infoIconWrap}>
-              <Ionicons name="cash-outline" size={14} color={Colors.accent} />
-            </View>
-            <Text style={wf.infoText}>
-              ${job.totalPrice.toFixed(2)} · {job.durationMinutes} min
-            </Text>
-          </View>
-        </View>
+        </ReAnimated.View>
 
         {/* ── Status stepper ── */}
-        <View style={wf.card}>
+        <ReAnimated.View entering={FadeInDown.delay(120).springify()} style={wf.sectionCard}>
           <Text style={wf.sectionTitle}>Job Progress</Text>
           <JobStepper status={job.jobStatus} />
-        </View>
+        </ReAnimated.View>
 
-        {/* ── Advance status button ── */}
-        {!isDone && nextStatus && (
-          <Pressable
-            style={({ pressed }) => [
-              wf.advanceBtn,
-              pressed && { opacity: 0.88 },
-              advancing && { opacity: 0.6 },
-            ]}
-            onPress={advanceStatus}
-            disabled={advancing}
-            android_ripple={{ color: Colors.primaryDark }}
-          >
-            {advancing ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <>
-                <Ionicons name="arrow-forward-circle" size={20} color={Colors.white} />
-                <Text style={wf.advanceBtnText}>{advLabel}</Text>
-              </>
-            )}
-          </Pressable>
-        )}
-
-        {isDone && (
-          <View style={wf.doneCard}>
-            <View style={wf.doneIconWrap}>
-              <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
-            </View>
-            <Text style={wf.doneText}>Job Finished — Customer Notified</Text>
-          </View>
-        )}
-
-        {/* ── Photos section ── */}
-        <View style={wf.card}>
-          <Text style={wf.sectionTitle}>Photos</Text>
+        {/* ── Photo section ── */}
+        <ReAnimated.View entering={FadeInDown.delay(180).springify()} style={wf.sectionCard}>
+          <SectionHeader title="Before & After Photos" />
 
           {/* Label toggle */}
           <View style={wf.labelToggle}>
@@ -543,34 +523,13 @@ export default function JobWorkflowScreen() {
                 key={l}
                 style={[wf.labelBtn, label === l && wf.labelBtnActive]}
                 onPress={() => setLabel(l)}
-                android_ripple={{ color: Colors.accent }}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
               >
                 <Text style={[wf.labelBtnText, label === l && wf.labelBtnTextActive]}>
                   {l.charAt(0).toUpperCase() + l.slice(1)}
                 </Text>
               </Pressable>
             ))}
-          </View>
-
-          {/* Capture buttons */}
-          <View style={wf.captureRow}>
-            <Pressable
-              style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.82 }]}
-              onPress={() => setCameraOpen(true)}
-              android_ripple={{ color: Colors.accent }}
-            >
-              <Ionicons name="camera" size={18} color={Colors.accent} />
-              <Text style={wf.captureBtnText}>Take Photo</Text>
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.82 }]}
-              onPress={pickFromGallery}
-              android_ripple={{ color: Colors.accent }}
-            >
-              <Ionicons name="images" size={18} color={Colors.accent} />
-              <Text style={wf.captureBtnText}>Gallery</Text>
-            </Pressable>
           </View>
 
           {/* Photo grid */}
@@ -583,17 +542,46 @@ export default function JobWorkflowScreen() {
                   onRemove={() => item.error ? retryUpload(item) : removePhoto(item.id)}
                 />
               ))}
+              {/* Add photo ghost button */}
+              <Pressable
+                style={wf.addPhotoBtn}
+                onPress={() => setCameraOpen(true)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <Ionicons name="add" size={28} color={Colors.accent} />
+                <Text style={wf.addPhotoBtnText}>Add</Text>
+              </Pressable>
             </View>
           ) : (
-            <View style={wf.emptyState}>
+            <View style={wf.emptyPhotos}>
               <Ionicons name="image-outline" size={32} color={Colors.border} />
-              <Text style={wf.emptyStateText}>No photos added yet</Text>
+              <Text style={wf.emptyPhotosText}>No photos added yet</Text>
             </View>
           )}
-        </View>
+
+          {/* Capture buttons */}
+          <View style={wf.captureRow}>
+            <Pressable
+              style={wf.captureBtn}
+              onPress={() => setCameraOpen(true)}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <Ionicons name="camera" size={18} color={Colors.accent} />
+              <Text style={wf.captureBtnText}>Take Photo</Text>
+            </Pressable>
+            <Pressable
+              style={wf.captureBtn}
+              onPress={pickFromGallery}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <Ionicons name="images" size={18} color={Colors.accent} />
+              <Text style={wf.captureBtnText}>Gallery</Text>
+            </Pressable>
+          </View>
+        </ReAnimated.View>
 
         {/* ── Staff notes ── */}
-        <View style={wf.card}>
+        <ReAnimated.View entering={FadeInDown.delay(240).springify()} style={wf.sectionCard}>
           <Text style={wf.sectionTitle}>Staff Notes</Text>
           <TextInput
             style={wf.notesInput}
@@ -606,7 +594,7 @@ export default function JobWorkflowScreen() {
             textAlignVertical="top"
           />
           <Pressable
-            style={({ pressed }) => [wf.saveNotesBtn, pressed && { opacity: 0.82 }]}
+            style={wf.saveNotesBtn}
             onPress={async () => {
               try {
                 await axios.patch(`/api/jobs/${id}/status`, {
@@ -618,15 +606,15 @@ export default function JobWorkflowScreen() {
                 Alert.alert('Error', 'Could not save notes.');
               }
             }}
-            android_ripple={{ color: Colors.accent }}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
           >
             <Ionicons name="save-outline" size={16} color={Colors.accent} />
             <Text style={wf.saveNotesBtnText}>Save Notes</Text>
           </Pressable>
-        </View>
+        </ReAnimated.View>
 
         {/* ── Voice notes ── */}
-        <View style={wf.card}>
+        <ReAnimated.View entering={FadeInDown.delay(300).springify()} style={wf.sectionCard}>
           <View style={wf.sectionHeaderRow}>
             <Text style={[wf.sectionTitle, { marginBottom: 0 }]}>Voice Notes</Text>
             {!recorderOpen && (
@@ -634,7 +622,7 @@ export default function JobWorkflowScreen() {
                 style={wf.micBtn}
                 onPress={() => setRecorderOpen(true)}
                 hitSlop={6}
-                android_ripple={{ color: Colors.accent }}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
               >
                 <Ionicons name="mic-outline" size={15} color={Colors.accent} />
                 <Text style={wf.micBtnText}>Record</Text>
@@ -643,7 +631,7 @@ export default function JobWorkflowScreen() {
           </View>
 
           {recorderOpen && (
-            <View style={{ marginBottom: 14 }}>
+            <View style={{ marginTop: 14 }}>
               <VoiceNoteRecorder
                 jobId={id!}
                 token={token ?? ''}
@@ -662,14 +650,41 @@ export default function JobWorkflowScreen() {
               <Text style={wf.emptyStateText}>No voice notes yet</Text>
             </View>
           ) : (
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: 8, marginTop: 14 }}>
               {voiceNotes.map(note => (
                 <VoiceNotePlayer key={note._id} note={note} />
               ))}
             </View>
           )}
-        </View>
+        </ReAnimated.View>
+
+        {/* bottom padding for fixed button */}
+        <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* ── Fixed Update Status button ── */}
+      {!isDone && nextStatus && (
+        <View style={wf.fixedBottom}>
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={advancing}
+            onPress={advanceStatus}
+          >
+            {advLabel}
+          </Button>
+        </View>
+      )}
+
+      {isDone && (
+        <View style={wf.fixedBottom}>
+          <View style={wf.doneCard}>
+            <Ionicons name="checkmark-circle" size={22} color={Colors.success} />
+            <Text style={wf.doneText}>Job Finished — Customer Notified</Text>
+          </View>
+        </View>
+      )}
 
       {/* ── Camera modal ── */}
       <JobCameraModal
@@ -686,7 +701,7 @@ export default function JobWorkflowScreen() {
 const wf = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { paddingBottom: 48 },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
   errorIconWrap: {
@@ -704,37 +719,43 @@ const wf = StyleSheet.create({
   },
   retryText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 14,
+  // Vehicle card
+  vehicleCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: Colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-  },
-  headerIconBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  headerTitle: {
-    fontSize: 16, fontWeight: '800', color: Colors.textPrimary,
-    flex: 1, textAlign: 'center', marginHorizontal: 8,
-  },
-
-  // Card
-  card: {
-    backgroundColor: Colors.surface,
-    marginHorizontal: 20,
-    borderRadius: borderRadius.lg,
-    padding: 20,
-    marginBottom: 16,
-    marginTop: 4,
+    borderRadius: borderRadius.xl,
+    padding: 20, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border,
     ...cardShadow,
   },
-  sectionTitle:     { fontSize: 13, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  divider:          { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginBottom: 16 },
+  vehicleIconCircle: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  vehicleName: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 2 },
+  vehicleSub:  { fontSize: 13, color: Colors.textMuted },
+  plateBadge: {
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderWidth: 1, borderColor: Colors.accent,
+  },
+  plateBadgeText: { fontSize: 12, fontWeight: '800', color: Colors.accent },
+
+  // Section card
+  sectionCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: 20, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  sectionTitle: {
+    fontSize: 13, fontWeight: '700', color: Colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16,
+  },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0 },
 
   micBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -745,81 +766,37 @@ const wf = StyleSheet.create({
   },
   micBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
-  // Summary
-  svcName:     { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 16 },
-  infoRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  infoIconWrap:{ width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
-  infoText:    { fontSize: 13, color: Colors.textSecondary, flex: 1 },
-
   // Stepper
-  stepRow:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
-  dot:           { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  dotPulse:      { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.white },
-  stepLabel:     { fontSize: 14, fontWeight: '600', color: Colors.border, flex: 1 },
-  stepLabelOn:   { color: Colors.textPrimary },
-  activePill:    { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3 },
-  activePillText:{ fontSize: 11, fontWeight: '700' },
-  connector:     { width: 2, height: 20, backgroundColor: Colors.border, marginLeft: 13, marginVertical: 2 },
-  connectorDone: { backgroundColor: Colors.accent },
-
-  // Advance button
-  advanceBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accent,
-    borderRadius: borderRadius.lg,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
-    overflow: 'hidden',
-    ...cardShadow,
+  stepperWrap: { paddingHorizontal: 0 },
+  stepRow:     { flexDirection: 'row', gap: 14, marginBottom: 0 },
+  stepIndicatorCol: { alignItems: 'center', width: 32 },
+  stepConnector: {
+    width: 2, height: 28,
+    backgroundColor: Colors.border,
+    marginTop: 4,
   },
-  advanceBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
-
-  // Done card
-  doneCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.successBg,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 16,
-  },
-  doneIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.white,
+  stepContent: { flex: 1, paddingBottom: 20, paddingTop: 6 },
+  stepCircle: {
+    width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
   },
-  doneText: { fontSize: 14, fontWeight: '700', color: Colors.success, flex: 1 },
-
-  // Label toggle
-  labelToggle: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  labelBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: borderRadius.sm,
-    alignItems: 'center', backgroundColor: Colors.background,
-    borderWidth: 1.5, borderColor: Colors.border,
-    overflow: 'hidden',
+  stepCirclePulse: {
+    width: 42, height: 42, borderRadius: 21,
+    backgroundColor: Colors.accent + '25',
+    position: 'absolute',
   },
-  labelBtnActive:     { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
-  labelBtnText:       { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
-  labelBtnTextActive: { color: Colors.accent },
+  stepCircleNum: { fontSize: 13, fontWeight: '800', color: Colors.white },
+  stepLabel: { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  stepLabelActive: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  stepLabelDone:   { color: Colors.textSecondary },
+  stepTimestamp: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 
-  // Capture buttons
-  captureRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  captureBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
-    backgroundColor: Colors.accentMuted,
-    borderRadius: borderRadius.md,
-    paddingVertical: 12,
-    overflow: 'hidden',
-  },
-  captureBtnText: { fontSize: 14, fontWeight: '700', color: Colors.accent },
-
-  // Photo grid
-  photoGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  thumbWrap:  { width: 88, height: 88, borderRadius: borderRadius.sm, overflow: 'hidden', position: 'relative' },
-  thumb:      { width: '100%', height: '100%' },
+  // Photos
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  thumbWrap: { width: 100, height: 100, borderRadius: borderRadius.md, overflow: 'hidden', position: 'relative' },
+  thumb:     { width: '100%', height: '100%' },
   thumbLabel: {
-    position: 'absolute', top: 4, left: 4,
+    position: 'absolute', top: 5, left: 5,
     borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2,
   },
   thumbBefore:    { backgroundColor: 'rgba(0,0,0,0.6)' },
@@ -829,10 +806,42 @@ const wf = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0,0,0,0.55)', paddingVertical: 6, alignItems: 'center',
   },
-  progressBar: { height: 3, backgroundColor: Colors.accent, position: 'absolute', top: 0, left: 0 },
-  progressText:{ color: Colors.white, fontSize: 11, fontWeight: '700' },
-  thumbBadge:  { position: 'absolute', bottom: 4, right: 4 },
-  thumbRemove: { position: 'absolute', top: 2, right: 2 },
+  progressBar:  { height: 3, backgroundColor: Colors.accent, position: 'absolute', top: 0, left: 0 },
+  progressText: { color: Colors.white, fontSize: 11, fontWeight: '700' },
+  thumbBadge:   { position: 'absolute', bottom: 4, right: 4 },
+  thumbRemove:  { position: 'absolute', top: 2, right: 2 },
+  addPhotoBtn: {
+    width: 100, height: 100, borderRadius: borderRadius.md,
+    borderWidth: 1.5, borderColor: Colors.border, borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  addPhotoBtnText: { fontSize: 11, color: Colors.accent, fontWeight: '600', marginTop: 2 },
+  emptyPhotos:     { alignItems: 'center', paddingVertical: 28, marginBottom: 12 },
+  emptyPhotosText: { fontSize: 13, color: Colors.textMuted, marginTop: 8 },
+
+  // Capture buttons
+  captureRow: { flexDirection: 'row', gap: 8 },
+  captureBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+    overflow: 'hidden',
+  },
+  captureBtnText: { fontSize: 14, fontWeight: '700', color: Colors.accent },
+
+  // Label toggle
+  labelToggle:        { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  labelBtn: {
+    flex: 1, paddingVertical: 10, borderRadius: borderRadius.sm,
+    alignItems: 'center', backgroundColor: Colors.background,
+    borderWidth: 1.5, borderColor: Colors.border,
+    overflow: 'hidden',
+  },
+  labelBtnActive:     { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
+  labelBtnText:       { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  labelBtnTextActive: { color: Colors.accent },
 
   emptyState:     { alignItems: 'center', paddingVertical: 28 },
   emptyStateText: { fontSize: 13, color: Colors.textMuted, marginTop: 8 },
@@ -857,6 +866,22 @@ const wf = StyleSheet.create({
     overflow: 'hidden',
   },
   saveNotesBtnText: { color: Colors.accent, fontWeight: '700', fontSize: 14 },
+
+  // Fixed bottom
+  fixedBottom: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingBottom: 28, paddingTop: 12,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+  },
+  doneCard: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
+    backgroundColor: Colors.successBg,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+  },
+  doneText: { fontSize: 15, fontWeight: '700', color: Colors.success },
 });
 
 // ─── Camera modal styles ──────────────────────────────────────────────────────

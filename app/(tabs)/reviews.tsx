@@ -1,4 +1,4 @@
-﻿// app/(tabs)/reviews.tsx
+// app/(tabs)/reviews.tsx
 // Admin reviews dashboard — overall rating, per-technician breakdown, review list.
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -18,8 +18,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { SCREEN_PADDING, borderRadius, cardShadow } from '@/utils/platformStyles';
+import { ScreenHeader, Avatar, Badge } from '@/components/ui';
 
 type TechStats = {
   staffId:      string | null;
@@ -46,6 +48,8 @@ type Review = {
   userId:         { name: string; email: string } | null;
 };
 
+type FilterTab = 'all' | 'positive' | 'negative' | 'pending';
+
 function StarRow({ avg, size = 14 }: { avg: number; size?: number }) {
   return (
     <View style={{ flexDirection: 'row', gap: 2 }}>
@@ -61,6 +65,14 @@ function StarRow({ avg, size = 14 }: { avg: number; size?: number }) {
   );
 }
 
+// Filter tabs
+const FILTER_TABS: { key: FilterTab; label: string }[] = [
+  { key: 'all',      label: 'All' },
+  { key: 'positive', label: 'Positive' },
+  { key: 'negative', label: 'Negative' },
+  { key: 'pending',  label: 'Pending' },
+];
+
 export default function ReviewsScreen() {
   const { token } = useAuth();
   const router    = useRouter();
@@ -75,6 +87,7 @@ export default function ReviewsScreen() {
   const [replyText,   setReplyText]   = useState('');
   const [submitting,  setSubmitting]  = useState(false);
   const [tab,         setTab]         = useState<'overview' | 'reviews'>('overview');
+  const [filterTab,   setFilterTab]   = useState<FilterTab>('all');
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -139,9 +152,17 @@ export default function ReviewsScreen() {
     );
   }
 
+  // Filter reviews
+  const filteredReviews = reviews.filter(r => {
+    if (filterTab === 'positive') return r.stars >= 4;
+    if (filterTab === 'negative') return r.stars <= 2;
+    if (filterTab === 'pending')  return !r.adminReply;
+    return true;
+  });
+
   if (loading) {
     return (
-      <SafeAreaView style={st.center}>
+      <SafeAreaView style={st.center} edges={['top']}>
         <Text style={st.muted}>Loading reviews…</Text>
       </SafeAreaView>
     );
@@ -149,21 +170,25 @@ export default function ReviewsScreen() {
 
   const overall = stats?.overall ?? { avgStars: 0, totalReviews: 0 };
 
+  // Star distribution for summary card
+  const allDist: Record<number, number> = {};
+  reviews.forEach(r => {
+    allDist[r.stars] = (allDist[r.stars] ?? 0) + 1;
+  });
+
   return (
-    <SafeAreaView style={st.safe}>
-      {/* Header */}
-      <View style={st.header}>
-        <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={st.headerTitle}>Reviews</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <SafeAreaView style={st.safe} edges={['top']}>
+      <ScreenHeader title="Reviews" />
 
       {/* Tabs */}
       <View style={st.tabRow}>
         {(['overview', 'reviews'] as const).map(t => (
-          <Pressable key={t} style={[st.tabBtn, tab === t && st.tabBtnActive]} onPress={() => setTab(t)}>
+          <Pressable
+            key={t}
+            style={[st.tabBtn, tab === t && st.tabBtnActive]}
+            onPress={() => setTab(t)}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
             <Text style={[st.tabBtnText, tab === t && st.tabBtnTextActive]}>
               {t === 'overview' ? 'Overview' : 'All Reviews'}
             </Text>
@@ -177,12 +202,29 @@ export default function ReviewsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
           showsVerticalScrollIndicator={false}
         >
-          {/* Overall card */}
-          <View style={st.overallCard}>
-            <Text style={st.overallNum}>{overall.avgStars.toFixed(1)}</Text>
-            <StarRow avg={overall.avgStars} size={22} />
-            <Text style={st.overallTotal}>{overall.totalReviews} reviews total</Text>
-          </View>
+          {/* Rating summary Card */}
+          <ReAnimated.View entering={FadeIn.duration(300)} style={st.ratingCard}>
+            <View style={st.ratingLeft}>
+              <Text style={st.ratingBig}>{overall.avgStars.toFixed(1)}</Text>
+              <StarRow avg={overall.avgStars} size={18} />
+              <Text style={st.ratingTotal}>{overall.totalReviews} reviews</Text>
+            </View>
+            <View style={st.starBars}>
+              {[5, 4, 3, 2, 1].map(s => {
+                const count = allDist[s] ?? 0;
+                const pct   = overall.totalReviews > 0 ? count / overall.totalReviews : 0;
+                return (
+                  <View key={s} style={st.starBarRow}>
+                    <Text style={st.starBarLabel}>{s}★</Text>
+                    <View style={st.starBarTrack}>
+                      <View style={[st.starBarFill, { width: `${Math.round(pct * 100)}%` }]} />
+                    </View>
+                    <Text style={st.starBarCount}>{count}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </ReAnimated.View>
 
           {/* Per-technician */}
           <Text style={st.sectionTitle}>By Technician</Text>
@@ -190,11 +232,13 @@ export default function ReviewsScreen() {
             <Text style={st.empty}>No technician data yet.</Text>
           ) : (
             stats!.byTechnician.map((t, i) => (
-              <View key={t.staffId ?? i} style={st.techCard}>
+              <ReAnimated.View
+                key={t.staffId ?? i}
+                entering={FadeInDown.delay(i * 60).springify()}
+                style={st.techCard}
+              >
                 <View style={st.techTop}>
-                  <View style={st.techAvatar}>
-                    <Text style={st.techAvatarText}>{(t.staffName || 'U')[0].toUpperCase()}</Text>
-                  </View>
+                  <Avatar name={t.staffName || 'U'} size={40} />
                   <View style={{ flex: 1 }}>
                     <Text style={st.techName}>{t.staffName || 'Unassigned'}</Text>
                     <StarRow avg={t.avgStars} />
@@ -204,7 +248,7 @@ export default function ReviewsScreen() {
                     <Text style={st.techCount}>{t.totalReviews} reviews</Text>
                   </View>
                 </View>
-                {/* Distribution bar */}
+                {/* Distribution bars */}
                 <View style={st.distRow}>
                   {[5, 4, 3, 2, 1].map(s => {
                     const count = t.distribution[s] ?? 0;
@@ -220,53 +264,95 @@ export default function ReviewsScreen() {
                     );
                   })}
                 </View>
-              </View>
+              </ReAnimated.View>
             ))
           )}
         </ScrollView>
       ) : (
-        <FlatList
-          data={reviews}
-          keyExtractor={r => r._id}
-          contentContainerStyle={st.scroll}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
-          onEndReached={() => hasMore && loadReviews(page + 1, true)}
-          onEndReachedThreshold={0.3}
-          ListEmptyComponent={<Text style={st.empty}>No reviews yet.</Text>}
-          renderItem={({ item: r }) => (
-            <View style={[st.reviewCard, !r.isPublic && { opacity: 0.5 }]}>
-              <View style={st.reviewTop}>
-                <View style={{ flex: 1 }}>
-                  <Text style={st.reviewUser}>{r.userId?.name ?? 'Customer'}</Text>
-                  <StarRow avg={r.stars} />
-                </View>
-                <Text style={st.reviewDate}>
-                  {new Date(r.createdAt).toLocaleDateString('en-TT', { day: 'numeric', month: 'short', year: 'numeric' })}
+        <>
+          {/* Filter chips */}
+          <View style={st.filterChipsRow}>
+            {FILTER_TABS.map(ft => (
+              <Pressable
+                key={ft.key}
+                style={[st.filterChip, filterTab === ft.key && st.filterChipActive]}
+                onPress={() => setFilterTab(ft.key)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <Text style={[st.filterChipText, filterTab === ft.key && st.filterChipTextActive]}>
+                  {ft.label}
                 </Text>
-              </View>
-              {r.staffName ? <Text style={st.techTag}>Technician: {r.staffName}</Text> : null}
-              {r.comment ? <Text style={st.reviewComment}>{r.comment}</Text> : null}
-              {r.adminReply ? (
-                <View style={st.replyBox}>
-                  <Text style={st.replyLabel}>Admin Reply:</Text>
-                  <Text style={st.replyText}>{r.adminReply}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <FlatList
+            data={filteredReviews}
+            keyExtractor={r => r._id}
+            contentContainerStyle={st.scroll}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
+            onEndReached={() => hasMore && loadReviews(page + 1, true)}
+            onEndReachedThreshold={0.3}
+            ListEmptyComponent={<Text style={st.empty}>No reviews yet.</Text>}
+            renderItem={({ item: r, index }) => (
+              <ReAnimated.View entering={FadeInDown.delay(index * 50).springify()}>
+                <View style={[st.reviewCard, !r.isPublic && { opacity: 0.5 }]}>
+                  {/* Top row: avatar + name + stars + date */}
+                  <View style={st.reviewTop}>
+                    <Avatar name={r.userId?.name ?? 'Customer'} size={40} />
+                    <View style={{ flex: 1, marginLeft: 10 }}>
+                      <Text style={st.reviewUser}>{r.userId?.name ?? 'Customer'}</Text>
+                      <StarRow avg={r.stars} />
+                    </View>
+                    <Text style={st.reviewDate}>
+                      {new Date(r.createdAt).toLocaleDateString('en-TT', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </Text>
+                  </View>
+
+                  {/* Review text */}
+                  {r.comment ? (
+                    <Text style={st.reviewComment} numberOfLines={3}>{r.comment}</Text>
+                  ) : null}
+
+                  {/* Admin reply */}
+                  {r.adminReply ? (
+                    <View style={st.replyBox}>
+                      <Text style={st.replyLabel}>Admin Reply:</Text>
+                      <Text style={st.replyText}>{r.adminReply}</Text>
+                    </View>
+                  ) : null}
+
+                  {/* Bottom: service badge + actions */}
+                  <View style={st.reviewBottom}>
+                    {r.staffName ? (
+                      <Badge status="info" label={r.staffName} size="sm" />
+                    ) : <View />}
+                    <View style={st.reviewActions}>
+                      <Pressable
+                        style={st.replyBtn}
+                        onPress={() => { setReplyTarget(r); setReplyText(r.adminReply ?? ''); }}
+                        android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                      >
+                        <Ionicons name="chatbubble-outline" size={13} color={Colors.accent} />
+                        <Text style={st.replyBtnText}>{r.adminReply ? 'Edit Reply' : 'Reply'}</Text>
+                      </Pressable>
+                      {r.isPublic && (
+                        <Pressable
+                          style={st.hideBtn}
+                          onPress={() => handleHide(r)}
+                          android_ripple={{ color: Colors.border, borderless: false }}
+                        >
+                          <Ionicons name="eye-off-outline" size={13} color={Colors.textMuted} />
+                          <Text style={st.hideBtnText}>Hide</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
                 </View>
-              ) : null}
-              <View style={st.reviewActions}>
-                <Pressable style={st.replyBtn} onPress={() => { setReplyTarget(r); setReplyText(r.adminReply ?? ''); }}>
-                  <Ionicons name="chatbubble-outline" size={13} color={Colors.accent} />
-                  <Text style={st.replyBtnText}>{r.adminReply ? 'Edit Reply' : 'Reply'}</Text>
-                </Pressable>
-                {r.isPublic && (
-                  <Pressable style={st.hideBtn} onPress={() => handleHide(r)}>
-                    <Ionicons name="eye-off-outline" size={13} color={Colors.textMuted} />
-                    <Text style={st.hideBtnText}>Hide</Text>
-                  </Pressable>
-                )}
-              </View>
-            </View>
-          )}
-        />
+              </ReAnimated.View>
+            )}
+          />
+        </>
       )}
 
       {/* Reply modal */}
@@ -302,32 +388,63 @@ export default function ReviewsScreen() {
 }
 
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING },
+  scroll: { padding: SCREEN_PADDING, paddingBottom: 100 },
   muted:  { color: Colors.textMuted, fontSize: 14 },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-
-  tabRow:         { flexDirection: 'row', backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border, paddingHorizontal: SCREEN_PADDING },
-  tabBtn:         { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
-  tabBtnActive:   { borderBottomColor: Colors.accent },
-  tabBtnText:     { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
+  // Tabs
+  tabRow: {
+    flexDirection: 'row', backgroundColor: Colors.surface,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    paddingHorizontal: SCREEN_PADDING,
+  },
+  tabBtn: {
+    flex: 1, paddingVertical: 12, alignItems: 'center',
+    borderBottomWidth: 2, borderBottomColor: 'transparent',
+    overflow: 'hidden',
+  },
+  tabBtnActive:     { borderBottomColor: Colors.accent },
+  tabBtnText:       { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
   tabBtnTextActive: { color: Colors.accent },
 
-  overallCard:  { backgroundColor: Colors.white, borderRadius: 16, padding: 24, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: Colors.border, shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  overallNum:   { fontSize: 56, fontWeight: '900', color: Colors.textPrimary, lineHeight: 60 },
-  overallTotal: { fontSize: 13, color: Colors.textMuted, marginTop: 8 },
+  // Rating summary card
+  ratingCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 20,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.xl, padding: 20,
+    marginBottom: 20,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  ratingLeft: { alignItems: 'center', gap: 6 },
+  ratingBig: {
+    fontSize: 48, fontWeight: '800', color: Colors.accent, lineHeight: 52,
+  },
+  ratingTotal: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+
+  // Star bars
+  starBars:   { flex: 1, gap: 4 },
+  starBarRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  starBarLabel: { width: 22, fontSize: 11, color: Colors.textSecondary, textAlign: 'right' },
+  starBarTrack: {
+    flex: 1, height: 6, backgroundColor: Colors.accentMuted,
+    borderRadius: 3, overflow: 'hidden',
+  },
+  starBarFill:  { height: 6, backgroundColor: Colors.accent, borderRadius: 3 },
+  starBarCount: { width: 22, fontSize: 11, color: Colors.textSecondary },
 
   sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
 
-  techCard:   { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
+  // Technician card
+  techCard: {
+    backgroundColor: Colors.surface, borderRadius: borderRadius.lg,
+    padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
   techTop:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
-  techAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
-  techAvatarText: { fontSize: 16, fontWeight: '700', color: Colors.accent },
   techName:   { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
   techRight:  { alignItems: 'flex-end' },
   techAvg:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
@@ -339,26 +456,57 @@ const st = StyleSheet.create({
   distFill:   { height: 6, backgroundColor: Colors.warning, borderRadius: 3 },
   distCount:  { width: 22, fontSize: 11, color: Colors.textSecondary },
 
-  reviewCard:    { backgroundColor: Colors.white, borderRadius: 14, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-  reviewTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
-  reviewUser:    { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  // Filter chips
+  filterChipsRow: {
+    flexDirection: 'row', gap: 8,
+    paddingHorizontal: SCREEN_PADDING, paddingVertical: 10,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1, borderBottomColor: Colors.border,
+  },
+  filterChip: {
+    borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: Colors.border,
+    paddingHorizontal: 14, paddingVertical: 6,
+    backgroundColor: Colors.surface, overflow: 'hidden',
+  },
+  filterChipActive:    { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
+  filterChipText:      { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  filterChipTextActive:{ color: Colors.accent },
+
+  // Review cards
+  reviewCard: {
+    backgroundColor: Colors.surface, borderRadius: borderRadius.lg,
+    padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  reviewTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
+  reviewUser:    { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
   reviewDate:    { fontSize: 11, color: Colors.textMuted },
-  techTag:       { fontSize: 11, color: Colors.textSecondary, marginBottom: 6 },
-  reviewComment: { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 8 },
-  replyBox:      { backgroundColor: Colors.accentMuted, borderRadius: 8, padding: 10, marginBottom: 8 },
+  reviewComment: { fontSize: 14, color: Colors.textSecondary, lineHeight: 20, marginBottom: 10 },
+  replyBox:      { backgroundColor: Colors.accentMuted, borderRadius: 8, padding: 10, marginBottom: 10 },
   replyLabel:    { fontSize: 11, fontWeight: '700', color: Colors.accent, marginBottom: 3 },
   replyText:     { fontSize: 12, color: Colors.textSecondary },
-  reviewActions: { flexDirection: 'row', gap: 10 },
-  replyBtn:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, backgroundColor: Colors.accentMuted },
-  replyBtnText:  { fontSize: 12, color: Colors.accent, fontWeight: '600' },
-  hideBtn:       { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, backgroundColor: Colors.surfaceAlt },
-  hideBtnText:   { fontSize: 12, color: Colors.textMuted },
 
-  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet:      { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
-  sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 12 },
-  replyInput: { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 16 },
-  sheetBtns:  { flexDirection: 'row', gap: 12 },
+  reviewBottom:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  reviewActions: { flexDirection: 'row', gap: 8 },
+  replyBtn:  {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 5, paddingHorizontal: 10,
+    borderRadius: borderRadius.sm, backgroundColor: Colors.accentMuted, overflow: 'hidden',
+  },
+  replyBtnText: { fontSize: 12, color: Colors.accent, fontWeight: '600' },
+  hideBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: 5, paddingHorizontal: 10,
+    borderRadius: borderRadius.sm, backgroundColor: Colors.surfaceAlt, overflow: 'hidden',
+  },
+  hideBtnText: { fontSize: 12, color: Colors.textMuted },
+
+  backdrop:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet:        { backgroundColor: Colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 40 },
+  sheetTitle:   { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 12 },
+  replyInput:   { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 16 },
+  sheetBtns:    { flexDirection: 'row', gap: 12 },
   sheetCancel:  { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center' },
   sheetConfirm: { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center' },
 });

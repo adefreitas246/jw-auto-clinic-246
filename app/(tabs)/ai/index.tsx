@@ -1,109 +1,163 @@
-﻿// app/(tabs)/ai/index.tsx — Claude AI Hub
+// app/(tabs)/ai/index.tsx — Claude AI Hub
 // Entry point for all three AI-powered admin features.
 import { Ionicons } from '@expo/vector-icons';
 import { router }   from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
   Pressable, ScrollView,
-  StyleSheet, Text, View,
+  StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { SCREEN_PADDING, borderRadius, cardShadow } from '@/utils/platformStyles';
+import { ScreenHeader, SectionHeader } from '@/components/ui';
 
 // ─── Feature card data ────────────────────────────────────────────────────────
 
 const FEATURES = [
   {
-    route:       '/(tabs)/ai/schedule',
-    icon:        'calendar-outline',
-    color:       Colors.accent,
-    bg:          Colors.accentMuted,
-    title:       'Smart Scheduling',
-    description: 'AI recommends the optimal time slot and best technician for a new booking based on current workload.',
-    badge:       'Scheduling',
-  },
-  {
     route:       '/(tabs)/ai/insights',
-    icon:        'bar-chart-outline',
-    color:       Colors.accent,
-    bg:          Colors.accentMuted,
-    title:       'Demand Insights',
-    description: 'Analyse 90 days of bookings to identify peak hours, slow days, and get 3 staffing recommendations.',
-    badge:       'Analytics',
+    icon:        'trending-up',
+    color:       Colors.success,
+    bg:          Colors.successBg,
+    title:       'Revenue Insights',
+    description: 'Analyse booking trends and revenue patterns.',
   },
   {
     route:       '/(tabs)/ai/pricing',
     icon:        'pricetag-outline',
-    color:       Colors.success,
-    bg:          Colors.successBg,
-    title:       'Dynamic Pricing',
-    description: 'Claude checks live queue depth vs. historical demand and suggests a surcharge or discount right now.',
-    badge:       'Pricing',
+    color:       Colors.accent,
+    bg:          Colors.accentMuted,
+    title:       'Smart Pricing',
+    description: 'Dynamic surcharge and discount suggestions.',
+  },
+  {
+    route:       '/(tabs)/ai/schedule',
+    icon:        'calendar-outline',
+    color:       Colors.warning,
+    bg:          Colors.warningBg,
+    title:       'Schedule Help',
+    description: 'AI-optimized slot and technician assignment.',
+  },
+  {
+    route:       '/(tabs)/ai/insights',
+    icon:        'bar-chart-outline',
+    color:       Colors.info,
+    bg:          Colors.infoBg,
+    title:       'Performance',
+    description: 'Staff ratings, peak hours, and slow days.',
   },
 ] as const;
+
+const RECENT_QUERIES = [
+  { id: '1', icon: 'trending-up',    text: 'Revenue summary for last 30 days' },
+  { id: '2', icon: 'calendar-outline', text: 'Best time slots for weekend bookings' },
+  { id: '3', icon: 'pricetag-outline', text: 'Should I raise prices on Saturdays?' },
+];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function AIHubScreen() {
+  const [query, setQuery] = React.useState('');
+
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
+      <ScreenHeader title="AI Assistant" subtitle="Powered by Wash Hub AI" />
+
       <ScrollView
         style={s.scroll}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </Pressable>
-          <View style={s.headerText}>
-            <Text style={s.title}>AI Assistant</Text>
-            <Text style={s.sub}>Powered by Claude · Anthropic</Text>
-          </View>
-          {/* Claude logo placeholder */}
-          <View style={s.claudeBadge}>
-            <Text style={s.claudeInitial}>C</Text>
-          </View>
-        </View>
-
-        {/* ── Info banner ── */}
-        <View style={s.infoBanner}>
-          <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
-          <Text style={s.infoText}>
-            All AI requests route through your backend.
-            Your Anthropic API key is never exposed to the app.
-          </Text>
-        </View>
-
-        {/* ── Feature cards ── */}
-        {FEATURES.map(f => (
-          <Pressable
-            key={f.route}
-            style={({ pressed }) => [s.card, pressed && { opacity: 0.9, transform: [{ scale: 0.99 }] }]}
-            onPress={() => router.push(f.route as any)}
+        {/* ── Hero card with LinearGradient ── */}
+        <ReAnimated.View entering={FadeIn.duration(400)}>
+          <LinearGradient
+            colors={[Colors.primary, Colors.primaryLight]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={s.heroCard}
           >
-            <View style={[s.cardIcon, { backgroundColor: f.bg }]}>
-              <Ionicons name={f.icon as any} size={28} color={f.color} />
-            </View>
+            <Ionicons name="sparkles" size={40} color={Colors.white} style={{ marginBottom: 12 }} />
+            <Text style={s.heroTitle}>Ask me anything</Text>
+            <Text style={s.heroSub}>
+              Get insights, pricing suggestions, and scheduling help
+            </Text>
+          </LinearGradient>
+        </ReAnimated.View>
 
-            <View style={s.cardBody}>
-              <View style={s.cardTopRow}>
-                <Text style={s.cardTitle}>{f.title}</Text>
-                <View style={[s.badgePill, { backgroundColor: f.bg }]}>
-                  <Text style={[s.badgeText, { color: f.color }]}>{f.badge}</Text>
+        {/* ── Quick action grid (2x2) ── */}
+        <ReAnimated.View entering={FadeInDown.delay(100).springify()} style={s.gridWrap}>
+          <View style={s.grid}>
+            {FEATURES.map((f, index) => (
+              <Pressable
+                key={f.route + f.title}
+                style={({ pressed }) => [s.gridCard, pressed && { opacity: 0.88 }]}
+                onPress={() => router.push(f.route as any)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <View style={[s.gridIconCircle, { backgroundColor: f.bg }]}>
+                  <Ionicons name={f.icon as any} size={22} color={f.color} />
                 </View>
-              </View>
-              <Text style={s.cardDesc}>{f.description}</Text>
-            </View>
+                <Text style={s.gridCardTitle}>{f.title}</Text>
+                <Text style={s.gridCardSub} numberOfLines={2}>{f.description}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </ReAnimated.View>
 
-            <Ionicons name="chevron-forward" size={18} color={Colors.border} style={{ alignSelf: 'center' }} />
-          </Pressable>
-        ))}
+        {/* ── Recent queries ── */}
+        <ReAnimated.View entering={FadeInDown.delay(200).springify()}>
+          <SectionHeader title="Recent" />
+          <View style={s.recentList}>
+            {RECENT_QUERIES.map((q, i) => (
+              <Pressable
+                key={q.id}
+                style={s.recentRow}
+                onPress={() => router.push('/(tabs)/ai/schedule' as any)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <View style={s.recentIconWrap}>
+                  <Ionicons name={q.icon as any} size={16} color={Colors.accent} />
+                </View>
+                <Text style={s.recentText} numberOfLines={1}>{q.text}</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.border} />
+              </Pressable>
+            ))}
+          </View>
+        </ReAnimated.View>
 
-        {/* ── Footer note ── */}
+        {/* ── Ask input ── */}
+        <ReAnimated.View entering={FadeInDown.delay(300).springify()} style={s.inputWrap}>
+          <View style={s.inputRow}>
+            <TextInput
+              style={s.input}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Ask a question…"
+              placeholderTextColor={Colors.textMuted}
+              returnKeyType="send"
+              onSubmitEditing={() => {
+                if (query.trim()) router.push('/(tabs)/ai/schedule' as any);
+              }}
+            />
+            <Pressable
+              style={[s.sendBtn, !query.trim() && s.sendBtnDisabled]}
+              onPress={() => {
+                if (query.trim()) router.push('/(tabs)/ai/schedule' as any);
+              }}
+              disabled={!query.trim()}
+              android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            >
+              <Ionicons name="send" size={18} color={query.trim() ? Colors.white : Colors.textMuted} />
+            </Pressable>
+          </View>
+        </ReAnimated.View>
+
+        {/* Footer note */}
         <Text style={s.footer}>
           Recommendations are AI-generated suggestions.{'\n'}
           Always review before applying changes.
@@ -120,50 +174,81 @@ const SHADOW = IS_IOS
   : IS_ANDROID ? { elevation: 2 } : {};
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 14 },
+  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 16 },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginBottom: 6,
-  },
-  backBtn:    { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  headerText: { flex: 1 },
-  title:      { fontSize: 22, fontWeight: '900', color: Colors.textPrimary },
-  sub:        { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
-  claudeBadge: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.warning,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  claudeInitial: { color: Colors.white, fontWeight: '900', fontSize: 18 },
-
-  infoBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: Colors.accentMuted, borderRadius: 12, padding: 12,
-  },
-  infoText: { flex: 1, fontSize: 12, color: Colors.accent, lineHeight: 18 },
-
-  card: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 14,
-    backgroundColor: Colors.white, borderRadius: 18, padding: 18,
+  // Hero card
+  heroCard: {
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
     ...SHADOW,
   },
-  cardIcon: {
-    width: 56, height: 56, borderRadius: 16,
+  heroTitle: { fontSize: 22, fontWeight: '700', color: Colors.white, marginBottom: 6 },
+  heroSub:   { fontSize: 14, color: Colors.white, opacity: 0.8, textAlign: 'center', lineHeight: 20 },
+
+  // Grid
+  gridWrap: {},
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  gridCard: {
+    width: '48%',
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: 16,
+    borderWidth: 1, borderColor: Colors.border,
+    overflow: 'hidden',
+    ...SHADOW,
+  },
+  gridIconCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 10,
+  },
+  gridCardTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  gridCardSub:   { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
+
+  // Recent queries
+  recentList: { gap: 6 },
+  recentRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 14,
+    borderWidth: 1, borderColor: Colors.border,
+    overflow: 'hidden',
+    ...SHADOW,
+  },
+  recentIconWrap: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.accentMuted,
     alignItems: 'center', justifyContent: 'center',
   },
-  cardBody:   { flex: 1, gap: 4 },
-  cardTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 },
-  cardTitle:  { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
-  cardDesc:   { fontSize: 13, color: Colors.textSecondary, lineHeight: 19 },
+  recentText: { flex: 1, fontSize: 14, color: Colors.textSecondary },
 
-  badgePill: { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 3 },
-  badgeText: { fontSize: 11, fontWeight: '700' },
+  // Input bar
+  inputWrap: {},
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5, borderColor: Colors.border,
+    paddingLeft: 16, paddingRight: 6, paddingVertical: 6,
+    ...SHADOW,
+  },
+  input: {
+    flex: 1, fontSize: 14, color: Colors.textPrimary, paddingVertical: 8,
+  },
+  sendBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: Colors.accent,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  sendBtnDisabled: { backgroundColor: Colors.surfaceAlt },
 
   footer: {
     fontSize: 12, color: Colors.textMuted, textAlign: 'center',
-    lineHeight: 18, marginTop: 8,
+    lineHeight: 18,
   },
 });

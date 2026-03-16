@@ -1,4 +1,4 @@
-﻿// app/(customer)/vehicles/_form.tsx
+// app/(customer)/vehicles/_form.tsx
 // Shared form for adding and editing a vehicle.
 // Not an Expo Router route (prefixed with _).
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -16,10 +16,11 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
 import { Colors } from "@/constants/Colors";
 import { IS_IOS } from "@/utils/platform";
-import { SCREEN_PADDING } from "@/utils/platformStyles";
+import { borderRadius, cardShadow, SCREEN_PADDING } from "@/utils/platformStyles";
 import { useVehicles } from "@/hooks/useVehicles";
 import {
   EMPTY_VEHICLE_FORM,
@@ -28,6 +29,7 @@ import {
   VehicleForm,
   VehicleSize,
 } from "@/types/vehicle";
+import { ScreenHeader } from "@/components/ui";
 
 // ─── Camera modal ─────────────────────────────────────────────────────────────
 function PlateCamera({
@@ -223,119 +225,162 @@ export default function AddEditVehicleScreen({ mode }: Props) {
       />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: Colors.background }}
         behavior={IS_IOS ? "padding" : undefined}
       >
+        <ScreenHeader
+          title={mode === "add" ? "Add Vehicle" : "Edit Vehicle"}
+          backButton
+        />
+
         <ScrollView
-          style={s.container}
+          style={s.scroll}
           contentContainerStyle={s.content}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {/* Make */}
-          <Text style={s.label}>Make *</Text>
-          <TextInput
-            style={s.input}
-            placeholder="e.g. Toyota"
-            value={form.make}
-            onChangeText={set("make")}
-            autoCapitalize="words"
-          />
+          <Animated.View entering={FadeIn.duration(300)}>
+            {/* Form card */}
+            <Animated.View entering={FadeInDown.delay(80).duration(300)}>
+              <View style={s.formCard}>
+                <Text style={s.cardSectionLabel}>Vehicle Details</Text>
 
-          {/* Model */}
-          <Text style={s.label}>Model *</Text>
-          <TextInput
-            style={s.input}
-            placeholder="e.g. Corolla"
-            value={form.model}
-            onChangeText={set("model")}
-            autoCapitalize="words"
-          />
+                {/* Make */}
+                <View style={s.fieldGroup}>
+                  <Text style={s.label}>Make <Text style={s.required}>*</Text></Text>
+                  <TextInput
+                    style={s.input}
+                    placeholder="e.g. Toyota"
+                    placeholderTextColor={Colors.textMuted}
+                    value={form.make}
+                    onChangeText={set("make")}
+                    autoCapitalize="words"
+                  />
+                </View>
 
-          {/* Licence plate */}
-          <Text style={s.label}>Licence Plate</Text>
-          <View style={s.row}>
-            <TextInput
-              style={[s.input, { flex: 1, marginBottom: 0 }]}
-              placeholder="e.g. PBM 1234"
-              value={form.licensePlate}
-              onChangeText={set("licensePlate")}
-              autoCapitalize="characters"
-            />
-            <Pressable
-              style={[s.scanBtn, scanning && { opacity: 0.6 }]}
-              onPress={() => setCameraOpen(true)}
-              disabled={scanning}
-              android_ripple={{ color: Colors.white + '30', borderless: false }}
-            >
-              {scanning ? (
-                <ActivityIndicator color={Colors.white} size="small" />
-              ) : (
-                <Text style={s.scanBtnText}>Scan Plate</Text>
-              )}
-            </Pressable>
-          </View>
+                {/* Model */}
+                <View style={s.fieldGroup}>
+                  <Text style={s.label}>Model <Text style={s.required}>*</Text></Text>
+                  <TextInput
+                    style={s.input}
+                    placeholder="e.g. Corolla"
+                    placeholderTextColor={Colors.textMuted}
+                    value={form.model}
+                    onChangeText={set("model")}
+                    autoCapitalize="words"
+                  />
+                </View>
 
-          {/* Color */}
-          <Text style={s.label}>Colour</Text>
-          <TextInput
-            style={s.input}
-            placeholder="e.g. Silver"
-            value={form.color}
-            onChangeText={set("color")}
-            autoCapitalize="words"
-          />
+                {/* Colour */}
+                <View style={s.fieldGroup}>
+                  <Text style={s.label}>Colour</Text>
+                  <TextInput
+                    style={s.input}
+                    placeholder="e.g. Silver"
+                    placeholderTextColor={Colors.textMuted}
+                    value={form.color}
+                    onChangeText={set("color")}
+                    autoCapitalize="words"
+                  />
+                </View>
+              </View>
+            </Animated.View>
 
-          {/* Size pills */}
-          <Text style={s.label}>Size</Text>
-          <View style={s.sizeRow}>
-            {VEHICLE_SIZES.map((sz) => (
+            {/* Licence plate card */}
+            <Animated.View entering={FadeInDown.delay(160).duration(300)}>
+              <View style={s.formCard}>
+                <Text style={s.cardSectionLabel}>Licence Plate</Text>
+                <View style={s.plateRow}>
+                  <TextInput
+                    style={[s.input, s.plateInput]}
+                    placeholder="e.g. PBM 1234"
+                    placeholderTextColor={Colors.textMuted}
+                    value={form.licensePlate}
+                    onChangeText={set("licensePlate")}
+                    autoCapitalize="characters"
+                  />
+                  <Pressable
+                    style={[s.scanBtn, scanning && { opacity: 0.6 }]}
+                    onPress={() => setCameraOpen(true)}
+                    disabled={scanning}
+                    android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                  >
+                    {scanning ? (
+                      <ActivityIndicator color={Colors.white} size="small" />
+                    ) : (
+                      <>
+                        <Text style={s.scanBtnIcon}>⬛</Text>
+                        <Text style={s.scanBtnText}>Scan</Text>
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* Size selector card */}
+            <Animated.View entering={FadeInDown.delay(240).duration(300)}>
+              <View style={s.formCard}>
+                <Text style={s.cardSectionLabel}>Vehicle Size</Text>
+                <View style={s.sizeRow}>
+                  {VEHICLE_SIZES.map((sz) => (
+                    <Pressable
+                      key={sz}
+                      style={[s.sizePill, form.size === sz && s.sizePillActive]}
+                      onPress={() =>
+                        setForm((prev) => ({ ...prev, size: sz as VehicleSize }))
+                      }
+                      android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                    >
+                      <Text
+                        style={[
+                          s.sizePillText,
+                          form.size === sz && s.sizePillTextActive,
+                        ]}
+                      >
+                        {sz}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+            </Animated.View>
+
+            {/* Notes card */}
+            <Animated.View entering={FadeInDown.delay(320).duration(300)}>
+              <View style={s.formCard}>
+                <Text style={s.cardSectionLabel}>Notes</Text>
+                <TextInput
+                  style={[s.input, s.multiline]}
+                  placeholder="Any special instructions or details…"
+                  placeholderTextColor={Colors.textMuted}
+                  value={form.notes}
+                  onChangeText={set("notes")}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+              </View>
+            </Animated.View>
+
+            {/* Save button */}
+            <Animated.View entering={FadeInDown.delay(400).duration(300)}>
               <Pressable
-                key={sz}
-                style={[s.sizePill, form.size === sz && s.sizePillActive]}
-                onPress={() =>
-                  setForm((prev) => ({ ...prev, size: sz as VehicleSize }))
-                }
+                style={[s.saveBtn, saving && { opacity: 0.7 }]}
+                onPress={handleSave}
+                disabled={saving}
                 android_ripple={{ color: Colors.accent + '20', borderless: false }}
               >
-                <Text
-                  style={[
-                    s.sizePillText,
-                    form.size === sz && s.sizePillTextActive,
-                  ]}
-                >
-                  {sz}
-                </Text>
+                {saving ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <Text style={s.saveBtnText}>
+                    {mode === "add" ? "Save Vehicle" : "Save Changes"}
+                  </Text>
+                )}
               </Pressable>
-            ))}
-          </View>
-
-          {/* Notes */}
-          <Text style={s.label}>Notes</Text>
-          <TextInput
-            style={[s.input, s.multiline]}
-            placeholder="Any special instructions or details…"
-            value={form.notes}
-            onChangeText={set("notes")}
-            multiline
-            numberOfLines={3}
-            textAlignVertical="top"
-          />
-
-          {/* Save */}
-          <Pressable
-            style={[s.saveBtn, saving && { opacity: 0.7 }]}
-            onPress={handleSave}
-            disabled={saving}
-            android_ripple={{ color: Colors.white + '30', borderless: false }}
-          >
-            {saving ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <Text style={s.saveBtnText}>
-                {mode === "add" ? "Add Vehicle" : "Save Changes"}
-              </Text>
-            )}
-          </Pressable>
+            </Animated.View>
+          </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
     </>
@@ -344,64 +389,94 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
-  content: { padding: SCREEN_PADDING, paddingBottom: 100 },
+  scroll:  { flex: 1, backgroundColor: Colors.background },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
+
+  formCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 16,
+    marginBottom: 14,
+    ...cardShadow,
+  },
+  cardSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 14,
+  },
+
+  fieldGroup: { marginBottom: 14 },
 
   label: {
     fontSize: 13,
     fontWeight: "600",
     color: Colors.textPrimary,
-    marginBottom: 6,
-    marginTop: 14,
+    marginBottom: 7,
   },
+  required: { color: Colors.error },
+
   input: {
-    backgroundColor: Colors.white,
-    borderRadius: 10,
-    borderWidth: 1,
+    backgroundColor: Colors.background,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5,
     borderColor: Colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 15,
     color: Colors.textPrimary,
-    marginBottom: 4,
   },
-  multiline: { minHeight: 80, paddingTop: 10 },
+  multiline: { minHeight: 88, paddingTop: 12 },
 
-  row: { flexDirection: "row", alignItems: "center", gap: 8 },
+  plateRow:  { flexDirection: "row", alignItems: "center", gap: 10 },
+  plateInput: { flex: 1, marginBottom: 0, letterSpacing: 1.2, fontWeight: '700' },
 
   scanBtn: {
     backgroundColor: Colors.accent,
-    borderRadius: 10,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingVertical: 13,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 100,
+    flexDirection: 'row',
+    gap: 4,
+    minWidth: 80,
   },
-  scanBtnText: { color: Colors.white, fontWeight: "600", fontSize: 14 },
+  scanBtnIcon: { fontSize: 12, color: Colors.white },
+  scanBtnText: { color: Colors.white, fontWeight: "700", fontSize: 13 },
 
-  sizeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
+  sizeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   sizePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 999,
-    backgroundColor: Colors.white,
-    borderWidth: 1,
+    backgroundColor: Colors.background,
+    borderWidth: 1.5,
     borderColor: Colors.border,
   },
   sizePillActive: {
     backgroundColor: Colors.accent,
     borderColor: Colors.accent,
   },
-  sizePillText: { fontSize: 13, color: Colors.textSecondary },
-  sizePillTextActive: { color: Colors.white, fontWeight: "600" },
+  sizePillText:       { fontSize: 13, color: Colors.textSecondary, fontWeight: '600' },
+  sizePillTextActive: { color: Colors.white, fontWeight: "700" },
 
   saveBtn: {
     backgroundColor: Colors.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
     alignItems: "center",
-    marginTop: 24,
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+    ...(IS_IOS
+      ? { shadowColor: Colors.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } }
+      : { elevation: 6 }),
   },
   saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 });
@@ -409,7 +484,7 @@ const s = StyleSheet.create({
 // Camera modal styles
 const cam = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.black },
-  preview: { flex: 1 },
+  preview:   { flex: 1 },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
@@ -451,7 +526,7 @@ const cam = StyleSheet.create({
     borderRadius: 26,
     backgroundColor: Colors.accent,
   },
-  cancelBtn: { padding: 8 },
+  cancelBtn:  { padding: 8 },
   cancelText: { color: Colors.white, fontSize: 15 },
 
   permView: {

@@ -19,7 +19,7 @@ import {
 import { useSpeechStatus } from '@/hooks/useSpeechStatus';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // jobTrackingTask imports expo-notifications (for background status pushes) and
 // expo-background-fetch. Both crash in Expo Go at module-load time.
@@ -41,46 +41,74 @@ const SPEECH_PHRASES: Record<string, string> = {
 const isExpoGo = Constants.appOwnership === 'expo';
 const FOREGROUND_POLL_MS = 30_000;
 
-// ─── Animated step dot ────────────────────────────────────────────────────────
-function StepDot({ active, done }: { active: boolean; done: boolean }) {
-  const scale = useRef(new Animated.Value(done || active ? 1 : 0.75)).current;
+// ─── Redesigned Animated step dot ────────────────────────────────────────────
+function StepDot({
+  active, done, stepIndex,
+}: { active: boolean; done: boolean; stepIndex: number }) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    Animated.spring(scale, {
-      toValue: done || active ? 1 : 0.75,
-      useNativeDriver: true,
-    }).start();
-  }, [active, done]);
+    if (active) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 0.5, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        ])
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [active]);
 
-  const bg = done || active ? Colors.accent : Colors.border;
+  const bg = done
+    ? Colors.success
+    : active
+    ? Colors.accent
+    : Colors.surfaceAlt;
+
+  const borderColor = done ? Colors.success : active ? Colors.accent : Colors.border;
 
   return (
-    <Animated.View style={[st.dot, { backgroundColor: bg, transform: [{ scale }] }]}>
-      {done
-        ? <Ionicons name="checkmark" size={13} color={Colors.white} />
-        : active
-        ? <View style={st.dotPulse} />
-        : null
-      }
+    <Animated.View
+      style={[
+        st.dot,
+        { backgroundColor: bg, borderColor, opacity: active ? pulseAnim : 1 },
+      ]}
+    >
+      {done ? (
+        <Ionicons name="checkmark" size={14} color={Colors.white} />
+      ) : (
+        <Text style={[st.dotText, { color: active ? Colors.white : Colors.textMuted }]}>
+          {stepIndex + 1}
+        </Text>
+      )}
     </Animated.View>
   );
 }
 
-// ─── Vertical stepper ────────────────────────────────────────────────────────
+// ─── Redesigned vertical stepper ─────────────────────────────────────────────
 function JobStepper({ status }: { status: JobStatus }) {
   const currentIdx = JOB_STEPS.findIndex(s => s.status === status);
 
   return (
-    <View>
+    <View style={st.stepperWrap}>
       {JOB_STEPS.map((step, i) => {
         const done   = i < currentIdx;
         const active = i === currentIdx;
         return (
           <View key={step.status}>
             <View style={st.stepRow}>
-              <StepDot active={active} done={done} />
-              <View style={{ flex: 1 }}>
-                <Text style={[st.stepLabel, (active || done) && st.stepLabelOn]}>
+              <View style={st.stepLeft}>
+                <StepDot active={active} done={done} stepIndex={i} />
+              </View>
+              <View style={st.stepContent}>
+                <Text style={[
+                  st.stepLabel,
+                  done  && st.stepLabelDone,
+                  active && st.stepLabelActive,
+                ]}>
                   {step.label}
                 </Text>
                 {active && (
@@ -91,13 +119,18 @@ function JobStepper({ status }: { status: JobStatus }) {
                 <Ionicons
                   name={step.icon as any}
                   size={18}
-                  color={active ? Colors.accent : Colors.border}
+                  color={done ? Colors.success : Colors.accent}
                 />
               )}
             </View>
 
             {i < JOB_STEPS.length - 1 && (
-              <View style={[st.connector, done && st.connectorDone]} />
+              <View style={st.connectorWrap}>
+                <View style={[
+                  st.connector,
+                  done && st.connectorDone,
+                ]} />
+              </View>
             )}
           </View>
         );
@@ -237,7 +270,7 @@ export default function TrackJobScreen() {
         <Pressable
           style={st.retryBtn}
           onPress={() => fetchJob()}
-          android_ripple={{ color: Colors.primaryDark }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
         >
           <Text style={st.retryText}>Retry</Text>
         </Pressable>
@@ -284,16 +317,16 @@ export default function TrackJobScreen() {
             style={st.headerIconBtn}
             onPress={() => router.back()}
             hitSlop={8}
-            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 20 }}
           >
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
-          <Text style={st.headerTitle}>Track Job</Text>
+          <Text style={st.headerTitle}>Track Wash</Text>
           <Pressable
             style={[st.voiceBtn, voiceEnabled && st.voiceBtnOn]}
             onPress={() => setVoiceEnabled(!voiceEnabled)}
             hitSlop={8}
-            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 20 }}
           >
             <Ionicons
               name={voiceEnabled ? 'volume-high' : 'volume-mute-outline'}
@@ -322,7 +355,7 @@ export default function TrackJobScreen() {
           ) : null}
         </View>
 
-        {/* ── Animated stepper ── */}
+        {/* ── Redesigned vertical stepper ── */}
         <View style={[st.card, { paddingVertical: 20 }]}>
           <Text style={st.cardSectionLabel}>Wash Progress</Text>
           <JobStepper status={job.jobStatus} />
@@ -412,11 +445,23 @@ export default function TrackJobScreen() {
           </View>
         )}
 
+        {/* ── Contact Wash Bay button ── */}
+        {!isDone && (
+          <Pressable
+            style={st.contactBtn}
+            onPress={() => {}}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
+            <Ionicons name="call-outline" size={18} color={Colors.accent} />
+            <Text style={st.contactBtnText}>Contact Wash Bay</Text>
+          </Pressable>
+        )}
+
         {isDone && (
           <Pressable
             style={st.doneBtn}
             onPress={() => router.replace('/(customer)/home')}
-            android_ripple={{ color: Colors.primaryDark }}
+            android_ripple={{ color: Colors.primaryDark + '40', borderless: false }}
           >
             <Ionicons name="home" size={18} color={Colors.white} />
             <Text style={st.doneBtnText}>Back to Home</Text>
@@ -495,7 +540,7 @@ const st = StyleSheet.create({
   cardSectionLabel: {
     fontSize: 12, fontWeight: '700', color: Colors.textMuted,
     textTransform: 'uppercase', letterSpacing: 0.6,
-    marginBottom: 16,
+    marginBottom: 20,
   },
 
   // Service summary
@@ -510,15 +555,20 @@ const st = StyleSheet.create({
   },
   techName: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
-  // Stepper
-  stepRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
-  dot:         { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  dotPulse:    { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.white },
-  stepLabel:   { fontSize: 14, fontWeight: '600', color: Colors.border },
-  stepLabelOn: { color: Colors.textPrimary },
+  // Redesigned Stepper
+  stepperWrap: { paddingLeft: 4 },
+  stepRow:     { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  stepLeft:    { alignItems: 'center', width: 32 },
+  dot:         { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  dotText:     { fontSize: 13, fontWeight: '700' },
+  stepContent: { flex: 1, paddingVertical: 4 },
+  stepLabel:   { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
+  stepLabelDone:  { color: Colors.success },
+  stepLabelActive:{ color: Colors.textPrimary },
   stepSub:     { fontSize: 12, color: Colors.accent, marginTop: 2 },
-  connector:     { width: 2, height: 20, backgroundColor: Colors.border, marginLeft: 13, marginVertical: 2 },
-  connectorDone: { backgroundColor: Colors.accent },
+  connectorWrap: { paddingLeft: 15, paddingVertical: 0 },
+  connector:     { width: 2, height: 22, backgroundColor: Colors.border, marginLeft: 0, marginVertical: 2 },
+  connectorDone: { backgroundColor: Colors.success },
 
   // ETA chip
   etaChip: {
@@ -593,4 +643,16 @@ const st = StyleSheet.create({
     ...cardShadow,
   },
   doneBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+
+  // Contact button
+  contactBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 15,
+    marginHorizontal: 20, marginTop: 16,
+    borderWidth: 1.5, borderColor: Colors.accentLight,
+    overflow: 'hidden',
+  },
+  contactBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
 });

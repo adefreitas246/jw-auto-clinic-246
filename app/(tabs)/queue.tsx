@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Animated,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -23,7 +24,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated2, { FadeIn } from 'react-native-reanimated';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
@@ -118,7 +119,7 @@ function ActionChip({
         onPress();
       }}
       disabled={disabled}
-      android_ripple={{ color: Colors.surfaceAlt }}
+      android_ripple={{ color: Colors.accent + '20', borderless: false }}
       style={({ pressed }) => [
         qd.chip,
         { borderColor: color, opacity: disabled ? 0.4 : pressed ? 0.7 : 1 },
@@ -137,90 +138,117 @@ function QueueCard({
   isAdmin,
   tvMode,
   onAction,
+  index,
 }: {
   entry:    QueueEntry;
   isAdmin:  boolean;
   tvMode:   boolean;
   onAction: (id: string, status: QStatus) => void;
+  index:    number;
 }) {
   const active = entry.position != null;
   const statusCfg = STATUS_CONFIG[entry.status];
 
   return (
-    <View style={[qd.card, { borderLeftColor: statusCfg.dot }, !active && qd.cardDim]}>
-      {/* Top row */}
-      <View style={qd.cardTop}>
-        <View style={[qd.numCircle, { backgroundColor: statusCfg.bg }]}>
-          <Text style={[qd.numText, { color: statusCfg.text }]}>#{entry.queueNumber}</Text>
+    <ReAnimated.View entering={FadeInDown.delay(index * 80).duration(300)}>
+      <View style={[qd.card, !active && qd.cardDim]}>
+        {/* Top row */}
+        <View style={qd.cardTop}>
+          {/* Number badge */}
+          <View style={[qd.numCircle, { backgroundColor: Colors.accent }]}>
+            <Text style={qd.numText}>{entry.queueNumber}</Text>
+          </View>
+
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={qd.name} numberOfLines={1}>{entry.customerName}</Text>
+            <Text style={qd.service} numberOfLines={1}>{entry.serviceLabel}</Text>
+            {entry.notes ? (
+              <Text style={qd.notes} numberOfLines={1}>{entry.notes}</Text>
+            ) : null}
+          </View>
+
+          <View style={{ alignItems: 'flex-end', gap: 4 }}>
+            <StatusBadge status={entry.status} />
+            <Text style={qd.price}>${entry.price.toFixed(2)}</Text>
+          </View>
         </View>
 
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={qd.name} numberOfLines={1}>{entry.customerName}</Text>
-          <Text style={qd.service} numberOfLines={1}>{entry.serviceLabel}</Text>
+        {/* Info row */}
+        <View style={qd.infoRow}>
+          {active && entry.position != null && (
+            <View style={qd.infoPill}>
+              <Ionicons name="people-outline" size={11} color={Colors.accent} />
+              <Text style={qd.infoPillText}>Pos {entry.position}</Text>
+            </View>
+          )}
+          {active && entry.estimatedWait != null && (
+            <View style={[qd.infoPill, { backgroundColor: Colors.warningBg }]}>
+              <Ionicons name="time-outline" size={11} color={Colors.warning} />
+              <Text style={[qd.infoPillText, { color: Colors.warning }]}>{fmtWait(entry.estimatedWait)}</Text>
+            </View>
+          )}
+          <View style={qd.infoPillNeutral}>
+            <Ionicons name={(PAYMENT_ICONS[entry.paymentMethod] ?? 'card-outline') as any} size={11} color={Colors.textMuted} />
+            <Text style={qd.infoPillNeutralText}>{entry.paymentMethod}</Text>
+          </View>
+          <View style={qd.infoPillNeutral}>
+            <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+            <Text style={qd.infoPillNeutralText}>{fmtTime(entry.joinedAt)}</Text>
+          </View>
         </View>
 
-        <StatusBadge status={entry.status} />
-      </View>
-
-      {/* Info row */}
-      <View style={qd.infoRow}>
-        {active && entry.position != null && (
-          <View style={qd.infoPill}>
-            <Ionicons name="people-outline" size={11} color={Colors.accent} />
-            <Text style={qd.infoPillText}>Pos {entry.position}</Text>
+        {/* Admin action chips */}
+        {isAdmin && !tvMode && (
+          <View style={qd.chipRow}>
+            {entry.status === 'waiting' && (
+              <>
+                <ActionChip label="Call"   color={Colors.warning} icon="megaphone-outline"
+                  onPress={() => onAction(entry._id, 'called')} />
+                <ActionChip label="Skip"   color={Colors.error} icon="arrow-forward-outline"
+                  onPress={() => onAction(entry._id, 'skipped')} />
+              </>
+            )}
+            {entry.status === 'called' && (
+              <>
+                <ActionChip label="Start"    color={Colors.success} icon="play-outline"
+                  onPress={() => onAction(entry._id, 'in_service')} />
+                <ActionChip label="Re-queue" color={Colors.accent} icon="refresh-outline"
+                  onPress={() => onAction(entry._id, 'waiting')} />
+                <ActionChip label="Skip"     color={Colors.error} icon="arrow-forward-outline"
+                  onPress={() => onAction(entry._id, 'skipped')} />
+              </>
+            )}
+            {entry.status === 'in_service' && (
+              <ActionChip label="Complete" color={Colors.success} icon="checkmark-circle-outline"
+                onPress={() => onAction(entry._id, 'completed')} />
+            )}
+            {(entry.status === 'waiting' || entry.status === 'called' || entry.status === 'in_service') && (
+              <ActionChip label="Cancel" color={Colors.error} icon="close-circle-outline"
+                onPress={() => onAction(entry._id, 'cancelled')} />
+            )}
           </View>
         )}
-        {active && entry.estimatedWait != null && (
-          <View style={qd.infoPill}>
-            <Ionicons name="time-outline" size={11} color={Colors.accent} />
-            <Text style={qd.infoPillText}>{fmtWait(entry.estimatedWait)}</Text>
-          </View>
-        )}
-        <View style={qd.infoPillNeutral}>
-          <Ionicons name={(PAYMENT_ICONS[entry.paymentMethod] ?? 'card-outline') as any} size={11} color={Colors.textMuted} />
-          <Text style={qd.infoPillNeutralText}>{entry.paymentMethod}</Text>
-        </View>
-        <View style={qd.infoPillNeutral}>
-          <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
-          <Text style={qd.infoPillNeutralText}>{fmtTime(entry.joinedAt)}</Text>
-        </View>
-        <View style={qd.priceChip}>
-          <Text style={qd.price}>${entry.price.toFixed(2)}</Text>
-        </View>
       </View>
+    </ReAnimated.View>
+  );
+}
 
-      {/* Admin action chips */}
-      {isAdmin && !tvMode && (
-        <View style={qd.chipRow}>
-          {entry.status === 'waiting' && (
-            <>
-              <ActionChip label="Call"   color={Colors.warning} icon="megaphone-outline"
-                onPress={() => onAction(entry._id, 'called')} />
-              <ActionChip label="Skip"   color={Colors.error} icon="arrow-forward-outline"
-                onPress={() => onAction(entry._id, 'skipped')} />
-            </>
-          )}
-          {entry.status === 'called' && (
-            <>
-              <ActionChip label="Start"    color={Colors.success} icon="play-outline"
-                onPress={() => onAction(entry._id, 'in_service')} />
-              <ActionChip label="Re-queue" color={Colors.accent} icon="refresh-outline"
-                onPress={() => onAction(entry._id, 'waiting')} />
-              <ActionChip label="Skip"     color={Colors.error} icon="arrow-forward-outline"
-                onPress={() => onAction(entry._id, 'skipped')} />
-            </>
-          )}
-          {entry.status === 'in_service' && (
-            <ActionChip label="Complete" color={Colors.success} icon="checkmark-circle-outline"
-              onPress={() => onAction(entry._id, 'completed')} />
-          )}
-          {(entry.status === 'waiting' || entry.status === 'called' || entry.status === 'in_service') && (
-            <ActionChip label="Cancel" color={Colors.error} icon="close-circle-outline"
-              onPress={() => onAction(entry._id, 'cancelled')} />
-          )}
-        </View>
-      )}
-    </View>
+// ── Pulsing dot ───────────────────────────────────────────────────────────────
+
+function PulsingDot() {
+  const pulse = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.4, duration: 800, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View style={[qd.pulsingDot, { opacity: pulse }]} />
   );
 }
 
@@ -352,21 +380,15 @@ export default function QueueScreen() {
 
       {/* ── Header ── */}
       <View style={qd.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={qd.backBtn}
-          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
-          hitSlop={8}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={qd.title}>Walk-in Queue</Text>
-          <Text style={qd.sub}>Today's queue</Text>
+        <View style={qd.headerLeft}>
+          <PulsingDot />
+          <Text style={qd.title}>Live Queue</Text>
         </View>
 
-        <CountdownBar seconds={countdown} total={REFRESH_INTERVAL} />
+        <View style={qd.headerRight}>
+          <Text style={qd.autoRefreshLabel}>Auto-refresh</Text>
+          <CountdownBar seconds={countdown} total={REFRESH_INTERVAL} />
+        </View>
 
         {/* TV mode toggle */}
         <Pressable
@@ -375,17 +397,17 @@ export default function QueueScreen() {
             setTvMode(v => !v);
           }}
           style={[qd.tvBtn, tvMode && qd.tvBtnActive]}
-          android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 20 }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
           hitSlop={8}
         >
           <Ionicons name="tv-outline" size={17} color={tvMode ? Colors.white : Colors.accent} />
         </Pressable>
 
-        {/* Walkin kiosk shortcut */}
+        {/* Walk-in / Add Walk-in */}
         <Pressable
           onPress={() => router.push('/(tabs)/walkin')}
           style={qd.walkinBtn}
-          android_ripple={{ color: Colors.accentMuted }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
           hitSlop={8}
         >
           <Ionicons name="add-circle-outline" size={17} color={Colors.accent} />
@@ -394,7 +416,7 @@ export default function QueueScreen() {
       </View>
 
       {/* ── Stats strip ── */}
-      <Animated2.View entering={FadeIn.duration(300)} style={qd.statsRow}>
+      <ReAnimated.View entering={FadeIn.duration(300)} style={qd.statsRow}>
         <View style={[qd.statCard, { borderLeftColor: Colors.accent }]}>
           <Text style={[qd.statNum, { color: Colors.accent }]}>{waiting}</Text>
           <Text style={qd.statLabel}>Waiting</Text>
@@ -411,7 +433,7 @@ export default function QueueScreen() {
           <Text style={[qd.statNum, { color: Colors.textMuted }]}>{done}</Text>
           <Text style={qd.statLabel}>Done</Text>
         </View>
-      </Animated2.View>
+      </ReAnimated.View>
 
       {/* ── List ── */}
       {loading ? (
@@ -431,18 +453,19 @@ export default function QueueScreen() {
           ListEmptyComponent={
             <View style={qd.empty}>
               <View style={qd.emptyIconWrap}>
-                <Ionicons name="people-outline" size={36} color={Colors.textMuted} />
+                <Ionicons name="checkmark-circle-outline" size={48} color={Colors.success} />
               </View>
               <Text style={qd.emptyTitle}>Queue is empty</Text>
-              <Text style={qd.emptyText}>No walk-ins today yet. Tap Walk-in to add someone.</Text>
+              <Text style={qd.emptyText}>No customers waiting. Tap Walk-in to add someone.</Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <QueueCard
               entry={item}
               isAdmin={isAdmin}
               tvMode={tvMode}
               onAction={handleAction}
+              index={index}
             />
           )}
         />
@@ -453,13 +476,9 @@ export default function QueueScreen() {
         <Pressable
           style={({ pressed }) => [qd.fab, pressed && { opacity: 0.88 }]}
           onPress={callNext}
-          android_ripple={{ color: Colors.accentDark }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
         >
-          <Ionicons name="megaphone-outline" size={20} color={Colors.white} />
-          <Text style={qd.fabText}>Call Next</Text>
-          <View style={qd.fabBadge}>
-            <Text style={qd.fabBadgeText}>{waiting}</Text>
-          </View>
+          <Ionicons name="arrow-up-circle" size={28} color={Colors.white} />
         </Pressable>
       )}
     </SafeAreaView>
@@ -469,37 +488,44 @@ export default function QueueScreen() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const qd = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
+  safe:     { flex: 1, backgroundColor: Colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 12,
+    gap: 8,
   },
-  backBtn: {
-    width: 36, height: 36, borderRadius: borderRadius.full,
-    alignItems: 'center', justifyContent: 'center',
+  headerLeft: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
+  },
+  headerRight: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  pulsingDot: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: Colors.success,
   },
   title:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  sub:      { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  autoRefreshLabel: { fontSize: 10, color: Colors.textMuted, fontWeight: '600' },
+
   tvBtn: {
     width: 36, height: 36, borderRadius: borderRadius.full,
     borderWidth: 1.5, borderColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
-    marginLeft: 8,
   },
   tvBtnActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   walkinBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
-    paddingHorizontal: 12, paddingVertical: 7, marginLeft: 8,
+    paddingHorizontal: 12, paddingVertical: 7,
   },
   walkinBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   // Countdown bar
   countdownWrap: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
   },
   countdownTrack: {
     width: 44, height: 4, borderRadius: 2,
@@ -522,22 +548,24 @@ const qd = StyleSheet.create({
 
   // List
   listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100 },
-  separator:   { height: 8 },
+  separator:   { height: 10 },
 
   // Card
   card: {
     backgroundColor: Colors.white, borderRadius: borderRadius.lg,
-    padding: 14, borderLeftWidth: 4, ...cardShadow,
+    padding: 16, ...cardShadow,
   },
-  cardDim: { opacity: 0.65 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  cardDim: { opacity: 0.6 },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
   numCircle: {
-    width: 44, height: 44, borderRadius: borderRadius.full,
+    width: 36, height: 36, borderRadius: borderRadius.full,
     alignItems: 'center', justifyContent: 'center',
   },
-  numText:  { fontSize: 13, fontWeight: '800' },
-  name:     { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  service:  { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  numText:  { fontSize: 16, fontWeight: '800', color: Colors.white },
+  name:     { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  service:  { fontSize: 13, color: Colors.textSecondary, marginTop: 1 },
+  notes:    { fontSize: 12, color: Colors.textMuted, marginTop: 2, fontStyle: 'italic' },
+  price:    { fontSize: 14, fontWeight: '700', color: Colors.success },
 
   // Badge
   badge:    { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 4 },
@@ -561,11 +589,6 @@ const qd = StyleSheet.create({
     paddingHorizontal: 7, paddingVertical: 3,
   },
   infoPillNeutralText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
-  priceChip: {
-    backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full,
-    paddingHorizontal: 8, paddingVertical: 3, marginLeft: 'auto',
-  },
-  price: { fontSize: 12, fontWeight: '800', color: Colors.textPrimary },
 
   // Action chips
   chipRow: {
@@ -579,31 +602,31 @@ const qd = StyleSheet.create({
   },
   chipText: { fontSize: 11, fontWeight: '700' },
 
-  // FAB
+  // FAB — circular, bottom right
   fab: {
-    position: 'absolute', bottom: 28, alignSelf: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: Colors.accent, borderRadius: borderRadius.full,
-    paddingHorizontal: 24, paddingVertical: 14,
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 8 },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.45, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      android: { elevation: 6 },
     }),
   },
-  fabText:  { fontSize: 16, fontWeight: '800', color: Colors.white },
-  fabBadge: {
-    width: 22, height: 22, borderRadius: borderRadius.full,
-    backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center',
-  },
-  fabBadgeText: { fontSize: 12, fontWeight: '800', color: Colors.accent },
 
-  // Empty
-  empty:       { alignItems: 'center', paddingTop: 60 },
+  // Empty state
+  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 12 },
   emptyIconWrap: {
-    width: 72, height: 72, borderRadius: borderRadius.full,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: Colors.successBg,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 4,
   },
-  emptyTitle:  { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  emptyText:   { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 22, paddingHorizontal: 32 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', maxWidth: 260 },
 });

@@ -1,4 +1,4 @@
-﻿// app/(tabs)/kiosk.tsx — Tablet Kiosk Mode
+// app/(tabs)/kiosk.tsx — Tablet Kiosk Mode
 // Full-screen, always-on camera that auto-processes QR codes with zero
 // staff interaction. Designed for a tablet mounted at the wash bay entrance.
 //
@@ -132,6 +132,38 @@ function ExitButton({ onExit }: { onExit: () => void }) {
   );
 }
 
+// ─── Pulsing ring animation ────────────────────────────────────────────────────
+
+function PulsingRing() {
+  const scale   = useRef(new Animated.Value(1)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(scale,   { toValue: 1.15, duration: 1000, useNativeDriver: true }),
+          Animated.timing(scale,   { toValue: 1,    duration: 1000, useNativeDriver: true }),
+        ]),
+        Animated.sequence([
+          Animated.timing(opacity, { toValue: 0,    duration: 1000, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 1,    duration: 1000, useNativeDriver: true }),
+        ]),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.View
+      style={[
+        ki.pulsingRing,
+        { transform: [{ scale }], opacity },
+      ]}
+      pointerEvents="none"
+    />
+  );
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function KioskScreen() {
@@ -245,12 +277,16 @@ export default function KioskScreen() {
   // ── Permission denied ─────────────────────────────────────────────────────
   if (!permission.granted) {
     return (
-      <View style={[ki.centered, { backgroundColor: Colors.black }]}>
-        <Ionicons name="camera-outline" size={56} color={Colors.textSecondary} />
+      <View style={[ki.centered, { backgroundColor: Colors.primary }]}>
+        <Ionicons name="camera-outline" size={56} color="rgba(255,255,255,0.6)" />
         <Text style={[ki.hint, { color: Colors.white, fontSize: 18, marginBottom: 24 }]}>
           Camera permission required for kiosk mode
         </Text>
-        <Pressable style={ki.permBtn} onPress={requestPermission}>
+        <Pressable
+          style={ki.permBtn}
+          onPress={requestPermission}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
+        >
           <Text style={ki.permBtnText}>Grant Access</Text>
         </Pressable>
       </View>
@@ -258,7 +294,7 @@ export default function KioskScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.black }}>
+    <View style={{ flex: 1, backgroundColor: Colors.primary }}>
       {/* ── Full-screen camera ── */}
       <CameraView
         style={StyleSheet.absoluteFill}
@@ -291,23 +327,30 @@ export default function KioskScreen() {
 
         {/* Centre viewfinder */}
         <View style={ki.frameWrap} pointerEvents="none">
-          <View style={ki.frame}>
-            <View style={[ki.corner, ki.cTL]} />
-            <View style={[ki.corner, ki.cTR]} />
-            <View style={[ki.corner, ki.cBL]} />
-            <View style={[ki.corner, ki.cBR]} />
-            {/* Processing spinner inside frame */}
-            {processing && (
-              <View style={ki.frameSpinner}>
+          {/* Pulsing outer ring */}
+          <View style={ki.tapCircleWrap}>
+            <PulsingRing />
+            <View style={ki.tapInnerCircle}>
+              {processing ? (
                 <ActivityIndicator color={Colors.white} size="large" />
-              </View>
-            )}
+              ) : (
+                <Ionicons name="hand-left-outline" size={56} color={Colors.white} />
+              )}
+            </View>
           </View>
 
           {/* Hint */}
           {!processing && (
             <Text style={ki.hint}>{HINT_MESSAGES[hintIdx]}</Text>
           )}
+
+          {/* QR Frame corners */}
+          <View style={ki.frame}>
+            <View style={[ki.corner, ki.cTL]} />
+            <View style={[ki.corner, ki.cTR]} />
+            <View style={[ki.corner, ki.cBL]} />
+            <View style={[ki.corner, ki.cBR]} />
+          </View>
         </View>
 
         {/* Bottom pad */}
@@ -327,10 +370,10 @@ export default function KioskScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const ki = StyleSheet.create({
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: Colors.primary },
 
   // Top bar
-  topBar:      { backgroundColor: 'rgba(0,0,0,0.6)' },
+  topBar:      { backgroundColor: 'rgba(0,0,0,0.55)' },
   topBarInner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingVertical: 12,
@@ -352,21 +395,44 @@ const ki = StyleSheet.create({
   exitProgressFill: { height: '100%', backgroundColor: Colors.error },
   exitText:         { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
 
-  // Viewfinder frame
-  frameWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 24 },
-  frame: {
-    width: 280, height: 280,
-    position: 'relative', alignItems: 'center', justifyContent: 'center',
+  // Viewfinder & tap area
+  frameWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 32 },
+
+  tapCircleWrap: {
+    width: 180, height: 180,
+    alignItems: 'center', justifyContent: 'center',
   },
-  corner:   { position: 'absolute', width: 36, height: 36, borderColor: Colors.white, borderWidth: 4 },
-  cTL: { top: 0, left: 0,  borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius:    10 },
-  cTR: { top: 0, right: 0, borderLeftWidth:  0, borderBottomWidth: 0, borderTopRightRadius:   10 },
-  cBL: { bottom: 0, left: 0,  borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius:  10 },
-  cBR: { bottom: 0, right: 0, borderLeftWidth:  0, borderTopWidth: 0, borderBottomRightRadius: 10 },
-  frameSpinner: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center' },
+  pulsingRing: {
+    position: 'absolute',
+    width: 180, height: 180,
+    borderRadius: 90,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
+  tapInnerCircle: {
+    width: 140, height: 140, borderRadius: 70,
+    backgroundColor: Colors.accent,
+    alignItems: 'center', justifyContent: 'center',
+    ...(IS_IOS
+      ? { shadowColor: Colors.black, shadowOpacity: 0.3, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } }
+      : { elevation: 8 }),
+  },
+
+  // QR frame corners (smaller, overlaid separately)
+  frame: {
+    position: 'absolute',
+    width: 220, height: 220,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  corner:   { position: 'absolute', width: 32, height: 32, borderColor: Colors.white, borderWidth: 3 },
+  cTL: { top: 0, left: 0,  borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius:    8 },
+  cTR: { top: 0, right: 0, borderLeftWidth:  0, borderBottomWidth: 0, borderTopRightRadius:   8 },
+  cBL: { bottom: 0, left: 0,  borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius:  8 },
+  cBR: { bottom: 0, right: 0, borderLeftWidth:  0, borderTopWidth: 0, borderBottomRightRadius: 8 },
+
   hint: {
-    color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'center',
-    maxWidth: 280,
+    color: 'rgba(255,255,255,0.8)', fontSize: 15, textAlign: 'center',
+    maxWidth: 300, fontWeight: '500',
   },
 
   // Bottom

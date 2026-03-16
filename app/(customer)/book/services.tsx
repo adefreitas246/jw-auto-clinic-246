@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { BookingProgressBar } from './_layout';
 import { Colors } from '@/constants/Colors';
@@ -20,6 +21,7 @@ import { useServiceCatalog } from '@/hooks/useServiceCatalog';
 import { Package, packageDuration, packagePrice, Service } from '@/types/catalog';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { SkeletonCard } from '@/components/ui';
 
 const fmt     = (n: number) => `$${n.toFixed(2)}`;
 const fmtMins = (m: number) =>
@@ -60,10 +62,14 @@ export default function BookServicesStep() {
 
   if (loading) {
     return (
-      <View style={s.center}>
-        <ActivityIndicator color={Colors.accent} size="large" />
-        <Text style={s.loadingText}>Loading services…</Text>
-      </View>
+      <SafeAreaView style={s.safe} edges={['bottom']}>
+        <BookingProgressBar step={2} />
+        <View style={s.loadingContainer}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -78,72 +84,88 @@ export default function BookServicesStep() {
         ]}
         keyExtractor={(item, i) => item._id ?? String(i)}
         renderSectionHeader={({ section }) => (
-          <Text style={s.sectionHeader}>{section.title}</Text>
+          <View style={s.sectionHeaderWrap}>
+            <View style={s.sectionHeaderLine} />
+            <Text style={s.sectionHeader}>{section.title}</Text>
+            <View style={s.sectionHeaderLine} />
+          </View>
         )}
         ItemSeparatorComponent={() => <View style={s.separator} />}
-        renderItem={({ item, section }) => {
+        renderItem={({ item, section, index }) => {
           if ((section as any).type === 'packages') {
             const pkg        = item as Package;
             const isSelected = selectedPkgId === pkg._id;
             const total      = packagePrice(pkg);
             const dur        = packageDuration(pkg);
             return (
-              <Pressable
-                style={({ pressed }) => [
-                  s.pkgCard,
-                  isSelected && s.pkgCardSelected,
-                  pressed && { opacity: 0.9 },
-                ]}
-                onPress={() => handleSelectPkg(pkg)}
-                android_ripple={{ color: Colors.accent + '12', borderless: false }}
-              >
-                {/* Selection indicator */}
-                <View style={[s.pkgSelBar, isSelected && s.pkgSelBarActive]} />
+              <Animated.View entering={FadeInDown.delay(index * 80).duration(300)}>
+                <Pressable
+                  style={({ pressed }) => [
+                    s.pkgCard,
+                    isSelected && s.pkgCardSelected,
+                    pressed && { opacity: 0.9 },
+                  ]}
+                  onPress={() => handleSelectPkg(pkg)}
+                  android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                >
+                  {/* Selection indicator bar */}
+                  <View style={[s.pkgSelBar, isSelected && s.pkgSelBarActive]} />
 
-                <View style={s.pkgContent}>
-                  {/* Header row: name + price */}
-                  <View style={s.pkgHeader}>
-                    <View style={s.pkgNameWrap}>
-                      <Text style={[s.pkgName, isSelected && s.pkgNameSelected]}>
-                        {pkg.name}
-                      </Text>
-                      {isSelected && (
-                        <View style={s.pkgSelectedBadge}>
-                          <Text style={s.pkgSelectedBadgeText}>Selected</Text>
+                  <View style={s.pkgContent}>
+                    {/* Top row: icon + name + price */}
+                    <View style={s.pkgTopRow}>
+                      <View style={[s.pkgIconCircle, isSelected && s.pkgIconCircleSelected]}>
+                        <Ionicons
+                          name="layers-outline"
+                          size={20}
+                          color={isSelected ? Colors.white : Colors.accent}
+                        />
+                      </View>
+                      <View style={s.pkgNameWrap}>
+                        <Text style={[s.pkgName, isSelected && s.pkgNameSelected]}>
+                          {pkg.name}
+                        </Text>
+                        {isSelected && (
+                          <View style={s.pkgSelectedBadge}>
+                            <Ionicons name="checkmark" size={10} color={Colors.white} />
+                            <Text style={s.pkgSelectedBadgeText}>Selected</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={s.pkgPriceWrap}>
+                        <Text style={s.pkgPrice}>{fmt(total)}</Text>
+                      </View>
+                    </View>
+
+                    {/* Description */}
+                    {!!pkg.description && (
+                      <Text style={s.pkgDesc} numberOfLines={2}>{pkg.description}</Text>
+                    )}
+
+                    {/* Service pills */}
+                    <View style={s.pkgPills}>
+                      {pkg.serviceIds.map(sv => (
+                        <View key={sv._id} style={[s.pill, isSelected && s.pillSelected]}>
+                          <Text style={[s.pillText, isSelected && s.pillTextSelected]}>
+                            {sv.name}
+                          </Text>
                         </View>
+                      ))}
+                    </View>
+
+                    {/* Duration row */}
+                    <View style={s.pkgFooter}>
+                      <View style={s.pkgDurWrap}>
+                        <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
+                        <Text style={s.pkgDur}>{fmtMins(dur)}</Text>
+                      </View>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={18} color={Colors.accent} />
                       )}
                     </View>
-                    <Text style={s.pkgPrice}>{fmt(total)}</Text>
                   </View>
-
-                  {/* Description */}
-                  {!!pkg.description && (
-                    <Text style={s.pkgDesc}>{pkg.description}</Text>
-                  )}
-
-                  {/* Service pills */}
-                  <View style={s.pkgPills}>
-                    {pkg.serviceIds.map(sv => (
-                      <View key={sv._id} style={[s.pill, isSelected && s.pillSelected]}>
-                        <Text style={[s.pillText, isSelected && s.pillTextSelected]}>
-                          {sv.name}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-
-                  {/* Duration row */}
-                  <View style={s.pkgFooter}>
-                    <View style={s.pkgDurWrap}>
-                      <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-                      <Text style={s.pkgDur}>{fmtMins(dur)}</Text>
-                    </View>
-                    {isSelected && (
-                      <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />
-                    )}
-                  </View>
-                </View>
-              </Pressable>
+                </Pressable>
+              </Animated.View>
             );
           }
 
@@ -151,37 +173,43 @@ export default function BookServicesStep() {
           const svc = item as Service;
           const qty = addonQty[svc._id] ?? 0;
           return (
-            <View style={s.addonRow}>
-              <View style={s.addonIconWrap}>
-                <Ionicons name="sparkles-outline" size={18} color={Colors.accent} />
-              </View>
-              <View style={s.addonInfo}>
-                <Text style={s.addonName}>{svc.name}</Text>
-                <View style={s.addonMetaRow}>
-                  <Text style={s.addonPrice}>{fmt(svc.price)}</Text>
-                  <Text style={s.addonDot}>·</Text>
-                  <Text style={s.addonDur}>{fmtMins(svc.duration)}</Text>
+            <Animated.View entering={FadeInDown.delay(index * 60).duration(300)}>
+              <View style={[s.addonRow, qty > 0 && s.addonRowActive]}>
+                <View style={[s.addonIconWrap, qty > 0 && s.addonIconWrapActive]}>
+                  <Ionicons
+                    name="sparkles-outline"
+                    size={18}
+                    color={qty > 0 ? Colors.white : Colors.accent}
+                  />
+                </View>
+                <View style={s.addonInfo}>
+                  <Text style={s.addonName}>{svc.name}</Text>
+                  <View style={s.addonMetaRow}>
+                    <Text style={s.addonPrice}>{fmt(svc.price)}</Text>
+                    <View style={s.addonDotView} />
+                    <Text style={s.addonDur}>{fmtMins(svc.duration)}</Text>
+                  </View>
+                </View>
+                <View style={s.qtyCtrl}>
+                  <Pressable
+                    style={[s.qtyBtn, qty === 0 && s.qtyBtnOff]}
+                    onPress={() => handleQty(svc._id, -1)}
+                    disabled={qty === 0}
+                    android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                  >
+                    <Ionicons name="remove" size={15} color={qty === 0 ? Colors.border : Colors.accent} />
+                  </Pressable>
+                  <Text style={[s.qtyNum, qty > 0 && s.qtyNumActive]}>{qty}</Text>
+                  <Pressable
+                    style={s.qtyBtn}
+                    onPress={() => handleQty(svc._id, 1)}
+                    android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                  >
+                    <Ionicons name="add" size={15} color={Colors.accent} />
+                  </Pressable>
                 </View>
               </View>
-              <View style={s.qtyCtrl}>
-                <Pressable
-                  style={[s.qtyBtn, qty === 0 && s.qtyBtnOff]}
-                  onPress={() => handleQty(svc._id, -1)}
-                  disabled={qty === 0}
-                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
-                >
-                  <Ionicons name="remove" size={15} color={qty === 0 ? Colors.border : Colors.accent} />
-                </Pressable>
-                <Text style={[s.qtyNum, qty > 0 && s.qtyNumActive]}>{qty}</Text>
-                <Pressable
-                  style={s.qtyBtn}
-                  onPress={() => handleQty(svc._id, 1)}
-                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
-                >
-                  <Ionicons name="add" size={15} color={Colors.accent} />
-                </Pressable>
-              </View>
-            </View>
+            </Animated.View>
           );
         }}
         contentContainerStyle={{ paddingHorizontal: SCREEN_PADDING, paddingTop: 12, paddingBottom: 120 }}
@@ -194,7 +222,10 @@ export default function BookServicesStep() {
           <Text style={s.footerLabel}>Total</Text>
           <Text style={s.footerTotal}>{fmt(totalPrice)}</Text>
           {totalDuration > 0 && (
-            <Text style={s.footerDur}>{fmtMins(totalDuration)}</Text>
+            <View style={s.footerDurWrap}>
+              <Ionicons name="time-outline" size={12} color={Colors.accent} />
+              <Text style={s.footerDur}>{fmtMins(totalDuration)}</Text>
+            </View>
           )}
         </View>
         <Pressable
@@ -205,7 +236,7 @@ export default function BookServicesStep() {
           ]}
           onPress={() => router.push('/(customer)/book/datetime')}
           disabled={!canContinue}
-          android_ripple={{ color: Colors.accent + '12', borderless: false }}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
         >
           <Text style={s.nextBtnText}>Date & Time</Text>
           <Ionicons name="arrow-forward" size={17} color={Colors.white} />
@@ -216,25 +247,34 @@ export default function BookServicesStep() {
 }
 
 const s = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: Colors.surfaceAlt },
-  center:      { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { fontSize: 14, color: Colors.textMuted },
-  separator:   { height: 8 },
+  safe:             { flex: 1, backgroundColor: Colors.background },
+  loadingContainer: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: 16, gap: 12 },
+  separator:        { height: 10 },
 
+  sectionHeaderWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  sectionHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
   sectionHeader: {
     fontSize: 11,
     fontWeight: '700',
     color: Colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginTop: 16,
-    marginBottom: 8,
+    letterSpacing: 1.2,
   },
 
   // Package card
   pkgCard: {
     backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: Colors.transparent,
@@ -246,59 +286,84 @@ const s = StyleSheet.create({
     backgroundColor: Colors.accentMuted,
   },
   pkgSelBar: {
-    width: 4,
+    width: 5,
     backgroundColor: Colors.transparent,
   },
   pkgSelBarActive: {
     backgroundColor: Colors.accent,
   },
-  pkgContent: { flex: 1, padding: 14 },
-  pkgHeader:  { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
-  pkgNameWrap:{ flex: 1, gap: 4 },
-  pkgName:    { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  pkgContent:   { flex: 1, padding: 14 },
+  pkgTopRow:    { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10, gap: 10 },
+  pkgIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  pkgIconCircleSelected: {
+    backgroundColor: Colors.accent,
+  },
+  pkgNameWrap:   { flex: 1, gap: 4 },
+  pkgName:       { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   pkgNameSelected: { color: Colors.accentDark },
   pkgSelectedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     alignSelf: 'flex-start',
     backgroundColor: Colors.accent,
-    borderRadius: borderRadius.full,
+    borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   pkgSelectedBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.white },
-  pkgPrice: { fontSize: 16, fontWeight: '800', color: Colors.accent },
-  pkgDesc:  { fontSize: 13, color: Colors.textSecondary, marginBottom: 10, lineHeight: 18 },
-  pkgPills: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 },
-  pill:     { backgroundColor: Colors.background, borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3 },
-  pillSelected: { backgroundColor: Colors.accent + '20' },
-  pillText: { fontSize: 11, color: Colors.textSecondary },
+  pkgPriceWrap:  { alignItems: 'flex-end' },
+  pkgPrice:      { fontSize: 17, fontWeight: '800', color: Colors.accent },
+  pkgDesc:       { fontSize: 13, color: Colors.textSecondary, marginBottom: 10, lineHeight: 18 },
+  pkgPills:      { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginBottom: 10 },
+  pill:          { backgroundColor: Colors.background, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  pillSelected:  { backgroundColor: Colors.accent + '20' },
+  pillText:      { fontSize: 11, color: Colors.textSecondary },
   pillTextSelected: { color: Colors.accentDark, fontWeight: '600' },
-  pkgFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  pkgDurWrap: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  pkgDur:    { fontSize: 12, color: Colors.textMuted },
+  pkgFooter:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  pkgDurWrap:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  pkgDur:        { fontSize: 12, color: Colors.textMuted },
 
   // Add-on row
   addonRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     padding: 14,
     gap: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
     ...cardShadow,
   },
+  addonRowActive: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accentMuted,
+  },
   addonIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.sm,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  addonIconWrapActive: {
+    backgroundColor: Colors.accent,
   },
   addonInfo:    { flex: 1 },
   addonName:    { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 3 },
   addonMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   addonPrice:   { fontSize: 13, fontWeight: '700', color: Colors.accent },
-  addonDot:     { fontSize: 12, color: Colors.border },
+  addonDotView: { width: 3, height: 3, borderRadius: 2, backgroundColor: Colors.border },
   addonDur:     { fontSize: 12, color: Colors.textMuted },
 
   // Qty controls
@@ -312,8 +377,8 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  qtyBtnOff: { borderColor: Colors.border },
-  qtyNum:    { fontSize: 14, fontWeight: '700', color: Colors.textMuted, minWidth: 20, textAlign: 'center' },
+  qtyBtnOff:    { borderColor: Colors.border },
+  qtyNum:       { fontSize: 14, fontWeight: '700', color: Colors.textMuted, minWidth: 20, textAlign: 'center' },
   qtyNumActive: { color: Colors.accent },
 
   // Footer
@@ -329,16 +394,17 @@ const s = StyleSheet.create({
     paddingHorizontal: SCREEN_PADDING,
     paddingTop: 16,
     paddingBottom: IS_IOS ? 32 : 16,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 1,
     borderTopColor: Colors.border,
     ...(IS_IOS
       ? { shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: -4 } }
       : { elevation: 8 }),
   },
-  footerInfo:  { flex: 1 },
-  footerLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  footerTotal: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
-  footerDur:   { fontSize: 12, color: Colors.accent, marginTop: 2, fontWeight: '600' },
+  footerInfo:   { flex: 1 },
+  footerLabel:  { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  footerTotal:  { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  footerDurWrap: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  footerDur:    { fontSize: 12, color: Colors.accent, fontWeight: '600' },
   nextBtn: {
     backgroundColor: Colors.accent,
     borderRadius: borderRadius.md,

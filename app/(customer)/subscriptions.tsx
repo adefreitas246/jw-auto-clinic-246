@@ -3,6 +3,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -20,7 +21,9 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
+import { Badge } from '@/components/ui';
+import { SectionHeader } from '@/components/ui';
 
 type Plan = {
   _id:         string;
@@ -148,62 +151,77 @@ export default function SubscriptionsScreen() {
       >
         {/* Current subscription card */}
         {subscription && (
-          <Animated.View entering={FadeIn.duration(300)} style={st.currentCard}>
-            <View style={st.currentHeader}>
-              <View>
-                <Text style={st.currentPlan}>{subscription.planId?.name}</Text>
-                <Text style={st.currentStatus}>
-                  {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                </Text>
-              </View>
-              <View style={st.statusBadge}>
-                <Text style={st.statusBadgeText}>{subscription.status}</Text>
-              </View>
-            </View>
-
-            <View style={st.currentStats}>
-              <View style={st.currentStat}>
-                <Text style={st.currentStatVal}>{subscription.usedJobs}</Text>
-                <Text style={st.currentStatLbl}>Jobs Used</Text>
-              </View>
-              <View style={st.statDiv} />
-              <View style={st.currentStat}>
-                <Text style={st.currentStatVal}>
-                  {subscription.planId?.jobQuota == null ? '∞' : subscription.planId.jobQuota}
-                </Text>
-                <Text style={st.currentStatLbl}>Quota</Text>
-              </View>
-              <View style={st.statDiv} />
-              <View style={st.currentStat}>
-                <Text style={[st.currentStatVal, daysLeft !== null && daysLeft <= 3 ? { color: Colors.error } : {}]}>
-                  {daysLeft != null ? (daysLeft <= 0 ? 'Expired' : `${daysLeft}d`) : '—'}
-                </Text>
-                <Text style={st.currentStatLbl}>Renews In</Text>
-              </View>
-            </View>
-
-            {daysLeft != null && daysLeft <= 3 && daysLeft > 0 && (
-              <View style={st.renewWarning}>
-                <Ionicons name="alert-circle-outline" size={14} color={Colors.warning} />
-                <Text style={st.renewWarningText}>Renewal due soon — tap a plan to renew.</Text>
-              </View>
-            )}
-
-            <Pressable
-              style={[st.cancelBtn, cancelling && { opacity: 0.6 }]}
-              onPress={handleCancel}
-              disabled={cancelling}
-              android_ripple={{ color: Colors.error + '20', borderless: false }}
+          <Animated.View entering={FadeIn.duration(350)} style={st.currentCardWrap}>
+            <LinearGradient
+              colors={[Colors.primary, Colors.primaryLight]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={st.currentCard}
             >
-              <Text style={st.cancelBtnText}>{cancelling ? 'Cancelling…' : 'Cancel Subscription'}</Text>
-            </Pressable>
+              <View style={st.currentTop}>
+                <View style={{ flex: 1 }}>
+                  <Text style={st.currentPlanName}>{subscription.planId?.name}</Text>
+                  <Text style={st.currentValidUntil}>
+                    Valid until {renewDate ? renewDate.toLocaleDateString() : '—'}
+                  </Text>
+                </View>
+                <View style={st.activeBadgeWrap}>
+                  <View style={st.activeBadge}>
+                    <Ionicons name="checkmark-circle" size={10} color={Colors.success} />
+                    <Text style={st.activeBadgeText}>Active</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={st.currentPriceRow}>
+                <Text style={st.currentPrice}>
+                  {subscription.planId?.currency} {subscription.planId?.price?.toFixed(2)}
+                </Text>
+                <Text style={st.currentPricePer}>/month</Text>
+              </View>
+
+              <View style={st.currentStats}>
+                <View style={st.currentStat}>
+                  <Text style={st.currentStatVal}>{subscription.usedJobs}</Text>
+                  <Text style={st.currentStatLbl}>Jobs Used</Text>
+                </View>
+                <View style={st.statDiv} />
+                <View style={st.currentStat}>
+                  <Text style={st.currentStatVal}>
+                    {subscription.planId?.jobQuota == null ? '∞' : subscription.planId.jobQuota}
+                  </Text>
+                  <Text style={st.currentStatLbl}>Quota</Text>
+                </View>
+                <View style={st.statDiv} />
+                <View style={st.currentStat}>
+                  <Text style={[st.currentStatVal, daysLeft !== null && daysLeft <= 3 ? { color: Colors.warning } : {}]}>
+                    {daysLeft != null ? (daysLeft <= 0 ? 'Expired' : `${daysLeft}d`) : '—'}
+                  </Text>
+                  <Text style={st.currentStatLbl}>Renews In</Text>
+                </View>
+              </View>
+
+              {daysLeft != null && daysLeft <= 3 && daysLeft > 0 && (
+                <View style={st.renewWarning}>
+                  <Ionicons name="alert-circle-outline" size={14} color={Colors.warning} />
+                  <Text style={st.renewWarningText}>Renewal due soon — tap a plan to renew.</Text>
+                </View>
+              )}
+
+              <Pressable
+                style={[st.cancelBtn, cancelling && { opacity: 0.6 }]}
+                onPress={handleCancel}
+                disabled={cancelling}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
+                <Text style={st.cancelBtnText}>{cancelling ? 'Cancelling…' : 'Cancel Subscription'}</Text>
+              </Pressable>
+            </LinearGradient>
           </Animated.View>
         )}
 
-        {/* Plans grid */}
-        <Text style={st.sectionTitle}>
-          {subscription ? 'Switch Plan' : 'Choose a Plan'}
-        </Text>
+        {/* Plans */}
+        <SectionHeader title={subscription ? 'Switch Plan' : 'Choose a Plan'} />
 
         {plans.length === 0 ? (
           <Text style={st.empty}>No plans available yet.</Text>
@@ -213,35 +231,37 @@ export default function SubscriptionsScreen() {
             return (
               <Animated.View
                 key={plan._id}
-                entering={FadeInDown.delay(idx * 60).duration(300)}
+                entering={FadeInDown.delay(idx * 70).duration(320)}
                 style={[st.planCard, plan.highlighted && st.planCardHighlight, isActive && st.planCardActive]}
               >
-                {plan.highlighted && (
+                {plan.highlighted && !isActive && (
                   <View style={st.popularBadge}>
-                    <Text style={st.popularBadgeText}>⭐ Most Popular</Text>
+                    <Ionicons name="star" size={9} color={Colors.white} />
+                    <Text style={st.popularBadgeText}>Most Popular</Text>
                   </View>
                 )}
                 {isActive && (
                   <View style={[st.popularBadge, { backgroundColor: Colors.success }]}>
-                    <Text style={st.popularBadgeText}>✓ Current Plan</Text>
+                    <Ionicons name="checkmark" size={9} color={Colors.white} />
+                    <Text style={st.popularBadgeText}>Current Plan</Text>
                   </View>
                 )}
+
                 <View style={st.planTop}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={st.planName}>{plan.name}</Text>
-                    {plan.description ? <Text style={st.planDesc}>{plan.description}</Text> : null}
-                  </View>
-                  <View style={st.priceBlock}>
-                    <Text style={st.planPrice}>{plan.currency} {plan.price.toFixed(2)}</Text>
-                    <Text style={st.planInterval}>/month</Text>
-                  </View>
+                  <Text style={st.planName}>{plan.name}</Text>
+                  {plan.description ? <Text style={st.planDesc}>{plan.description}</Text> : null}
+                </View>
+
+                <View style={st.priceRow}>
+                  <Text style={st.planPrice}>{plan.currency} {plan.price.toFixed(2)}</Text>
+                  <Text style={st.planInterval}>/month</Text>
                 </View>
 
                 {plan.features.length > 0 && (
                   <View style={st.features}>
                     {plan.features.map((f, i) => (
                       <View key={i} style={st.featureRow}>
-                        <Ionicons name="checkmark-circle" size={14} color={Colors.accent} />
+                        <Ionicons name="checkmark" size={16} color={Colors.success} />
                         <Text style={st.featureText}>{f}</Text>
                       </View>
                     ))}
@@ -259,7 +279,7 @@ export default function SubscriptionsScreen() {
                   style={[st.subscribeBtn, isActive ? st.subscribeBtnDisabled : {}]}
                   onPress={() => !isActive && setConfirmPlan(plan)}
                   disabled={isActive}
-                  android_ripple={{ color: Colors.white + '30', borderless: false }}
+                  android_ripple={{ color: Colors.accent + '20', borderless: false }}
                 >
                   <Text style={[st.subscribeBtnText, isActive ? { color: Colors.textMuted } : {}]}>
                     {isActive ? 'Current Plan' : subscription ? 'Switch to this Plan' : 'Subscribe'}
@@ -314,50 +334,53 @@ export default function SubscriptionsScreen() {
 }
 
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING },
+  scroll: { padding: SCREEN_PADDING, paddingTop: 20 },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  currentCard:    { backgroundColor: Colors.accentMuted, borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: Colors.accentLight },
-  currentHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  currentPlan:    { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  currentStatus:  { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  statusBadge:    { backgroundColor: Colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  statusBadgeText: { color: Colors.white, fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
-  currentStats:   { flexDirection: 'row', marginBottom: 12 },
-  currentStat:    { flex: 1, alignItems: 'center' },
-  currentStatVal: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  currentStatLbl: { fontSize: 10, color: Colors.textSecondary, marginTop: 2 },
-  statDiv:        { width: 1, backgroundColor: Colors.accentLight },
-  renewWarning:   { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.warningBg, borderRadius: 8, padding: 8, marginBottom: 12 },
-  renewWarningText: { fontSize: 12, color: Colors.warningText, flex: 1 },
-  cancelBtn:      { alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: Colors.errorBg, overflow: 'hidden' },
-  cancelBtnText:  { color: Colors.error, fontWeight: '600', fontSize: 13 },
+  currentCardWrap: { marginBottom: 24 },
+  currentCard:     { borderRadius: 20, padding: 24 },
+  currentTop:      { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 16 },
+  currentPlanName: { fontSize: 22, fontWeight: '700', color: Colors.white, marginBottom: 4 },
+  currentValidUntil: { fontSize: 13, color: Colors.white, opacity: 0.8 },
+  activeBadgeWrap: { marginTop: 2 },
+  activeBadge:     { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.white, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  activeBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.success },
+  currentPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 20 },
+  currentPrice:    { fontSize: 32, fontWeight: '700', color: Colors.white },
+  currentPricePer: { fontSize: 16, color: Colors.white, opacity: 0.7 },
+  currentStats:    { flexDirection: 'row', marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 12 },
+  currentStat:     { flex: 1, alignItems: 'center' },
+  currentStatVal:  { fontSize: 20, fontWeight: '800', color: Colors.white },
+  currentStatLbl:  { fontSize: 10, color: Colors.white, opacity: 0.8, marginTop: 2 },
+  statDiv:         { width: 1, backgroundColor: 'rgba(255,255,255,0.3)' },
+  renewWarning:    { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: 10, marginBottom: 14 },
+  renewWarningText:{ fontSize: 12, color: Colors.white, flex: 1 },
+  cancelBtn:       { alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
+  cancelBtnText:   { color: Colors.white, fontWeight: '600', fontSize: 13 },
 
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
-
-  planCard:          { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: Colors.border },
-  planCardHighlight: { borderColor: Colors.accentLight, borderWidth: 2 },
+  planCard:          { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
+  planCardHighlight: { borderColor: Colors.accent, borderWidth: 2 },
   planCardActive:    { borderColor: Colors.success, borderWidth: 2 },
-  popularBadge:      { position: 'absolute', top: -1, right: 14, backgroundColor: Colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 8, borderBottomRightRadius: 8 },
+  popularBadge:      { position: 'absolute', top: -1, right: 14, backgroundColor: Colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 8, borderBottomRightRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
   popularBadgeText:  { color: Colors.white, fontSize: 10, fontWeight: '700' },
-  planTop:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-  planName:      { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  planDesc:      { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  priceBlock:    { alignItems: 'flex-end' },
-  planPrice:     { fontSize: 22, fontWeight: '900', color: Colors.accent },
-  planInterval:  { fontSize: 11, color: Colors.textMuted },
+  planTop:       { marginBottom: 8 },
+  planName:      { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  planDesc:      { fontSize: 12, color: Colors.textSecondary },
+  priceRow:      { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 14 },
+  planPrice:     { fontSize: 26, fontWeight: '700', color: Colors.accent },
+  planInterval:  { fontSize: 13, color: Colors.textMuted },
   features:      { marginBottom: 12 },
-  featureRow:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  featureText:   { fontSize: 13, color: Colors.textSecondary },
+  featureRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  featureText:   { fontSize: 14, color: Colors.textSecondary, flex: 1 },
   quotaRow:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
   quotaText:     { fontSize: 12, color: Colors.textSecondary },
-  subscribeBtn:         { backgroundColor: Colors.accent, borderRadius: 10, padding: 14, alignItems: 'center', overflow: 'hidden' },
+  subscribeBtn:         { backgroundColor: Colors.accent, borderRadius: 12, padding: 14, alignItems: 'center', overflow: 'hidden' },
   subscribeBtnDisabled: { backgroundColor: Colors.surfaceAlt },
   subscribeBtnText:     { color: Colors.white, fontWeight: '700', fontSize: 14 },
 

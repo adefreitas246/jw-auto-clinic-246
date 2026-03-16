@@ -1,27 +1,32 @@
 ﻿// app/(customer)/loyalty.tsx
 // Customer loyalty dashboard — points balance, tier, milestone progress,
 // history list, and redeem button.
+import { Colors } from '@/constants/Colors';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { IS_IOS } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Animated,
   Easing,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  View,
-  Modal,
   TextInput,
-  Alert,
+  View,
 } from 'react-native';
+import Reanimated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/Colors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Milestone = { points: number; label: string; emoji: string };
@@ -55,9 +60,9 @@ type LoyaltyData = {
 };
 
 const TIER_META = {
-  bronze: { color: Colors.warning, bg: Colors.warningBg, label: 'Bronze',  icon: '🥉' },
-  silver: { color: Colors.textMuted, bg: Colors.surfaceAlt, label: 'Silver',  icon: '🥈' },
-  gold:   { color: Colors.warning, bg: Colors.warningBg, label: 'Gold',    icon: '🥇' },
+  bronze: { color: Colors.warning,   bg: Colors.warningBg,  label: 'Bronze', icon: '🥉' },
+  silver: { color: Colors.textMuted, bg: Colors.surfaceAlt, label: 'Silver', icon: '🥈' },
+  gold:   { color: Colors.warning,   bg: Colors.warningBg,  label: 'Gold',   icon: '🥇' },
 };
 
 // ─── Animated points counter ──────────────────────────────────────────────────
@@ -150,6 +155,7 @@ export default function LoyaltyScreen() {
   if (loading || !data) {
     return (
       <SafeAreaView style={st.center}>
+        <ActivityIndicator size="large" color={Colors.accent} />
         <Text style={st.muted}>Loading loyalty account…</Text>
       </SafeAreaView>
     );
@@ -166,121 +172,204 @@ export default function LoyaltyScreen() {
     <SafeAreaView style={st.safe}>
       {/* Header */}
       <View style={st.header}>
-        <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={st.backBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.surfaceAlt, borderless: true }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={st.headerTitle}>Loyalty Rewards</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
         contentContainerStyle={st.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor={Colors.accent}
+          />
+        }
         showsVerticalScrollIndicator={false}
       >
-        {/* Tier + Points card */}
-        <View style={[st.card, { backgroundColor: tier.bg }]}>
-          <View style={st.tierRow}>
-            <Text style={st.tierEmoji}>{tier.icon}</Text>
-            <View style={{ marginLeft: 10 }}>
-              <Text style={[st.tierLabel, { color: tier.color }]}>{tier.label} Member</Text>
-              <Text style={st.totalEarned}>{earned.toLocaleString()} pts earned lifetime</Text>
-            </View>
-          </View>
-          <Text style={st.pointsLabel}>Available Points</Text>
-          <PointsCounter target={account.points} />
-          <Text style={st.redeemValue}>
-            ≈ ${(account.points * (config.redeemValue ?? 0.01)).toFixed(2)} value
-          </Text>
-        </View>
-
-        {/* Milestone progress */}
-        {nextMilestone && (
-          <View style={st.milestoneCard}>
-            <Text style={st.milestoneTitle}>
-              Next: {nextMilestone.emoji} {nextMilestone.label}
-            </Text>
-            <Text style={st.milestoneSubtitle}>
-              {earned.toLocaleString()} / {nextMilestone.points.toLocaleString()} pts
-            </Text>
-            <View style={st.barTrack}>
-              <Animated.View style={[st.barFill, { width: barW }]} />
-            </View>
-            <Text style={st.milestoneRemain}>
-              {(nextMilestone.points - earned).toLocaleString()} pts to go
-            </Text>
-          </View>
-        )}
-
-        {/* Tier thresholds info */}
-        <View style={st.tiersRow}>
-          {[
-            { icon: '🥉', label: 'Bronze',  pts: 0,         color: Colors.warning },
-            { icon: '🥈', label: 'Silver',  pts: silverT,   color: Colors.textMuted },
-            { icon: '🥇', label: 'Gold',    pts: goldT,     color: Colors.warning },
-          ].map(t => (
-            <View key={t.label} style={[st.tierChip, earned >= t.pts && account.tier !== 'bronze' || t.pts === 0 ? st.tierChipActive : {}]}>
-              <Text style={st.tierChipEmoji}>{t.icon}</Text>
-              <Text style={[st.tierChipLabel, { color: t.color }]}>{t.label}</Text>
-              <Text style={st.tierChipPts}>{t.pts === 0 ? 'Start' : `${t.pts.toLocaleString()}+`}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Redeem button */}
-        {config.enabled !== false && account.points >= (config.minRedeem ?? 50) && (
-          <Pressable style={st.redeemBtn} onPress={() => setRedeemModal(true)}>
-            <Ionicons name="gift-outline" size={18} color={Colors.white} />
-            <Text style={st.redeemBtnText}>Redeem Points</Text>
-          </Pressable>
-        )}
-
-        {/* Stats row */}
-        <View style={st.statsRow}>
-          <View style={st.statBox}>
-            <Text style={st.statVal}>{account.totalEarned.toLocaleString()}</Text>
-            <Text style={st.statLbl}>Total Earned</Text>
-          </View>
-          <View style={st.statDivider} />
-          <View style={st.statBox}>
-            <Text style={st.statVal}>{account.totalRedeemed.toLocaleString()}</Text>
-            <Text style={st.statLbl}>Total Redeemed</Text>
-          </View>
-          <View style={st.statDivider} />
-          <View style={st.statBox}>
-            <Text style={st.statVal}>{account.points.toLocaleString()}</Text>
-            <Text style={st.statLbl}>Available</Text>
-          </View>
-        </View>
-
-        {/* History */}
-        <Text style={st.sectionTitle}>Points History</Text>
-        {account.history.length === 0 ? (
-          <Text style={st.empty}>No transactions yet. Complete a wash to earn points!</Text>
-        ) : (
-          [...account.history].reverse().map(h => (
-            <View key={h._id} style={st.histRow}>
-              <View style={[st.histDot, { backgroundColor: h.type === 'earn' ? Colors.success : h.type === 'redeem' ? Colors.error : Colors.warning }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={st.histDesc}>{h.description || (h.type === 'earn' ? 'Points earned' : 'Points redeemed')}</Text>
-                <Text style={st.histDate}>{new Date(h.createdAt).toLocaleDateString()}</Text>
+        <Reanimated.View entering={FadeIn.duration(300)}>
+          {/* ── Hero points card ── */}
+          <View style={[st.heroCard, { backgroundColor: tier.bg }]}>
+            <View style={st.tierRow}>
+              <View style={st.tierIconWrap}>
+                <Text style={st.tierEmoji}>{tier.icon}</Text>
               </View>
-              <Text style={[st.histPts, { color: h.type === 'earn' ? Colors.success : Colors.error }]}>
-                {h.type === 'earn' || h.type === 'bonus' ? '+' : '-'}{h.points}
+              <View style={st.tierInfo}>
+                <Text style={[st.tierLabel, { color: tier.color }]}>{tier.label} Member</Text>
+                <Text style={st.totalEarned}>{earned.toLocaleString()} pts earned lifetime</Text>
+              </View>
+            </View>
+            <Text style={st.pointsLabel}>Available Points</Text>
+            <PointsCounter target={account.points} />
+            <View style={st.redeemValueRow}>
+              <Ionicons name="cash-outline" size={14} color={Colors.textSecondary} />
+              <Text style={st.redeemValue}>
+                ≈ ${(account.points * (config.redeemValue ?? 0.01)).toFixed(2)} value
               </Text>
             </View>
-          ))
-        )}
-        <View style={{ height: 40 }} />
+          </View>
+
+          {/* ── Milestone progress ── */}
+          {nextMilestone && (
+            <View style={st.milestoneCard}>
+              <View style={st.milestoneHeader}>
+                <Text style={st.milestoneTitle}>
+                  {nextMilestone.emoji} {nextMilestone.label}
+                </Text>
+                <Text style={st.milestoneRemain}>
+                  {(nextMilestone.points - earned).toLocaleString()} pts to go
+                </Text>
+              </View>
+              <Text style={st.milestoneSubtitle}>
+                {earned.toLocaleString()} / {nextMilestone.points.toLocaleString()} pts
+              </Text>
+              <View style={st.barTrack}>
+                <Animated.View style={[st.barFill, { width: barW }]} />
+              </View>
+            </View>
+          )}
+
+          {/* ── Tier chips ── */}
+          <View style={st.tiersRow}>
+            {[
+              { icon: '🥉', label: 'Bronze', pts: 0,       color: Colors.warning },
+              { icon: '🥈', label: 'Silver', pts: silverT, color: Colors.textMuted },
+              { icon: '🥇', label: 'Gold',   pts: goldT,   color: Colors.warning },
+            ].map(t => (
+              <View
+                key={t.label}
+                style={[
+                  st.tierChip,
+                  (earned >= t.pts && account.tier !== 'bronze') || t.pts === 0
+                    ? st.tierChipActive
+                    : {},
+                ]}
+              >
+                <Text style={st.tierChipEmoji}>{t.icon}</Text>
+                <Text style={[st.tierChipLabel, { color: t.color }]}>{t.label}</Text>
+                <Text style={st.tierChipPts}>
+                  {t.pts === 0 ? 'Start' : `${t.pts.toLocaleString()}+`}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          {/* ── Redeem button ── */}
+          {config.enabled !== false && account.points >= (config.minRedeem ?? 50) && (
+            <Pressable
+              style={({ pressed }) => [st.redeemBtn, pressed && { opacity: 0.88 }]}
+              onPress={() => {
+                if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setRedeemModal(true);
+              }}
+              android_ripple={{ color: Colors.accentDark, borderless: false }}
+            >
+              <Ionicons name="gift-outline" size={18} color={Colors.white} />
+              <Text style={st.redeemBtnText}>Redeem Points</Text>
+            </Pressable>
+          )}
+
+          {/* ── Stats row ── */}
+          <View style={st.statsRow}>
+            <View style={st.statBox}>
+              <Text style={st.statVal}>{account.totalEarned.toLocaleString()}</Text>
+              <Text style={st.statLbl}>Total Earned</Text>
+            </View>
+            <View style={st.statDivider} />
+            <View style={st.statBox}>
+              <Text style={st.statVal}>{account.totalRedeemed.toLocaleString()}</Text>
+              <Text style={st.statLbl}>Total Redeemed</Text>
+            </View>
+            <View style={st.statDivider} />
+            <View style={st.statBox}>
+              <Text style={st.statVal}>{account.points.toLocaleString()}</Text>
+              <Text style={st.statLbl}>Available</Text>
+            </View>
+          </View>
+
+          {/* ── History ── */}
+          <Text style={st.sectionTitle}>Points History</Text>
+          {account.history.length === 0 ? (
+            <View style={st.emptyWrap}>
+              <View style={st.emptyIconWrap}>
+                <Ionicons name="receipt-outline" size={28} color={Colors.textMuted} />
+              </View>
+              <Text style={st.empty}>
+                No transactions yet. Complete a wash to earn points!
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={[...account.history].reverse()}
+              keyExtractor={h => h._id}
+              scrollEnabled={false}
+              ItemSeparatorComponent={() => <View style={st.histSeparator} />}
+              renderItem={({ item: h }) => (
+                <View style={st.histRow}>
+                  <View
+                    style={[
+                      st.histDot,
+                      {
+                        backgroundColor:
+                          h.type === 'earn' || h.type === 'bonus'
+                            ? Colors.success
+                            : h.type === 'redeem'
+                            ? Colors.error
+                            : Colors.warning,
+                      },
+                    ]}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <Text style={st.histDesc}>
+                      {h.description ||
+                        (h.type === 'earn' ? 'Points earned' : 'Points redeemed')}
+                    </Text>
+                    <Text style={st.histDate}>
+                      {new Date(h.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[
+                      st.histPts,
+                      {
+                        color:
+                          h.type === 'earn' || h.type === 'bonus'
+                            ? Colors.success
+                            : Colors.error,
+                      },
+                    ]}
+                  >
+                    {h.type === 'earn' || h.type === 'bonus' ? '+' : '-'}{h.points}
+                  </Text>
+                </View>
+              )}
+            />
+          )}
+          <View style={{ height: 40 }} />
+        </Reanimated.View>
       </ScrollView>
 
-      {/* Redeem Modal */}
-      <Modal visible={redeemModal} transparent animationType="slide" onRequestClose={() => setRedeemModal(false)}>
+      {/* ── Redeem Modal ── */}
+      <Modal
+        visible={redeemModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setRedeemModal(false)}
+      >
         <Pressable style={st.modalBackdrop} onPress={() => setRedeemModal(false)} />
         <View style={st.modalSheet}>
+          <View style={st.modalHandle} />
           <Text style={st.modalTitle}>Redeem Points</Text>
           <Text style={st.modalSub}>
-            You have {account.points} pts available.{'\n'}
+            You have <Text style={{ color: Colors.accent, fontWeight: '700' }}>{account.points}</Text> pts available.{'\n'}
             Min: {config.minRedeem ?? 50} pts · Value: ${config.redeemValue ?? 0.01}/pt
           </Text>
           <TextInput
@@ -292,18 +381,32 @@ export default function LoyaltyScreen() {
             placeholderTextColor={Colors.textMuted}
           />
           {redeemPts ? (
-            <Text style={st.modalPreview}>
-              Discount ≈ ${(Number(redeemPts) * (config.redeemValue ?? 0.01)).toFixed(2)}
-            </Text>
+            <View style={st.modalPreviewBox}>
+              <Ionicons name="pricetag-outline" size={14} color={Colors.accent} />
+              <Text style={st.modalPreview}>
+                Discount ≈ ${(Number(redeemPts) * (config.redeemValue ?? 0.01)).toFixed(2)}
+              </Text>
+            </View>
           ) : null}
           <View style={st.modalBtns}>
-            <Pressable style={st.modalCancel} onPress={() => setRedeemModal(false)}>
+            <Pressable
+              style={st.modalCancel}
+              onPress={() => setRedeemModal(false)}
+              android_ripple={{ color: Colors.border, borderless: false }}
+            >
               <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
             </Pressable>
-            <Pressable style={[st.modalConfirm, redeeming && { opacity: 0.6 }]} onPress={handleRedeem} disabled={redeeming}>
-              <Text style={{ color: Colors.white, fontWeight: '700' }}>
-                {redeeming ? 'Redeeming…' : 'Confirm'}
-              </Text>
+            <Pressable
+              style={[st.modalConfirm, redeeming && { opacity: 0.6 }]}
+              onPress={handleRedeem}
+              disabled={redeeming}
+              android_ripple={{ color: Colors.accentDark, borderless: false }}
+            >
+              {redeeming ? (
+                <ActivityIndicator size="small" color={Colors.white} />
+              ) : (
+                <Text style={{ color: Colors.white, fontWeight: '700' }}>Confirm</Text>
+              )}
             </Pressable>
           </View>
         </View>
@@ -312,66 +415,106 @@ export default function LoyaltyScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles ────────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
+  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    ...cardShadow,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  card:          { borderRadius: 16, padding: 20, marginBottom: 16, shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  tierRow:       { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  tierEmoji:     { fontSize: 36 },
-  tierLabel:     { fontSize: 18, fontWeight: '800' },
-  totalEarned:   { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
-  pointsLabel:   { fontSize: 12, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8 },
-  pointsNum:     { fontSize: 52, fontWeight: '900', color: Colors.textPrimary, lineHeight: 58 },
-  redeemValue:   { fontSize: 13, color: Colors.textSecondary, marginTop: 4 },
+  // Hero points card
+  heroCard: {
+    borderRadius: borderRadius.lg,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
+  },
+  tierRow:      { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  tierIconWrap: { width: 52, height: 52, borderRadius: 26, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  tierEmoji:    { fontSize: 28 },
+  tierInfo:     { flex: 1 },
+  tierLabel:    { fontSize: 18, fontWeight: '800' },
+  totalEarned:  { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  pointsLabel:  { fontSize: 11, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 4 },
+  pointsNum:    { fontSize: 52, fontWeight: '900', color: Colors.textPrimary, lineHeight: 58 },
+  redeemValueRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  redeemValue:  { fontSize: 13, color: Colors.textSecondary },
 
-  milestoneCard:     { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
-  milestoneTitle:    { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  milestoneSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 2, marginBottom: 10 },
-  barTrack:          { height: 10, backgroundColor: Colors.surfaceAlt, borderRadius: 5, overflow: 'hidden' },
-  barFill:           { height: 10, backgroundColor: Colors.accent, borderRadius: 5 },
-  milestoneRemain:   { fontSize: 11, color: Colors.textMuted, marginTop: 6, textAlign: 'right' },
+  // Milestone
+  milestoneCard:   { backgroundColor: Colors.surface, borderRadius: borderRadius.md, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
+  milestoneHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  milestoneTitle:  { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  milestoneSubtitle: { fontSize: 12, color: Colors.textSecondary, marginBottom: 10 },
+  barTrack:        { height: 8, backgroundColor: Colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
+  barFill:         { height: 8, backgroundColor: Colors.accent, borderRadius: 4 },
+  milestoneRemain: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
 
+  // Tier chips
   tiersRow:      { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  tierChip:      { flex: 1, backgroundColor: Colors.surfaceAlt, borderRadius: 12, padding: 10, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  tierChip:      { flex: 1, backgroundColor: Colors.surface, borderRadius: borderRadius.md, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.border, ...cardShadow },
   tierChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  tierChipEmoji: { fontSize: 20 },
+  tierChipEmoji: { fontSize: 22 },
   tierChipLabel: { fontSize: 12, fontWeight: '700', marginTop: 4 },
   tierChipPts:   { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
 
-  redeemBtn:     { backgroundColor: Colors.accent, borderRadius: 12, padding: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
+  // Redeem button
+  redeemBtn:     { backgroundColor: Colors.accent, borderRadius: borderRadius.md, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, ...cardShadow },
   redeemBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
-  statsRow:   { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
+  // Stats
+  statsRow:   { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: borderRadius.md, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
   statBox:    { flex: 1, alignItems: 'center' },
   statVal:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
   statLbl:    { fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
-  statDivider: { width: 1, backgroundColor: Colors.surfaceAlt },
+  statDivider: { width: 1, backgroundColor: Colors.border },
 
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
-  empty:        { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
+  // History
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
+  emptyWrap:    { alignItems: 'center', paddingVertical: 24 },
+  emptyIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  empty:        { color: Colors.textMuted, textAlign: 'center', fontSize: 14, lineHeight: 20 },
 
-  histRow:  { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt, gap: 10 },
-  histDot:  { width: 10, height: 10, borderRadius: 5 },
-  histDesc: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500' },
-  histDate: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  histPts:  { fontSize: 15, fontWeight: '700' },
+  histRow:      { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, backgroundColor: Colors.surface, borderRadius: borderRadius.sm, paddingHorizontal: 12, gap: 10 },
+  histSeparator: { height: 6 },
+  histDot:      { width: 10, height: 10, borderRadius: 5, flexShrink: 0 },
+  histDesc:     { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
+  histDate:     { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  histPts:      { fontSize: 15, fontWeight: '700', flexShrink: 0 },
 
-  muted: { color: Colors.textMuted, fontSize: 14 },
+  muted: { color: Colors.textMuted, fontSize: 14, marginTop: 8 },
 
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  modalSheet:    { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
+  // Modal
+  modalBackdrop: { flex: 1, backgroundColor: Colors.overlay },
+  modalSheet:    { backgroundColor: Colors.surface, borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl, padding: 24, paddingBottom: 40 },
+  modalHandle:   { width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalTitle:    { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
   modalSub:      { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 16 },
-  modalInput:    { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 12, fontSize: 16, color: Colors.textPrimary, marginBottom: 8 },
-  modalPreview:  { fontSize: 13, color: Colors.accent, fontWeight: '600', marginBottom: 16 },
+  modalInput:    { borderWidth: 1, borderColor: Colors.border, borderRadius: borderRadius.sm, padding: 14, fontSize: 16, color: Colors.textPrimary, marginBottom: 8, backgroundColor: Colors.surfaceAlt },
+  modalPreviewBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
+  modalPreview:  { fontSize: 13, color: Colors.accent, fontWeight: '600' },
   modalBtns:     { flexDirection: 'row', gap: 12 },
-  modalCancel:   { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center' },
-  modalConfirm:  { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center' },
+  modalCancel:   { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.sm, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },
+  modalConfirm:  { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
 });

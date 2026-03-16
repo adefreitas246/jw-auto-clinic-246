@@ -1,4 +1,4 @@
-﻿// app/(tabs)/marketing/campaigns.tsx
+// app/(tabs)/marketing/campaigns.tsx
 // Broadcast push campaign composer — create, schedule, send, view delivery report.
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +23,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Audience = 'all_customers' | 'loyalty_members' | 'subscribers' | 'inactive_30d';
@@ -43,17 +45,17 @@ type Campaign = {
 };
 
 const AUDIENCE_LABELS: Record<Audience, string> = {
-  all_customers:  'All Customers',
+  all_customers:   'All Customers',
   loyalty_members: 'Loyalty Members',
-  subscribers:    'Subscribers',
-  inactive_30d:   'Inactive 30+ Days',
+  subscribers:     'Subscribers',
+  inactive_30d:    'Inactive 30+ Days',
 };
 
 const AUDIENCE_ICONS: Record<Audience, React.ComponentProps<typeof Ionicons>['name']> = {
-  all_customers:  'people-outline',
+  all_customers:   'people-outline',
   loyalty_members: 'gift-outline',
-  subscribers:    'card-outline',
-  inactive_30d:   'time-outline',
+  subscribers:     'card-outline',
+  inactive_30d:    'time-outline',
 };
 
 const STATUS_COLOR: Record<CampaignStatus, string> = {
@@ -101,15 +103,15 @@ export default function CampaignsScreen() {
   const [editing,    setEditing]    = useState<Campaign | null>(null);
   const [reportCamp, setReportCamp] = useState<(Campaign & { audienceSize?: number }) | null>(null);
   const [saving,     setSaving]     = useState(false);
-  const [sending,    setSending]    = useState<string | null>(null); // campaign id being sent
+  const [sending,    setSending]    = useState<string | null>(null);
 
   // Form state
   const [title,       setTitle]       = useState('');
   const [body,        setBody]        = useState('');
   const [audience,    setAudience]    = useState<Audience>('all_customers');
   const [useSchedule, setUseSchedule] = useState(false);
-  const [schedDate,   setSchedDate]   = useState('');  // YYYY-MM-DD
-  const [schedTime,   setSchedTime]   = useState('');  // HH:MM
+  const [schedDate,   setSchedDate]   = useState('');
+  const [schedTime,   setSchedTime]   = useState('');
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -226,17 +228,31 @@ export default function CampaignsScreen() {
   }
 
   if (loading) {
-    return <SafeAreaView style={bd.center}><ActivityIndicator color={Colors.accent} /></SafeAreaView>;
+    return (
+      <SafeAreaView style={bd.center}>
+        <ActivityIndicator color={Colors.accent} size="large" />
+      </SafeAreaView>
+    );
   }
 
   return (
     <SafeAreaView style={bd.safe}>
+      {/* Header */}
       <View style={bd.header}>
-        <Pressable onPress={() => router.back()} style={bd.backBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={bd.backBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.border, radius: 20, borderless: true }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={bd.headerTitle}>Push Campaigns</Text>
-        <Pressable onPress={openCreate} style={bd.addBtn}>
+        <Pressable
+          onPress={openCreate}
+          style={bd.addBtn}
+          android_ripple={{ color: Colors.accentDark, radius: 20, borderless: true }}
+        >
           <Ionicons name="add" size={20} color={Colors.white} />
         </Pressable>
       </View>
@@ -245,10 +261,19 @@ export default function CampaignsScreen() {
         data={campaigns}
         keyExtractor={c => c._id}
         contentContainerStyle={bd.scroll}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} tintColor={Colors.accent} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); load(); }}
+            tintColor={Colors.accent}
+            colors={[Colors.accent]}
+          />
+        }
         ListEmptyComponent={
           <View style={bd.emptyWrap}>
-            <Ionicons name="megaphone-outline" size={48} color={Colors.border} />
+            <View style={bd.emptyIcon}>
+              <Ionicons name="megaphone-outline" size={36} color={Colors.textMuted} />
+            </View>
             <Text style={bd.emptyTitle}>No campaigns yet</Text>
             <Text style={bd.empty}>Tap + to create your first broadcast.</Text>
           </View>
@@ -288,11 +313,20 @@ export default function CampaignsScreen() {
             <View style={bd.actions}>
               {c.status === 'draft' && (
                 <>
-                  <Pressable style={bd.actionBtn} onPress={() => openEdit(c)}>
+                  <Pressable
+                    style={bd.actionBtn}
+                    onPress={() => openEdit(c)}
+                    android_ripple={{ color: Colors.accentMuted }}
+                  >
                     <Ionicons name="pencil-outline" size={14} color={Colors.accent} />
                     <Text style={[bd.actionText, { color: Colors.accent }]}>Edit</Text>
                   </Pressable>
-                  <Pressable style={bd.actionBtn} onPress={() => handleSend(c)} disabled={sending === c._id}>
+                  <Pressable
+                    style={bd.actionBtn}
+                    onPress={() => handleSend(c)}
+                    disabled={sending === c._id}
+                    android_ripple={{ color: Colors.successBg }}
+                  >
                     {sending === c._id
                       ? <ActivityIndicator size="small" color={Colors.success} />
                       : <>
@@ -303,14 +337,22 @@ export default function CampaignsScreen() {
                         </>
                     }
                   </Pressable>
-                  <Pressable style={bd.actionBtn} onPress={() => handleDelete(c)}>
+                  <Pressable
+                    style={bd.actionBtn}
+                    onPress={() => handleDelete(c)}
+                    android_ripple={{ color: Colors.errorBg }}
+                  >
                     <Ionicons name="trash-outline" size={14} color={Colors.error} />
                     <Text style={[bd.actionText, { color: Colors.error }]}>Delete</Text>
                   </Pressable>
                 </>
               )}
               {(c.status === 'sent' || c.status === 'failed') && (
-                <Pressable style={bd.actionBtn} onPress={() => openReport(c)}>
+                <Pressable
+                  style={bd.actionBtn}
+                  onPress={() => openReport(c)}
+                  android_ripple={{ color: Colors.surfaceAlt }}
+                >
                   <Ionicons name="bar-chart-outline" size={14} color={Colors.textSecondary} />
                   <Text style={[bd.actionText, { color: Colors.textSecondary }]}>Report</Text>
                 </Pressable>
@@ -322,17 +364,38 @@ export default function CampaignsScreen() {
 
       {/* Create / Edit Modal */}
       <Modal visible={modal} transparent animationType="slide" onRequestClose={() => setModal(false)}>
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
           <Pressable style={bd.backdrop} onPress={() => setModal(false)} />
-          <ScrollView style={bd.sheet} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            style={bd.sheet}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={bd.sheetHandle} />
             <Text style={bd.sheetTitle}>{editing ? 'Edit Campaign' : 'New Campaign'}</Text>
 
             <Text style={bd.label}>Notification Title *</Text>
-            <TextInput style={bd.input} value={title} onChangeText={setTitle} placeholder="e.g. ☀️ Summer Special" placeholderTextColor={Colors.textMuted} maxLength={100} />
+            <TextInput
+              style={bd.input}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="e.g. Summer Special"
+              placeholderTextColor={Colors.textMuted}
+              maxLength={100}
+            />
             <Text style={bd.charCount}>{title.length}/100</Text>
 
             <Text style={bd.label}>Message *</Text>
-            <TextInput style={[bd.input, { minHeight: 80 }]} value={body} onChangeText={setBody} placeholder="Write your message…" placeholderTextColor={Colors.textMuted} multiline textAlignVertical="top" maxLength={500} />
+            <TextInput
+              style={[bd.input, { minHeight: 80 }]}
+              value={body}
+              onChangeText={setBody}
+              placeholder="Write your message…"
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              textAlignVertical="top"
+              maxLength={500}
+            />
             <Text style={bd.charCount}>{body.length}/500</Text>
 
             <Text style={bd.label}>Audience</Text>
@@ -342,8 +405,13 @@ export default function CampaignsScreen() {
                   key={a}
                   style={[bd.audienceChip, audience === a && bd.audienceChipActive]}
                   onPress={() => setAudience(a)}
+                  android_ripple={{ color: Colors.accentMuted }}
                 >
-                  <Ionicons name={AUDIENCE_ICONS[a]} size={13} color={audience === a ? Colors.accent : Colors.textSecondary} />
+                  <Ionicons
+                    name={AUDIENCE_ICONS[a]}
+                    size={13}
+                    color={audience === a ? Colors.accent : Colors.textSecondary}
+                  />
                   <Text style={[bd.audienceChipText, audience === a && { color: Colors.accent }]}>
                     {AUDIENCE_LABELS[a]}
                   </Text>
@@ -368,21 +436,46 @@ export default function CampaignsScreen() {
               <View style={bd.schedFields}>
                 <View style={{ flex: 1 }}>
                   <Text style={bd.label}>Date (YYYY-MM-DD)</Text>
-                  <TextInput style={bd.input} value={schedDate} onChangeText={setSchedDate} placeholder="2025-08-15" placeholderTextColor={Colors.textMuted} keyboardType="numbers-and-punctuation" />
+                  <TextInput
+                    style={bd.input}
+                    value={schedDate}
+                    onChangeText={setSchedDate}
+                    placeholder="2025-08-15"
+                    placeholderTextColor={Colors.textMuted}
+                    keyboardType="numbers-and-punctuation"
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={bd.label}>Time (HH:MM)</Text>
-                  <TextInput style={bd.input} value={schedTime} onChangeText={setSchedTime} placeholder="09:00" placeholderTextColor={Colors.textMuted} keyboardType="numbers-and-punctuation" />
+                  <TextInput
+                    style={bd.input}
+                    value={schedTime}
+                    onChangeText={setSchedTime}
+                    placeholder="09:00"
+                    placeholderTextColor={Colors.textMuted}
+                    keyboardType="numbers-and-punctuation"
+                  />
                 </View>
               </View>
             )}
 
             <View style={bd.sheetBtns}>
-              <Pressable style={bd.sheetCancel} onPress={() => setModal(false)}>
-                <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+              <Pressable
+                style={bd.sheetCancel}
+                onPress={() => setModal(false)}
+                android_ripple={{ color: Colors.border }}
+              >
+                <Text style={bd.sheetCancelText}>Cancel</Text>
               </Pressable>
-              <Pressable style={[bd.sheetConfirm, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-                <Text style={{ color: Colors.white, fontWeight: '700' }}>{saving ? 'Saving…' : editing ? 'Save' : 'Create'}</Text>
+              <Pressable
+                style={[bd.sheetConfirm, saving && { opacity: 0.6 }]}
+                onPress={handleSave}
+                disabled={saving}
+                android_ripple={{ color: Colors.accentDark }}
+              >
+                <Text style={bd.sheetConfirmText}>
+                  {saving ? 'Saving…' : editing ? 'Save' : 'Create'}
+                </Text>
               </Pressable>
             </View>
           </ScrollView>
@@ -390,19 +483,25 @@ export default function CampaignsScreen() {
       </Modal>
 
       {/* Delivery report modal */}
-      <Modal visible={!!reportCamp} transparent animationType="slide" onRequestClose={() => setReportCamp(null)}>
+      <Modal
+        visible={!!reportCamp}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReportCamp(null)}
+      >
         <Pressable style={bd.backdrop} onPress={() => setReportCamp(null)} />
         {reportCamp && (
           <View style={bd.reportSheet}>
+            <View style={bd.sheetHandle} />
             <Text style={bd.sheetTitle}>Delivery Report</Text>
             <Text style={bd.reportTitle}>{reportCamp.title}</Text>
 
             <View style={bd.reportGrid}>
               {[
-                { label: 'Audience', val: AUDIENCE_LABELS[reportCamp.audience], color: Colors.accent },
+                { label: 'Audience',  val: AUDIENCE_LABELS[reportCamp.audience], color: Colors.accent },
                 { label: 'Est. Reach', val: String(reportCamp.audienceSize ?? '—'), color: Colors.textSecondary },
-                { label: 'Sent', val: String(reportCamp.sentCount), color: Colors.success },
-                { label: 'Failed', val: String(reportCamp.failedCount), color: Colors.error },
+                { label: 'Sent',      val: String(reportCamp.sentCount),           color: Colors.success },
+                { label: 'Failed',    val: String(reportCamp.failedCount),         color: Colors.error },
               ].map(r => (
                 <View key={r.label} style={bd.reportStat}>
                   <Text style={[bd.reportStatVal, { color: r.color }]}>{r.val}</Text>
@@ -427,8 +526,12 @@ export default function CampaignsScreen() {
               <Text style={[bd.errText, { marginTop: 8 }]}>{reportCamp.errorMessage}</Text>
             ) : null}
 
-            <Pressable style={[bd.sheetConfirm, { marginTop: 20 }]} onPress={() => setReportCamp(null)}>
-              <Text style={{ color: Colors.white, fontWeight: '700' }}>Close</Text>
+            <Pressable
+              style={[bd.sheetConfirm, { marginTop: 20 }]}
+              onPress={() => setReportCamp(null)}
+              android_ripple={{ color: Colors.accentDark }}
+            >
+              <Text style={bd.sheetConfirmText}>Close</Text>
             </Pressable>
           </View>
         )}
@@ -439,66 +542,205 @@ export default function CampaignsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const bd = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    ...cardShadow,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: Colors.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  addBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center' },
+  addBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: Colors.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...cardShadow,
+  },
 
-  emptyWrap:  { alignItems: 'center', paddingTop: 60, gap: 8 },
+  emptyWrap:  { alignItems: 'center', paddingTop: 64, gap: 12 },
+  emptyIcon:  {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary },
   empty:      { color: Colors.textMuted, textAlign: 'center', fontSize: 13 },
 
-  card:      { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border },
-  cardTop:   { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8 },
-  cardTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  audienceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
+  },
+  cardTop:     { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 8 },
+  cardTitle:   { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  audienceRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
   audienceText:{ fontSize: 11, color: Colors.textSecondary },
-  cardBody:  { fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: 8 },
-  schedRow:  { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 },
-  schedText: { fontSize: 11, color: Colors.warning, fontWeight: '600' },
-  errText:   { fontSize: 11, color: Colors.error, marginBottom: 6 },
+  cardBody:    { fontSize: 13, color: Colors.textSecondary, lineHeight: 19, marginBottom: 8 },
+  schedRow:    { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 6 },
+  schedText:   { fontSize: 11, color: Colors.warning, fontWeight: '600' },
+  errText:     { fontSize: 11, color: Colors.error, marginBottom: 6 },
 
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 20 },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
   statusText:  { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
 
   barWrap:  { marginBottom: 8 },
-  barTrack: { height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden', marginBottom: 4 },
+  barTrack: {
+    height: 6,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
   barFill:  { height: 6, backgroundColor: Colors.success, borderRadius: 3 },
   barLabel: { fontSize: 11, color: Colors.textSecondary },
 
-  actions:    { flexDirection: 'row', gap: 6, borderTopWidth: 1, borderTopColor: Colors.surfaceAlt, paddingTop: 10, marginTop: 4 },
-  actionBtn:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: Colors.surfaceAlt, borderRadius: 8, minWidth: 70, justifyContent: 'center' },
+  actions:    {
+    flexDirection: 'row',
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: Colors.surfaceAlt,
+    paddingTop: 10,
+    marginTop: 4,
+  },
+  actionBtn:  {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 8,
+    minWidth: 70,
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
   actionText: { fontSize: 12, fontWeight: '600' },
 
-  backdrop:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet:       { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
-  reportSheet: { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
-  sheetTitle:  { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 14 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  reportSheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  sheetHandle: {
+    width: 36,
+    height: 4,
+    backgroundColor: Colors.border,
+    borderRadius: 99,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle:  { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 16 },
   reportTitle: { fontSize: 14, color: Colors.textSecondary, marginBottom: 16 },
-  label:       { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 4, marginTop: 10 },
-  subLabel:    { fontSize: 11, color: Colors.textMuted, marginBottom: 4 },
-  input:       { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 11, fontSize: 14, color: Colors.textPrimary, backgroundColor: Colors.white },
-  charCount:   { fontSize: 10, color: Colors.textMuted, textAlign: 'right', marginBottom: 2 },
+  label:       {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    marginBottom: 4,
+    marginTop: 12,
+  },
+  subLabel: { fontSize: 11, color: Colors.textMuted, marginBottom: 4 },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.surface,
+  },
+  charCount: { fontSize: 10, color: Colors.textMuted, textAlign: 'right', marginTop: 2 },
 
-  audiencePicker:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  audienceChip:     { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: Colors.border, backgroundColor: Colors.surfaceAlt },
+  audiencePicker:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  audienceChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 99,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceAlt,
+    overflow: 'hidden',
+  },
   audienceChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  audienceChipText: { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
+  audienceChipText:   { fontSize: 12, fontWeight: '600', color: Colors.textSecondary },
 
-  scheduleToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 },
-  schedFields:    { flexDirection: 'row', gap: 12, marginTop: 4 },
+  scheduleToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  schedFields: { flexDirection: 'row', gap: 12, marginTop: 4 },
 
-  reportGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
-  reportStat:    { flex: 1, minWidth: '40%', backgroundColor: Colors.surfaceAlt, borderRadius: 10, padding: 12, alignItems: 'center' },
+  reportGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 12 },
+  reportStat:    {
+    flex: 1,
+    minWidth: '40%',
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
   reportStatVal: { fontSize: 24, fontWeight: '800' },
   reportStatLbl: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
   reportDate:    { fontSize: 12, color: Colors.textMuted, textAlign: 'center' },
 
-  sheetBtns:    { flexDirection: 'row', gap: 12, marginTop: 20 },
-  sheetCancel:  { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center' },
-  sheetConfirm: { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center' },
+  sheetBtns:       { flexDirection: 'row', gap: 12, marginTop: 24 },
+  sheetCancel: {
+    flex: 1,
+    padding: 14,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 12,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  sheetCancelText: { color: Colors.textSecondary, fontWeight: '600', fontSize: 15 },
+  sheetConfirm: {
+    flex: 1,
+    padding: 14,
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    alignItems: 'center',
+    overflow: 'hidden',
+    ...cardShadow,
+  },
+  sheetConfirmText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

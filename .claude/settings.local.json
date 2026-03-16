@@ -9,7 +9,14 @@
       "Bash(powershell -Command \"Write-Host \\($PSVersionTable.PSVersion.ToString\\(\\)\\)\")",
       "Bash(powershell -NoProfile -Command \"Write-Host $host.Version\")",
       "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\AddeS\\\\Documents\\\\ASD Inova Technologia\\\\jw-auto-clinic\\\\check-ps.ps1\")",
-      "Bash(powershell -ExecutionPolicy Bypass -Command \"Get-Content 'C:\\\\Users\\\\AddeS\\\\Documents\\\\ASD Inova Technologia\\\\jw-auto-clinic\\\\add-colors-import.ps1' | Select-Object -Last 10\")"
+      "Bash(powershell -ExecutionPolicy Bypass -Command \"Get-Content 'C:\\\\Users\\\\AddeS\\\\Documents\\\\ASD Inova Technologia\\\\jw-auto-clinic\\\\add-colors-import.ps1' | Select-Object -Last 10\")",
+      "Bash(find:*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/AddeS/AppData/Local/Temp/claude/C--Users-AddeS-Documents-ASD-Inova-Technologia-jw-auto-clinic/af5ef311-fb1c-4a3d-9f60-1432822aabf0/tasks/**)",
+      "Bash(done)",
+      "Bash(head:*)",
+      "Bash(wc:*)"
     ]
   }
 }

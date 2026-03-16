@@ -1,11 +1,15 @@
-﻿// app/auth/login.tsx
+// app/auth/login.tsx
 import { SECURE_STORE_KEYS } from "@/constants/secureStoreKeys";
 import { Colors } from "@/constants/Colors";
+import { IS_ANDROID, IS_IOS, SUPPORTS_LIQUID_GLASS } from "@/constants/Platform";
+import { Typography } from "@/constants/Typography";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Google from "expo-auth-session/providers/google";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -66,13 +70,10 @@ export default function LoginScreen() {
   const isSmallScreen = height < 700;
 
   // ── Google OAuth ─────────────────────────────────────────────
-  // expo-auth-session does not accept null — always pass strings.
-  // Placeholder values satisfy the hook; googleEnabled gates the actual flow.
   const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ?? "placeholder-android";
   const iosClientId     = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID     ?? "placeholder-ios";
   const webClientId     = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID     ?? "placeholder-web";
 
-  // Only requires native client IDs — web ID is optional for native apps
   const googleEnabled = (
     androidClientId !== "placeholder-android" &&
     iosClientId     !== "placeholder-ios"
@@ -230,11 +231,24 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={s.safeArea} edges={["top", "bottom"]}>
       {isNative && (
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.background} translucent={false} />
+        <StatusBar
+          barStyle={IS_ANDROID ? "dark-content" : "light-content"}
+          backgroundColor={IS_ANDROID ? Colors.background : undefined}
+          translucent={IS_IOS}
+        />
+      )}
+
+      {/* iOS: full-screen gradient background */}
+      {IS_IOS && (
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryLight, Colors.background]}
+          locations={[0, 0.35, 0.7]}
+          style={StyleSheet.absoluteFill}
+        />
       )}
 
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: Colors.background }}
+        style={s.kvFill}
         behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? insets.top : 0}
       >
@@ -250,168 +264,206 @@ export default function LoginScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <View style={s.formContainer}>
-              {/* Logo */}
-              <Image
-                source={require("@/assets/images/icon.png")}
-                style={[s.logo, isSmallScreen && s.logoSmall]}
-                resizeMode="contain"
-              />
-
-              {/* Heading */}
-              <Text style={s.heading}>Welcome Back</Text>
-              <Text style={s.subtext}>Sign in to continue to Wash Hub</Text>
-
-              {/* ── Email ── */}
-              <Text style={s.label}>Email Address</Text>
-              <Animatable.View ref={emailRef} animation={emailError ? "shake" : undefined}>
-                <TextInput
-                  style={[s.input, emailError && s.inputError]}
-                  placeholder="you@example.com"
-                  placeholderTextColor={Colors.textMuted}
-                  value={email}
-                  onChangeText={(t) => { setEmail(t); if (emailError && t) setEmailError(false); }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  textContentType="emailAddress"
-                  importantForAutofill="yes"
-                  returnKeyType="next"
+            {/* Glass card wrapper on iOS */}
+            <View style={[s.formOuter, IS_IOS && s.formOuterIOS]}>
+              {SUPPORTS_LIQUID_GLASS && (
+                <BlurView
+                  intensity={65}
+                  tint="light"
+                  style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
                 />
-              </Animatable.View>
-
-              {/* ── Password ── */}
-              <Text style={s.label}>Password</Text>
-              <Animatable.View
-                ref={passwordRef}
-                animation={passwordError ? "shake" : undefined}
-                style={[s.passwordContainer, passwordError && s.inputError]}
-              >
-                <TextInput
-                  style={s.passwordInput}
-                  placeholder="Your password"
-                  placeholderTextColor={Colors.textMuted}
-                  secureTextEntry={hidePassword}
-                  value={password}
-                  onChangeText={(t) => { setPassword(t); if (passwordError && t) setPasswordError(false); }}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  textContentType="password"
-                  returnKeyType="done"
-                  onSubmitEditing={() => handleLogin()}
+              )}
+              {SUPPORTS_LIQUID_GLASS && (
+                <LinearGradient
+                  colors={["rgba(255,255,255,0.40)", "rgba(255,255,255,0.12)"]}
+                  style={[StyleSheet.absoluteFill, { borderRadius: 28 }]}
                 />
-                <Pressable onPress={() => setHidePassword((p) => !p)} accessibilityLabel="Toggle password visibility" hitSlop={8}>
-                  <Ionicons name={hidePassword ? "eye-outline" : "eye"} size={22} color={Colors.textMuted} />
-                </Pressable>
-              </Animatable.View>
+              )}
 
-              {/* ── Remember Me + Forgot ── */}
-              <View style={s.rememberRow}>
-                <Pressable onPress={() => setRememberMe((p) => !p)} hitSlop={8} style={s.rememberCheck}>
-                  <Ionicons
-                    name={rememberMe ? "checkbox" : "square-outline"}
-                    size={22}
-                    color={Colors.accent}
+              <View style={s.formContainer}>
+                {/* Logo */}
+                <Image
+                  source={require("@/assets/images/icon.png")}
+                  style={[s.logo, isSmallScreen && s.logoSmall]}
+                  resizeMode="contain"
+                />
+
+                {/* Heading */}
+                <Text style={[s.heading, IS_IOS && { color: SUPPORTS_LIQUID_GLASS ? Colors.primary : Colors.white }]}>
+                  Welcome Back
+                </Text>
+                <Text style={[s.subtext, IS_IOS && { color: SUPPORTS_LIQUID_GLASS ? Colors.textSecondary : "rgba(255,255,255,0.8)" }]}>
+                  Sign in to continue to Wash Hub
+                </Text>
+
+                {/* ── Email ── */}
+                <Text style={s.label}>Email Address</Text>
+                <Animatable.View ref={emailRef} animation={emailError ? "shake" : undefined}>
+                  <TextInput
+                    style={[s.input, IS_IOS && s.inputIOS, emailError && s.inputError]}
+                    placeholder="you@example.com"
+                    placeholderTextColor={Colors.textMuted}
+                    value={email}
+                    onChangeText={(t) => { setEmail(t); if (emailError && t) setEmailError(false); }}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
+                    importantForAutofill="yes"
+                    returnKeyType="next"
                   />
-                  <Text style={s.rememberLabel}>Remember Me</Text>
-                </Pressable>
-                <TouchableOpacity onPress={() => router.push("/auth/forgot")} disabled={anyLoading}>
-                  <Text style={s.forgotText}>Forgot Password?</Text>
-                </TouchableOpacity>
-              </View>
+                </Animatable.View>
 
-              {/* ── Sign In Button ── */}
-              <TouchableOpacity
-                style={[s.primaryBtn, anyLoading && s.disabled]}
-                onPress={() => handleLogin()}
-                disabled={anyLoading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <Text style={s.primaryBtnText}>Sign In</Text>
+                {/* ── Password ── */}
+                <Text style={s.label}>Password</Text>
+                <Animatable.View
+                  ref={passwordRef}
+                  animation={passwordError ? "shake" : undefined}
+                  style={[s.passwordContainer, IS_IOS && s.inputIOS, passwordError && s.inputError]}
+                >
+                  <TextInput
+                    style={s.passwordInput}
+                    placeholder="Your password"
+                    placeholderTextColor={Colors.textMuted}
+                    secureTextEntry={hidePassword}
+                    value={password}
+                    onChangeText={(t) => { setPassword(t); if (passwordError && t) setPasswordError(false); }}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    textContentType="password"
+                    returnKeyType="done"
+                    onSubmitEditing={() => handleLogin()}
+                  />
+                  <Pressable
+                    onPress={() => setHidePassword((p) => !p)}
+                    accessibilityLabel="Toggle password visibility"
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name={hidePassword ? "eye-outline" : "eye"}
+                      size={22}
+                      color={Colors.textMuted}
+                    />
+                  </Pressable>
+                </Animatable.View>
+
+                {/* ── Remember Me + Forgot ── */}
+                <View style={s.rememberRow}>
+                  <Pressable onPress={() => setRememberMe((p) => !p)} hitSlop={8} style={s.rememberCheck}>
+                    <Ionicons
+                      name={rememberMe ? "checkbox" : "square-outline"}
+                      size={22}
+                      color={Colors.accent}
+                    />
+                    <Text style={s.rememberLabel}>Remember Me</Text>
+                  </Pressable>
+                  <TouchableOpacity onPress={() => router.push("/auth/forgot")} disabled={anyLoading}>
+                    <Text style={s.forgotText}>Forgot Password?</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* ── Sign In Button ── */}
+                <TouchableOpacity
+                  style={[s.primaryBtnWrapper, anyLoading && s.disabled]}
+                  onPress={() => handleLogin()}
+                  disabled={anyLoading}
+                  activeOpacity={0.85}
+                >
+                  <LinearGradient
+                    colors={[Colors.accent, Colors.accentDark]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={s.primaryBtnGradient}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color={Colors.white} />
+                    ) : (
+                      <Text style={s.primaryBtnText}>Sign In</Text>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* ── Biometric ── */}
+                {isNative && biometricEnabled && biometricAvailable && (
+                  <TouchableOpacity
+                    style={[s.secondaryBtn, anyLoading && s.disabled]}
+                    onPress={handleBiometricLogin}
+                    disabled={anyLoading}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="finger-print-outline" size={20} color={Colors.accent} />
+                    <Text style={s.secondaryBtnText}>Login with Biometrics</Text>
+                  </TouchableOpacity>
                 )}
-              </TouchableOpacity>
 
-              {/* ── Biometric ── */}
-              {isNative && biometricEnabled && biometricAvailable && (
-                <TouchableOpacity
-                  style={[s.secondaryBtn, anyLoading && s.disabled]}
-                  onPress={handleBiometricLogin}
-                  disabled={anyLoading}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="finger-print-outline" size={20} color={Colors.accent} />
-                  <Text style={s.secondaryBtnText}>Login with Biometrics</Text>
-                </TouchableOpacity>
-              )}
+                {/* ── OAuth divider ── */}
+                <View style={s.dividerRow}>
+                  <View style={s.dividerLine} />
+                  <Text style={s.dividerText}>or continue with</Text>
+                  <View style={s.dividerLine} />
+                </View>
 
-              {/* ── OAuth divider ── */}
-              <View style={s.dividerRow}>
-                <View style={s.dividerLine} />
-                <Text style={s.dividerText}>or continue with</Text>
-                <View style={s.dividerLine} />
-              </View>
-
-              {/* ── Google Sign-In — all platforms ── */}
-              {googleEnabled ? (
-                <TouchableOpacity
-                  style={[s.oauthBtn, anyLoading && s.disabled]}
-                  onPress={() => { setOauthLoading("google"); promptGoogleAsync(); }}
-                  disabled={anyLoading}
-                  activeOpacity={0.8}
-                >
-                  {oauthLoading === "google" ? (
-                    <ActivityIndicator color={Colors.textPrimary} />
-                  ) : (
-                    <>
-                      <Text style={s.googleG}>G</Text>
+                {/* ── Google Sign-In ── */}
+                {googleEnabled ? (
+                  <TouchableOpacity
+                    style={[s.oauthBtn, anyLoading && s.disabled]}
+                    onPress={() => { setOauthLoading("google"); promptGoogleAsync(); }}
+                    disabled={anyLoading}
+                    activeOpacity={0.8}
+                  >
+                    {oauthLoading === "google" ? (
+                      <ActivityIndicator color={Colors.textPrimary} />
+                    ) : (
+                      <>
+                        <Text style={s.googleG}>G</Text>
+                        <Text style={s.oauthBtnText}>Continue with Google</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : __DEV__ ? (
+                  <TouchableOpacity style={[s.oauthBtn, s.disabled]} disabled activeOpacity={1}>
+                    <Text style={s.googleG}>G</Text>
+                    <View>
                       <Text style={s.oauthBtnText}>Continue with Google</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              ) : __DEV__ ? (
-                <TouchableOpacity style={[s.oauthBtn, s.disabled]} disabled activeOpacity={1}>
-                  <Text style={s.googleG}>G</Text>
-                  <View>
-                    <Text style={s.oauthBtnText}>Continue with Google</Text>
-                    <Text style={{ fontSize: 11, color: Colors.textMuted, textAlign: 'center' }}>Configure .env to enable</Text>
-                  </View>
-                </TouchableOpacity>
-              ) : null}
+                      <Text style={{ fontSize: 11, color: Colors.textMuted, textAlign: "center" }}>
+                        Configure .env to enable
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ) : null}
 
-              {/* ── Apple Sign-In — iOS only ── */}
-              {Platform.OS === "ios" && (
-                <AppleAuthentication.AppleAuthenticationButton
-                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                  cornerRadius={12}
-                  style={s.appleBtn}
-                  onPress={async () => {
-                    try {
-                      const credential = await AppleAuthentication.signInAsync({
-                        requestedScopes: [
-                          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                        ],
-                      });
-                      await handleAppleLogin(credential.identityToken);
-                    } catch (error: any) {
-                      if (error.code !== "ERR_REQUEST_CANCELED") {
-                        Alert.alert("Apple Sign-In Failed", error.message ?? "Try again.");
+                {/* ── Apple Sign-In — iOS only ── */}
+                {Platform.OS === "ios" && (
+                  <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius={12}
+                    style={s.appleBtn}
+                    onPress={async () => {
+                      try {
+                        const credential = await AppleAuthentication.signInAsync({
+                          requestedScopes: [
+                            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                          ],
+                        });
+                        await handleAppleLogin(credential.identityToken);
+                      } catch (error: any) {
+                        if (error.code !== "ERR_REQUEST_CANCELED") {
+                          Alert.alert("Apple Sign-In Failed", error.message ?? "Try again.");
+                        }
                       }
-                    }
-                  }}
-                />
-              )}
+                    }}
+                  />
+                )}
 
-              {/* ── Register link ── */}
-              <View style={s.registerRow}>
-                <Text style={s.registerText}>Don't have an account? </Text>
-                <TouchableOpacity onPress={() => router.push("/auth/forgot")}>
-                  <Text style={s.registerLink}>Contact your admin</Text>
-                </TouchableOpacity>
+                {/* ── Register link ── */}
+                <View style={s.registerRow}>
+                  <Text style={s.registerText}>Don't have an account? </Text>
+                  <TouchableOpacity onPress={() => router.push("/auth/forgot")}>
+                    <Text style={s.registerLink}>Contact your admin</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </ScrollView>
@@ -422,91 +474,164 @@ export default function LoginScreen() {
 }
 
 const s = StyleSheet.create({
-  safeArea:      { flex: 1, backgroundColor: Colors.background },
-  scrollContent: { padding: 20, paddingBottom: 40, flexGrow: 1, justifyContent: 'center' },
-  formContainer: { width: '100%', maxWidth: 420, alignSelf: 'center' },
+  safeArea: { flex: 1, backgroundColor: Colors.background },
+  kvFill:   { flex: 1 },
+
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+
+  // Form wrapper
+  formOuter: {
+    width: "100%",
+    maxWidth: 420,
+    alignSelf: "center",
+  },
+  formOuterIOS: {
+    borderRadius: 28,
+    overflow: "hidden",
+    borderWidth: 0.5,
+    borderColor: "rgba(255,255,255,0.5)",
+  },
+
+  formContainer: { padding: IS_IOS ? 24 : 0 },
 
   // Logo
-  logo:      { width: 300, height: 160, borderRadius: 24, alignSelf: 'center', marginBottom: 24 },
-  logoSmall: { width: 220, height: 120, borderRadius: 16 },
+  logo:      { width: 280, height: 140, borderRadius: 20, alignSelf: "center", marginBottom: 20 },
+  logoSmall: { width: 200, height: 100, borderRadius: 14 },
 
-  // Heading
+  // Headings
   heading: {
-    fontSize: 26, fontWeight: '800', textAlign: 'center',
-    color: Colors.textPrimary, marginBottom: 6,
+    fontSize: 26,
+    fontWeight: "800",
+    textAlign: "center",
+    color: Colors.textPrimary,
+    marginBottom: 6,
   },
   subtext: {
-    fontSize: 14, color: Colors.textSecondary,
-    textAlign: 'center', marginBottom: 28,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginBottom: 28,
+  },
+
+  // Labels
+  label: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: Colors.textSecondary,
+    marginBottom: 6,
+    marginTop: 4,
   },
 
   // Inputs
-  label: {
-    fontSize: 13, fontWeight: '600',
-    color: Colors.textSecondary, marginBottom: 6,
-  },
   input: {
     backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.border,
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 13,
-    fontSize: 15, color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: Colors.textPrimary,
     marginBottom: 16,
+  },
+  inputIOS: {
+    backgroundColor: "rgba(255,255,255,0.75)",
+    borderColor: "rgba(255,255,255,0.6)",
   },
   inputError: { borderColor: Colors.error, borderWidth: 1.5 },
+
   passwordContainer: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.border,
-    borderRadius: 10, paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 14,
     marginBottom: 16,
   },
-  passwordInput: { flex: 1, paddingVertical: 13, fontSize: 15, color: Colors.textPrimary },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: Colors.textPrimary,
+  },
 
-  // Remember + forgot row
+  // Remember + forgot
   rememberRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
   },
-  rememberCheck: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rememberCheck: { flexDirection: "row", alignItems: "center", gap: 6 },
   rememberLabel: { fontSize: 14, color: Colors.textSecondary },
-  forgotText:    { fontSize: 14, color: Colors.accent, fontWeight: '600' },
+  forgotText:    { fontSize: 14, color: Colors.accent, fontWeight: "600" },
 
-  // Buttons
-  primaryBtn: {
-    backgroundColor: Colors.accent, borderRadius: 12,
-    paddingVertical: 14, alignItems: 'center',
+  // Primary CTA
+  primaryBtnWrapper: {
+    borderRadius: 14,
+    overflow: "hidden",
     marginBottom: 12,
+    shadowColor: Colors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  primaryBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  primaryBtnGradient: {
+    paddingVertical: 15,
+    alignItems: "center",
+    borderRadius: 14,
+  },
+  primaryBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 
   secondaryBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    borderWidth: 1.5, borderColor: Colors.accent,
-    borderRadius: 12, paddingVertical: 13, marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
+    borderRadius: 12,
+    paddingVertical: 13,
+    marginBottom: 12,
+    backgroundColor: "transparent",
   },
-  secondaryBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '600' },
+  secondaryBtnText: { color: Colors.accent, fontSize: 15, fontWeight: "600" },
 
   disabled: { opacity: 0.5 },
 
-  // OAuth divider
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  // Divider
+  dividerRow:  { flexDirection: "row", alignItems: "center", marginBottom: 16 },
   dividerLine: { flex: 1, height: 1, backgroundColor: Colors.border },
   dividerText: { marginHorizontal: 12, fontSize: 13, color: Colors.textMuted },
 
   // OAuth buttons
   oauthBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
-    borderWidth: 1, borderColor: Colors.border, borderRadius: 12,
-    paddingVertical: 13, marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 12,
+    paddingVertical: 13,
+    marginBottom: 12,
     backgroundColor: Colors.surface,
   },
-  googleG:     { fontSize: 16, fontWeight: '800', color: Colors.accent, width: 20, textAlign: 'center' },
-  oauthBtnText:{ fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  googleG:      { fontSize: 16, fontWeight: "800", color: Colors.accent, width: 20, textAlign: "center" },
+  oauthBtnText: { fontSize: 15, fontWeight: "600", color: Colors.textPrimary },
 
-  appleBtn: { width: '100%', height: 50, marginBottom: 12 },
+  appleBtn: { width: "100%", height: 50, marginBottom: 12 },
 
   // Register
-  registerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
+  registerRow: { flexDirection: "row", justifyContent: "center", marginTop: 16 },
   registerText: { fontSize: 14, color: Colors.textSecondary },
-  registerLink: { fontSize: 14, color: Colors.accent, fontWeight: '600' },
+  registerLink: { fontSize: 14, color: Colors.accent, fontWeight: "600" },
 });

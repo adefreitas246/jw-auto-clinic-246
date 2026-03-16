@@ -1,4 +1,4 @@
-﻿// app/(customer)/subscriptions.tsx
+// app/(customer)/subscriptions.tsx
 // Subscription plans list + customer subscription management.
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -14,9 +14,13 @@ import {
   StyleSheet,
   Text,
   View,
+  ActivityIndicator,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 type Plan = {
   _id:         string;
@@ -113,7 +117,7 @@ export default function SubscriptionsScreen() {
   if (loading) {
     return (
       <SafeAreaView style={st.center}>
-        <Text style={st.muted}>Loading plans…</Text>
+        <ActivityIndicator color={Colors.accent} size="large" />
       </SafeAreaView>
     );
   }
@@ -125,7 +129,12 @@ export default function SubscriptionsScreen() {
     <SafeAreaView style={st.safe}>
       {/* Header */}
       <View style={st.header}>
-        <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={st.backBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.accent + '20', borderless: true }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={st.headerTitle}>Subscription Plans</Text>
@@ -139,7 +148,7 @@ export default function SubscriptionsScreen() {
       >
         {/* Current subscription card */}
         {subscription && (
-          <View style={st.currentCard}>
+          <Animated.View entering={FadeIn.duration(300)} style={st.currentCard}>
             <View style={st.currentHeader}>
               <View>
                 <Text style={st.currentPlan}>{subscription.planId?.name}</Text>
@@ -184,10 +193,11 @@ export default function SubscriptionsScreen() {
               style={[st.cancelBtn, cancelling && { opacity: 0.6 }]}
               onPress={handleCancel}
               disabled={cancelling}
+              android_ripple={{ color: Colors.error + '20', borderless: false }}
             >
               <Text style={st.cancelBtnText}>{cancelling ? 'Cancelling…' : 'Cancel Subscription'}</Text>
             </Pressable>
-          </View>
+          </Animated.View>
         )}
 
         {/* Plans grid */}
@@ -198,10 +208,14 @@ export default function SubscriptionsScreen() {
         {plans.length === 0 ? (
           <Text style={st.empty}>No plans available yet.</Text>
         ) : (
-          plans.map(plan => {
+          plans.map((plan, idx) => {
             const isActive = subscription?.planId?._id === plan._id;
             return (
-              <View key={plan._id} style={[st.planCard, plan.highlighted && st.planCardHighlight, isActive && st.planCardActive]}>
+              <Animated.View
+                key={plan._id}
+                entering={FadeInDown.delay(idx * 60).duration(300)}
+                style={[st.planCard, plan.highlighted && st.planCardHighlight, isActive && st.planCardActive]}
+              >
                 {plan.highlighted && (
                   <View style={st.popularBadge}>
                     <Text style={st.popularBadgeText}>⭐ Most Popular</Text>
@@ -213,7 +227,7 @@ export default function SubscriptionsScreen() {
                   </View>
                 )}
                 <View style={st.planTop}>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={st.planName}>{plan.name}</Text>
                     {plan.description ? <Text style={st.planDesc}>{plan.description}</Text> : null}
                   </View>
@@ -245,16 +259,17 @@ export default function SubscriptionsScreen() {
                   style={[st.subscribeBtn, isActive ? st.subscribeBtnDisabled : {}]}
                   onPress={() => !isActive && setConfirmPlan(plan)}
                   disabled={isActive}
+                  android_ripple={{ color: Colors.white + '30', borderless: false }}
                 >
                   <Text style={[st.subscribeBtnText, isActive ? { color: Colors.textMuted } : {}]}>
                     {isActive ? 'Current Plan' : subscription ? 'Switch to this Plan' : 'Subscribe'}
                   </Text>
                 </Pressable>
-              </View>
+              </Animated.View>
             );
           })
         )}
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Confirm modal */}
@@ -262,6 +277,7 @@ export default function SubscriptionsScreen() {
         <Pressable style={st.backdrop} onPress={() => setConfirmPlan(null)} />
         {confirmPlan && (
           <View style={st.sheet}>
+            <View style={st.sheetHandle} />
             <Text style={st.sheetTitle}>
               {subscription ? 'Switch Plan' : 'Subscribe'} — {confirmPlan.name}
             </Text>
@@ -272,13 +288,18 @@ export default function SubscriptionsScreen() {
               {'\n\n'}Payment is handled via WiPay / BIMPay. Contact the business to complete your payment.
             </Text>
             <View style={st.sheetBtns}>
-              <Pressable style={st.sheetCancel} onPress={() => setConfirmPlan(null)}>
+              <Pressable
+                style={st.sheetCancel}
+                onPress={() => setConfirmPlan(null)}
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
+              >
                 <Text style={{ color: Colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
               </Pressable>
               <Pressable
                 style={[st.sheetConfirm, subscribing && { opacity: 0.6 }]}
                 onPress={() => handleSubscribe(confirmPlan)}
                 disabled={subscribing}
+                android_ripple={{ color: Colors.white + '30', borderless: false }}
               >
                 <Text style={{ color: Colors.white, fontWeight: '700' }}>
                   {subscribing ? 'Processing…' : 'Confirm'}
@@ -295,16 +316,15 @@ export default function SubscriptionsScreen() {
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: 16 },
-  muted:  { color: Colors.textMuted, fontSize: 14 },
+  scroll: { padding: SCREEN_PADDING },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  currentCard:    { backgroundColor: Colors.accentMuted, borderRadius: 16, padding: 18, marginBottom: 20, borderWidth: 1, borderColor: Colors.accentLight },
-  currentHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+  currentCard:    { backgroundColor: Colors.accentMuted, borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: Colors.accentLight },
+  currentHeader:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
   currentPlan:    { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
   currentStatus:  { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   statusBadge:    { backgroundColor: Colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
@@ -314,38 +334,39 @@ const st = StyleSheet.create({
   currentStatVal: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
   currentStatLbl: { fontSize: 10, color: Colors.textSecondary, marginTop: 2 },
   statDiv:        { width: 1, backgroundColor: Colors.accentLight },
-  renewWarning:   { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.warningBg, borderRadius: 8, padding: 8, marginBottom: 10 },
-  renewWarningText: { fontSize: 12, color: Colors.warningText },
-  cancelBtn:      { alignItems: 'center', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: Colors.errorBg },
+  renewWarning:   { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.warningBg, borderRadius: 8, padding: 8, marginBottom: 12 },
+  renewWarningText: { fontSize: 12, color: Colors.warningText, flex: 1 },
+  cancelBtn:      { alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: Colors.errorBg, overflow: 'hidden' },
   cancelBtnText:  { color: Colors.error, fontWeight: '600', fontSize: 13 },
 
   sectionTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
 
-  planCard:          { backgroundColor: Colors.white, borderRadius: 16, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: Colors.border, shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
+  planCard:          { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: Colors.border },
   planCardHighlight: { borderColor: Colors.accentLight, borderWidth: 2 },
   planCardActive:    { borderColor: Colors.success, borderWidth: 2 },
   popularBadge:      { position: 'absolute', top: -1, right: 14, backgroundColor: Colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 8, borderBottomRightRadius: 8 },
   popularBadgeText:  { color: Colors.white, fontSize: 10, fontWeight: '700' },
   planTop:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
   planName:      { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  planDesc:      { fontSize: 12, color: Colors.textSecondary, marginTop: 2, maxWidth: 180 },
+  planDesc:      { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
   priceBlock:    { alignItems: 'flex-end' },
   planPrice:     { fontSize: 22, fontWeight: '900', color: Colors.accent },
   planInterval:  { fontSize: 11, color: Colors.textMuted },
-  features:      { marginBottom: 10 },
+  features:      { marginBottom: 12 },
   featureRow:    { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   featureText:   { fontSize: 13, color: Colors.textSecondary },
-  quotaRow:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
+  quotaRow:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
   quotaText:     { fontSize: 12, color: Colors.textSecondary },
-  subscribeBtn:      { backgroundColor: Colors.accent, borderRadius: 10, padding: 13, alignItems: 'center' },
+  subscribeBtn:         { backgroundColor: Colors.accent, borderRadius: 10, padding: 14, alignItems: 'center', overflow: 'hidden' },
   subscribeBtnDisabled: { backgroundColor: Colors.surfaceAlt },
-  subscribeBtnText:  { color: Colors.white, fontWeight: '700', fontSize: 14 },
+  subscribeBtnText:     { color: Colors.white, fontWeight: '700', fontSize: 14 },
 
-  backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet:      { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40 },
-  sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
-  sheetBody:  { fontSize: 14, color: Colors.textSecondary, lineHeight: 22, marginBottom: 20 },
-  sheetBtns:  { flexDirection: 'row', gap: 12 },
-  sheetCancel:  { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center' },
-  sheetConfirm: { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center' },
+  backdrop:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  sheet:       { backgroundColor: Colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: SCREEN_PADDING, paddingBottom: 40 },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border, alignSelf: 'center', marginBottom: 16 },
+  sheetTitle:  { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
+  sheetBody:   { fontSize: 14, color: Colors.textSecondary, lineHeight: 22, marginBottom: 20 },
+  sheetBtns:   { flexDirection: 'row', gap: 12 },
+  sheetCancel:  { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 10, alignItems: 'center', overflow: 'hidden' },
+  sheetConfirm: { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: 10, alignItems: 'center', overflow: 'hidden' },
 });

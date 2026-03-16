@@ -1,4 +1,4 @@
-﻿// app/(tabs)/marketing/sms.tsx
+// app/(tabs)/marketing/sms.tsx
 // SMS Reminder Automation — scaffold with setup guide and manual trigger.
 // TODO: Wire up a real SMS provider (Twilio / local gateway) in:
 //       backend/routes/marketing.js  →  POST /sms/send-reminders
@@ -9,7 +9,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Alert,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +18,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 type SetupStep = {
   num:   string;
@@ -77,7 +78,7 @@ export default function SmsScreen() {
               const res = await axios.post('/api/marketing/sms/send-reminders', {}, { headers });
               setLastResult({ sent: res.data.sent, total: res.data.total });
               Alert.alert(
-                '✅ Done',
+                'Done',
                 `${res.data.sent} of ${res.data.total} reminders processed.\n` +
                 `(SMS delivery requires provider setup — see scaffold steps.)`
               );
@@ -94,19 +95,25 @@ export default function SmsScreen() {
 
   return (
     <SafeAreaView style={sm.safe}>
+      {/* Header */}
       <View style={sm.header}>
-        <Pressable onPress={() => router.back()} style={sm.backBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={sm.backBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.border, radius: 20, borderless: true }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={sm.headerTitle}>SMS Reminders</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={sm.scroll} showsVerticalScrollIndicator={false}>
         {/* Status banner */}
         <View style={sm.statusBanner}>
           <View style={sm.statusIcon}>
-            <Ionicons name="construct-outline" size={22} color={Colors.warning} />
+            <Ionicons name="construct-outline" size={20} color={Colors.warning} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={sm.statusTitle}>Setup Required</Text>
@@ -121,10 +128,10 @@ export default function SmsScreen() {
           <Text style={sm.sectionTitle}>How It Works</Text>
           <View style={sm.flowCard}>
             {[
-              { icon: 'alarm-outline',       label: 'Cron fires daily at 09:00' },
-              { icon: 'search-outline',       label: 'Finds bookings for tomorrow' },
-              { icon: 'chatbox-outline',      label: 'Sends SMS to each customer' },
-              { icon: 'checkmark-done-outline', label: 'Marks reminderScheduled = true' },
+              { icon: 'alarm-outline',          label: 'Cron fires daily at 09:00' },
+              { icon: 'search-outline',          label: 'Finds bookings for tomorrow' },
+              { icon: 'chatbox-outline',         label: 'Sends SMS to each customer' },
+              { icon: 'checkmark-done-outline',  label: 'Marks reminderScheduled = true' },
             ].map((step, i, arr) => (
               <View key={step.label} style={sm.flowStep}>
                 <View style={sm.flowDot}>
@@ -224,6 +231,7 @@ export default function SmsScreen() {
             style={[sm.triggerBtn, triggering && { opacity: 0.6 }]}
             onPress={handleTrigger}
             disabled={triggering}
+            android_ripple={{ color: Colors.accentDark }}
           >
             {triggering
               ? <ActivityIndicator color={Colors.white} size="small" />
@@ -242,52 +250,177 @@ export default function SmsScreen() {
 }
 
 const sm = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
-  scroll: { padding: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.background },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    ...cardShadow,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    backgroundColor: Colors.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  statusBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.warningBg, borderRadius: 14, padding: 14, marginBottom: 20, borderWidth: 1, borderColor: Colors.warningBg },
-  statusIcon:   { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.warningBg, justifyContent: 'center', alignItems: 'center' },
-  statusTitle:  { fontSize: 14, fontWeight: '700', color: Colors.warningText, marginBottom: 2 },
-  statusDesc:   { fontSize: 12, color: Colors.warningText, lineHeight: 18 },
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Colors.warningBg,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.warningBg,
+  },
+  statusIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.warning + '22',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusTitle: { fontSize: 14, fontWeight: '700', color: Colors.warningText, marginBottom: 2 },
+  statusDesc:  { fontSize: 12, color: Colors.warningText, lineHeight: 18 },
 
   section:      { marginBottom: 16 },
-  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 10 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
 
-  flowCard: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: Colors.border },
-  flowStep: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  flowDot:  { width: 32, height: 32, borderRadius: 16, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
+  flowCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
+  },
+  flowStep:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  flowDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.accentMuted,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   flowLabel: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', flex: 1 },
-  flowLine: { position: 'absolute', left: 15, top: 32, width: 2, height: 20, backgroundColor: Colors.border },
+  flowLine:  { position: 'absolute', left: 17, top: 36, width: 2, height: 20, backgroundColor: Colors.border },
 
-  stepCard:    { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
-  stepNum:     { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', borderWidth: 1.5, borderColor: Colors.accent },
+  stepCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
+  },
+  stepNum: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.accentMuted,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
+  },
   stepNumDone: { backgroundColor: Colors.success, borderColor: Colors.success },
   stepNumText: { fontSize: 13, fontWeight: '800', color: Colors.accent },
   stepTitle:   { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   stepDesc:    { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
 
-  providerCard: { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: Colors.border },
+  providerCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
+  },
   providerRow:  { flexDirection: 'row', gap: 12 },
-  providerIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  providerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   providerEmoji: { fontSize: 20 },
-  providerName: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  providerDesc: { fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginBottom: 8 },
-  envChips:    { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  envChip:     { backgroundColor: Colors.primaryDark, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 4 },
-  envChipText: { fontSize: 9, fontWeight: '700', color: Colors.accentMuted, fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' },
+  providerName:  { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  providerDesc:  { fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginBottom: 8 },
+  envChips:   { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  envChip:    {
+    backgroundColor: Colors.primaryDark,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  envChipText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: Colors.accentMuted,
+    fontFamily: IS_IOS ? 'Courier' : 'monospace',
+  },
 
-  codeRef:     { flexDirection: 'row', gap: 10, backgroundColor: Colors.accentMuted, borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: Colors.accentLight, alignItems: 'flex-start' },
+  codeRef: {
+    flexDirection: 'row',
+    gap: 10,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: Colors.accentLight,
+    alignItems: 'flex-start',
+  },
   codeRefText: { fontSize: 12, color: Colors.textSecondary, lineHeight: 20, flex: 1 },
-  codeRefFile: { fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', color: Colors.accent, fontWeight: '700' },
+  codeRefFile: {
+    fontFamily: IS_IOS ? 'Courier' : 'monospace',
+    color: Colors.accent,
+    fontWeight: '700',
+  },
 
-  triggerCard:  { backgroundColor: Colors.white, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: Colors.border, marginBottom: 10 },
-  triggerDesc:  { fontSize: 13, color: Colors.textSecondary, marginBottom: 12 },
-  lastResult:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 },
+  triggerCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 10,
+    ...cardShadow,
+  },
+  triggerDesc:    { fontSize: 13, color: Colors.textSecondary, marginBottom: 12 },
+  lastResult:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   lastResultText: { fontSize: 12, color: Colors.success, fontWeight: '600' },
-  triggerBtn:   { backgroundColor: Colors.accent, borderRadius: 10, padding: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  triggerBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: 12,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    overflow: 'hidden',
+    ...cardShadow,
+  },
   triggerBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
 });

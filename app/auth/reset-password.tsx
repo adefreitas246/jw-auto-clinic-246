@@ -1,40 +1,44 @@
-﻿// reset-password.tsx
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+// reset-password.tsx
+import { Colors } from '@/constants/Colors';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { IS_IOS } from '@/utils/platform';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   TouchableWithoutFeedback,
   View,
-} from "react-native";
-import * as Animatable from "react-native-animatable";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Colors } from '@/constants/Colors';
+} from 'react-native';
+import * as Animatable from 'react-native-animatable';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const API =
-  process.env.EXPO_PUBLIC_API_URL || "https://jw-auto-clinic-246.onrender.com";
+  process.env.EXPO_PUBLIC_API_URL || 'https://jw-auto-clinic-246.onrender.com';
 
 export default function ResetPasswordScreen() {
   const rawParams = useLocalSearchParams();
   const token = Array.isArray(rawParams.token)
     ? rawParams.token[0]
-    : typeof rawParams.token === "string"
+    : typeof rawParams.token === 'string'
       ? rawParams.token
-      : "";
+      : '';
 
   const router = useRouter();
 
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState(false);
   const [confirmError, setConfirmError] = useState(false);
@@ -44,7 +48,7 @@ export default function ResetPasswordScreen() {
   const confirmRef = useRef<Animatable.View>(null);
 
   const [passwordStrength, setPasswordStrength] = useState<
-    "Weak" | "Medium" | "Strong" | null
+    'Weak' | 'Medium' | 'Strong' | null
   >(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -52,8 +56,8 @@ export default function ResetPasswordScreen() {
 
   useEffect(() => {
     if (!token) {
-      alert("Invalid Link, Reset token is missing.");
-      router.replace("/auth/forgot");
+      alert('Invalid Link, Reset token is missing.');
+      router.replace('/auth/forgot');
     }
   }, [token]);
 
@@ -66,14 +70,14 @@ export default function ResetPasswordScreen() {
   }, [password, confirm]);
 
   const triggerHaptic = () => {
-    if (Platform.OS !== "web") {
+    if (IS_IOS) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
   const getPasswordStrength = (
     pwd: string
-  ): "Weak" | "Medium" | "Strong" | null => {
+  ): 'Weak' | 'Medium' | 'Strong' | null => {
     if (!pwd) return null;
     const hasUpper = /[A-Z]/.test(pwd);
     const hasLower = /[a-z]/.test(pwd);
@@ -85,25 +89,25 @@ export default function ResetPasswordScreen() {
       Boolean
     ).length;
 
-    if (score <= 2) return "Weak";
-    if (score === 3 || score === 4) return "Medium";
-    return "Strong";
+    if (score <= 2) return 'Weak';
+    if (score === 3 || score === 4) return 'Medium';
+    return 'Strong';
   };
 
   useEffect(() => {
     setPasswordStrength(getPasswordStrength(password));
   }, [password]);
 
-  const strengthColor = useMemo(() => {
+  const strengthMeta = useMemo(() => {
     switch (passwordStrength) {
-      case "Weak":
-        return "red";
-      case "Medium":
-        return Colors.warning;
-      case "Strong":
-        return "green";
+      case 'Weak':
+        return { color: Colors.error, bgColor: Colors.errorBg, width: '33%' as const };
+      case 'Medium':
+        return { color: Colors.warning, bgColor: Colors.warningBg, width: '66%' as const };
+      case 'Strong':
+        return { color: Colors.success, bgColor: Colors.successBg, width: '100%' as const };
       default:
-        return Colors.border;
+        return { color: Colors.border, bgColor: Colors.surfaceAlt, width: '0%' as const };
     }
   }, [passwordStrength]);
 
@@ -126,7 +130,7 @@ export default function ResetPasswordScreen() {
 
     if (hasError) {
       triggerHaptic();
-      alert("Missing Fields, Both password fields are required.");
+      alert('Missing Fields, Both password fields are required.');
       return;
     }
 
@@ -137,7 +141,7 @@ export default function ResetPasswordScreen() {
       setPasswordError(true);
       triggerHaptic();
       alert(
-        "Weak Password, Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+        'Weak Password, Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
       );
       return;
     }
@@ -154,121 +158,159 @@ export default function ResetPasswordScreen() {
     try {
       setLoading(true);
       const res = await fetch(`${API}/api/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password }),
       });
 
       const data = await res.json();
       if (res.ok) {
+        if (IS_IOS) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
         setShowSuccess(true);
         setTimeout(() => {
-          router.replace("/auth/login");
+          router.replace('/auth/login');
         }, 2000);
       } else {
-        alert(data?.error || "Reset failed.");
+        alert(data?.error || 'Reset failed.');
       }
     } catch (err) {
-      alert("Error, Something went wrong. Please try again.");
+      alert('Error, Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={s.safe}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        behavior={IS_IOS ? 'padding' : 'height'}
+        keyboardVerticalOffset={IS_IOS ? 0 : 20}
       >
         <TouchableWithoutFeedback
-          onPress={Platform.OS !== "web" ? Keyboard.dismiss : undefined}
+          onPress={Platform.OS !== 'web' ? Keyboard.dismiss : undefined}
         >
           <ScrollView
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={s.scrollContent}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            <Animatable.View style={styles.container}>
+            <Animated.View entering={FadeIn.duration(300)} style={s.container}>
               {showSuccess ? (
                 <Animatable.View
                   animation="zoomIn"
                   duration={700}
-                  style={styles.successBox}
+                  style={s.successBox}
                 >
                   <Image
-                    source={require("@/assets/images/success.png")}
-                    style={styles.illustration}
+                    source={require('@/assets/images/success.png')}
+                    style={s.illustration}
                   />
-                  <Text style={styles.successText}>
-                    Password Reset Successfully
-                  </Text>
+                  <View style={s.successBadge}>
+                    <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                    <Text style={s.successText}>Password Reset Successfully</Text>
+                  </View>
+                  <Text style={s.successSub}>Redirecting you to login…</Text>
                 </Animatable.View>
               ) : (
                 <>
                   <Image
-                    source={require("@/assets/images/reset-password-illustration.png")}
-                    style={styles.illustration}
+                    source={require('@/assets/images/reset-password-illustration.png')}
+                    style={s.illustration}
                   />
 
+                  <Text style={s.heading}>Reset Your Password</Text>
+                  <Text style={s.subtext}>
+                    Choose a strong password with uppercase, lowercase, a number, and a special character.
+                  </Text>
+
+                  {/* New password field */}
+                  <Text style={s.label}>New Password</Text>
                   <Animatable.View ref={passwordRef}>
-                    <View style={styles.passwordRow}>
+                    <View style={[s.inputWrapper, passwordError && s.inputWrapperError]}>
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={18}
+                        color={passwordError ? Colors.error : Colors.textMuted}
+                        style={s.inputIcon}
+                      />
                       <TextInput
                         placeholder="New Password"
-                        placeholderTextColor={Colors.textSecondary}
+                        placeholderTextColor={Colors.textMuted}
                         secureTextEntry={!showPassword}
-                        style={[styles.input, passwordError && styles.errorInput]}
+                        style={s.input}
                         value={password}
                         onChangeText={setPassword}
                       />
-                      <TouchableOpacity
+                      <Pressable
                         onPress={() => setShowPassword((p) => !p)}
-                        style={styles.eyeIcon}
+                        style={s.eyeBtn}
                         accessibilityLabel="Toggle password visibility"
+                        hitSlop={8}
                       >
                         <Ionicons
-                          name={showPassword ? "eye-outline" : "eye"}
-                          size={22}
-                          color={Colors.textSecondary}
+                          name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                          size={20}
+                          color={Colors.textMuted}
                         />
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                   </Animatable.View>
 
-                  <View style={styles.tooltip}>
-                    <Text style={styles.tooltipText}>
-                      Include at least 8 characters, 1 uppercase, 1 lowercase, 1
-                      number, and 1 special character
-                    </Text>
-                  </View>
-
+                  {/* Strength meter */}
                   {passwordStrength && (
-                    <View style={styles.meterContainer}>
-                      <View
-                        style={[
-                          styles.meterBar,
-                          { backgroundColor: strengthColor },
-                        ]}
-                      />
-                      <Text style={[styles.meterLabel, { color: strengthColor }]}>
+                    <View style={s.meterContainer}>
+                      <View style={s.meterTrack}>
+                        <View
+                          style={[
+                            s.meterFill,
+                            {
+                              width: strengthMeta.width,
+                              backgroundColor: strengthMeta.color,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={[s.meterLabel, { color: strengthMeta.color }]}>
                         {passwordStrength} Password
                       </Text>
                     </View>
                   )}
 
+                  <Text style={s.hintText}>
+                    Min 8 characters · uppercase · lowercase · number · special character
+                  </Text>
+
+                  {/* Confirm password field */}
+                  <Text style={[s.label, { marginTop: 16 }]}>Confirm Password</Text>
                   <Animatable.View ref={confirmRef}>
-                    <View style={styles.passwordRow}>
+                    <View
+                      style={[
+                        s.inputWrapper,
+                        confirmError && s.inputWrapperError,
+                        confirmMatch === false && s.inputWrapperError,
+                        confirmMatch === true && s.inputWrapperSuccess,
+                      ]}
+                    >
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={18}
+                        color={
+                          confirmMatch === true
+                            ? Colors.success
+                            : confirmMatch === false
+                            ? Colors.error
+                            : Colors.textMuted
+                        }
+                        style={s.inputIcon}
+                      />
                       <TextInput
                         placeholder="Confirm New Password"
-                        placeholderTextColor={Colors.textSecondary}
+                        placeholderTextColor={Colors.textMuted}
                         secureTextEntry={!showConfirm}
-                        style={[
-                          styles.input,
-                          confirmError && styles.errorInput,
-                          confirmMatch === false && { borderColor: "red" },
-                          confirmMatch === true && { borderColor: "green" },
-                        ]}
+                        style={s.input}
                         value={confirm}
                         onChangeText={(text) => {
                           setConfirm(text);
@@ -279,38 +321,47 @@ export default function ResetPasswordScreen() {
                           }
                         }}
                       />
-                      <TouchableOpacity
+                      <Pressable
                         onPress={() => setShowConfirm((p) => !p)}
-                        style={styles.eyeIcon}
+                        style={s.eyeBtn}
                         accessibilityLabel="Toggle confirm password visibility"
+                        hitSlop={8}
                       >
                         <Ionicons
-                          name={showConfirm ? "eye-outline" : "eye"}
-                          size={22}
-                          color={Colors.textSecondary}
+                          name={showConfirm ? 'eye-outline' : 'eye-off-outline'}
+                          size={20}
+                          color={Colors.textMuted}
                         />
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                   </Animatable.View>
 
                   {confirmMatch === false && (
-                    <Text style={styles.mismatchText}>
-                      Passwords do not match
-                    </Text>
+                    <Text style={s.mismatchText}>Passwords do not match</Text>
+                  )}
+                  {confirmMatch === true && (
+                    <Text style={s.matchText}>Passwords match</Text>
                   )}
 
-                  <TouchableOpacity
-                    style={[styles.button, loading && { opacity: 0.7 }]}
+                  {/* Submit button */}
+                  <Pressable
+                    style={({ pressed }) => [
+                      s.primaryBtn,
+                      (pressed || loading) && s.primaryBtnPressed,
+                    ]}
                     onPress={handleReset}
                     disabled={loading}
+                    android_ripple={{ color: Colors.accentDark, borderless: false }}
                   >
-                    <Text style={styles.buttonText}>
-                      {loading ? "Resetting..." : "Reset Password"}
-                    </Text>
-                  </TouchableOpacity>
+                    {loading ? (
+                      <ActivityIndicator size="small" color={Colors.white} />
+                    ) : (
+                      <Text style={s.primaryBtnText}>Reset Password</Text>
+                    )}
+                  </Pressable>
                 </>
               )}
-            </Animatable.View>
+            </Animated.View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -318,104 +369,165 @@ export default function ResetPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
+const s = StyleSheet.create({
+  safe: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.background,
   },
   scrollContent: {
-    paddingBottom: 40,
     flexGrow: 1,
-    justifyContent: "center", // Optional: centers the form vertically
+    justifyContent: 'center',
+    paddingBottom: 100,
   },
   container: {
-    padding: 24,
-    flexGrow: 1,
-    backgroundColor: Colors.white,
-    justifyContent: "center",
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 24,
   },
+
   illustration: {
-    width: 520,
-    height: 520,
-    resizeMode: "contain",
-    alignSelf: "center",
-    marginBottom: -50,
+    width: 260,
+    height: 260,
+    resizeMode: 'contain',
+    alignSelf: 'center',
+    marginBottom: 20,
   },
-  input: {
-    backgroundColor: Colors.surfaceAlt,
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 24,
-    fontSize: 16,
-    shadowColor: Colors.black,
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  errorInput: {
-    borderColor: "red",
-    borderWidth: 1,
-  },
-  button: {
-    backgroundColor: Colors.accent,
-    paddingVertical: 14,
-    borderRadius: 10,
-  },
-  buttonText: {
-    color: Colors.white,
-    fontSize: 16,
-    textAlign: "center",
-    fontWeight: "600",
-  },
-  successBox: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 40,
-  },
-  successText: {
-    fontSize: 18,
-    fontWeight: "600",
+
+  heading: {
+    fontSize: 24,
+    fontWeight: '800',
     color: Colors.textPrimary,
-    textAlign: "center",
-    marginTop: 20,
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  meterContainer: {
-    marginTop: 0,
-    marginBottom: 16,
-    alignItems: "flex-start",
+  subtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
   },
-  meterBar: {
-    height: 6,
-    width: "100%",
-    borderRadius: 4,
+
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
     marginBottom: 6,
   },
-  meterLabel: {
-    fontSize: 13,
-    fontWeight: "500",
-  },
-  tooltip: {
+
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
     marginBottom: 8,
-    marginTop: -8,
+    ...cardShadow,
   },
-  tooltipText: {
+  inputWrapperError: {
+    borderColor: Colors.error,
+    borderWidth: 1.5,
+  },
+  inputWrapperSuccess: {
+    borderColor: Colors.success,
+    borderWidth: 1.5,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  eyeBtn: {
+    padding: 4,
+  },
+
+  meterContainer: {
+    marginBottom: 4,
+  },
+  meterTrack: {
+    height: 5,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 4,
+  },
+  meterFill: {
+    height: 5,
+    borderRadius: 3,
+  },
+  meterLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    fontWeight: '600',
   },
-  passwordRow: {
-    position: "relative",
-    justifyContent: "center",
+
+  hintText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginBottom: 4,
   },
-  eyeIcon: {
-    position: "absolute",
-    right: 12,
-    top: 14,
-  },
+
   mismatchText: {
     fontSize: 12,
-    color: "red",
-    marginTop: -12,
-    marginBottom: 12,
-    paddingLeft: 4,
+    color: Colors.error,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  matchText: {
+    fontSize: 12,
+    color: Colors.success,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+
+  primaryBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    minHeight: 52,
+    ...cardShadow,
+  },
+  primaryBtnPressed: {
+    opacity: 0.85,
+    backgroundColor: Colors.accentDark,
+  },
+  primaryBtnText: {
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  successBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 40,
+  },
+  successBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.successBg,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginTop: 16,
+  },
+  successText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.successText,
+  },
+  successSub: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    marginTop: 12,
   },
 });

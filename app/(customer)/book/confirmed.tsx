@@ -1,19 +1,20 @@
-﻿// app/(customer)/book/confirmed.tsx — Step 7: Booking confirmed
+// app/(customer)/book/confirmed.tsx — Step 7: Booking confirmed
 // • Requests push permission if not already granted
 // • Saves Expo push token to backend
 // • Schedules a local reminder 1 hour before the appointment
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
 import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  Animated, Platform, Pressable, StyleSheet, Text, View,
-} from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from 'axios';
 
-import { useBooking } from '@/context/BookingContext';
 import { Colors } from '@/constants/Colors';
+import { useBooking } from '@/context/BookingContext';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // expo-notifications ships DevicePushTokenAutoRegistration.fx.js which runs as
 // a module-load side-effect and crashes in Expo Go SDK 53+.
@@ -48,13 +49,12 @@ async function registerPushToken(): Promise<string | null> {
     }
     if (finalStatus !== 'granted') return null;
 
-    // Android channel
-    if (Platform.OS === 'android') {
+    if (!IS_IOS) {
       await Notifications.setNotificationChannelAsync('bookings', {
-        name:       'Booking Reminders',
-        importance: Notifications.AndroidImportance.HIGH,
+        name:             'Booking Reminders',
+        importance:       Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: Colors.accent,
+        lightColor:       Colors.accent,
       });
     }
 
@@ -71,7 +71,11 @@ async function registerPushToken(): Promise<string | null> {
   }
 }
 
-async function scheduleReminder(appointmentDate: string, appointmentTime: string, serviceLabel: string): Promise<void> {
+async function scheduleReminder(
+  appointmentDate: string,
+  appointmentTime: string,
+  serviceLabel: string,
+): Promise<void> {
   if (IS_EXPO_GO) return;
   const Notifications = getNotifications();
   try {
@@ -81,11 +85,11 @@ async function scheduleReminder(appointmentDate: string, appointmentTime: string
     const reminderMs   = apptMs - 60 * 60 * 1000; // 1 hour before
     const secondsUntil = Math.floor((reminderMs - Date.now()) / 1000);
 
-    if (secondsUntil <= 0) return; // appointment already passed
+    if (secondsUntil <= 0) return;
 
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: '⏰ Appointment in 1 hour',
+        title: 'Appointment in 1 hour',
         body:  `Your ${serviceLabel} is coming up at ${appointmentTime}. Get ready!`,
         sound: 'default',
         data:  { type: 'booking_reminder' },
@@ -103,20 +107,29 @@ export default function BookConfirmedStep() {
   const [notifStatus, setNotifStatus] = useState<'pending' | 'granted' | 'denied'>('pending');
 
   // Scale-in animation for the checkmark
-  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim  = useRef(new Animated.Value(0)).current;
+  const fadeAnim   = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.spring(scaleAnim, { toValue: 1, bounciness: 14, useNativeDriver: true }).start();
+    // Animate check circle in, then fade in content
+    Animated.sequence([
+      Animated.spring(scaleAnim, { toValue: 1, bounciness: 16, useNativeDriver: true }),
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 300, useNativeDriver: true }),
+    ]).start();
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     (async () => {
       const token = await registerPushToken();
       if (token) {
         setNotifStatus('granted');
-        // Save token to backend
         try { await axios.post('/api/bookings/push-token', { token }); } catch {}
-        // Schedule local reminder
         if (draft.appointmentDate && draft.appointmentTime) {
-          await scheduleReminder(draft.appointmentDate, draft.appointmentTime, draft.serviceLabel ?? draft.selectedPackage?.name ?? 'your appointment');
+          await scheduleReminder(
+            draft.appointmentDate,
+            draft.appointmentTime,
+            draft.serviceLabel ?? draft.selectedPackage?.name ?? 'your appointment',
+          );
         }
       } else {
         setNotifStatus('denied');
@@ -131,7 +144,6 @@ export default function BookConfirmedStep() {
 
   const handleViewBookings = () => {
     reset();
-    // Navigate to bookings list (can be built later; fall back to home for now)
     router.replace('/(customer)/home');
   };
 
@@ -139,123 +151,240 @@ export default function BookConfirmedStep() {
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
       <View style={s.container}>
 
-        {/* Animated check */}
-        <Animated.View style={[s.checkCircle, { transform: [{ scale: scaleAnim }] }]}>
-          <Ionicons name="checkmark" size={56} color={Colors.white} />
+        {/* Animated check circle */}
+        <Animated.View style={[s.checkCircleOuter, { transform: [{ scale: scaleAnim }] }]}>
+          <View style={s.checkCircleInner}>
+            <Ionicons name="checkmark" size={52} color={Colors.white} />
+          </View>
         </Animated.View>
 
-        <Text style={s.title}>Booking Confirmed!</Text>
-        <Text style={s.sub}>
-          Your {draft.selectedPackage?.name ?? 'service'} is booked for{'\n'}
-          <Text style={s.highlight}>{draft.appointmentDate}</Text>
-          {' at '}
-          <Text style={s.highlight}>{draft.appointmentTime}</Text>
-        </Text>
-
-        {/* Notification status */}
-        <View style={[s.notifBadge, notifStatus === 'granted' ? s.notifGranted : s.notifDenied]}>
-          <Ionicons
-            name={notifStatus === 'granted' ? 'notifications' : 'notifications-off-outline'}
-            size={16}
-            color={notifStatus === 'granted' ? Colors.success : Colors.textMuted}
-          />
-          <Text style={[s.notifText, notifStatus === 'granted' ? { color: Colors.success } : { color: Colors.textMuted }]}>
-            {notifStatus === 'pending'  && 'Setting up reminder…'}
-            {notifStatus === 'granted'  && 'Reminder set for 1 hour before'}
-            {notifStatus === 'denied'   && 'Enable notifications to get reminders'}
+        <Animated.View style={[s.textBlock, { opacity: fadeAnim }]}>
+          <Text style={s.title}>Booking Confirmed!</Text>
+          <Text style={s.sub}>
+            Your{' '}
+            <Text style={s.highlight}>{draft.selectedPackage?.name ?? 'service'}</Text>
+            {' '}is booked for{'\n'}
+            <Text style={s.highlight}>{draft.appointmentDate}</Text>
+            {'  at  '}
+            <Text style={s.highlight}>{draft.appointmentTime}</Text>
           </Text>
-        </View>
+        </Animated.View>
 
-        {/* Summary pill */}
-        <View style={s.summaryCard}>
-          {[
-            { icon: 'layers',   label: draft.selectedPackage?.name ?? 'Custom service' },
-            { icon: 'location', label: draft.locationType === 'bay' ? (draft.bay?.label ?? 'Bay service') : 'Mobile service' },
-            { icon: 'cash',     label: `${draft.paymentMethod.toUpperCase()} · $${draft.totalPrice.toFixed(2)}` },
-          ].map(row => (
-            <View key={row.label} style={s.summaryRow}>
-              <Ionicons name={row.icon as any} size={16} color={Colors.accent} />
-              <Text style={s.summaryText}>{row.label}</Text>
-            </View>
-          ))}
-        </View>
+        {/* Notification status badge */}
+        <Animated.View style={{ opacity: fadeAnim, width: '100%' }}>
+          <View style={[
+            s.notifBadge,
+            notifStatus === 'granted' ? s.notifBadgeGranted : s.notifBadgeDenied,
+          ]}>
+            <Ionicons
+              name={notifStatus === 'granted' ? 'notifications-outline' : 'notifications-off-outline'}
+              size={15}
+              color={notifStatus === 'granted' ? Colors.successText : Colors.textMuted}
+            />
+            <Text style={[
+              s.notifText,
+              notifStatus === 'granted' ? s.notifTextGranted : s.notifTextDenied,
+            ]}>
+              {notifStatus === 'pending' && 'Setting up reminder…'}
+              {notifStatus === 'granted' && 'Reminder set for 1 hour before'}
+              {notifStatus === 'denied'  && 'Enable notifications to get reminders'}
+            </Text>
+          </View>
 
-        <View style={s.actions}>
-          {bookingId ? (
-            <>
-              <Pressable
-                style={s.qrBtn}
-                onPress={() => {
-                  reset();
-                  router.replace({
-                    pathname: '/(customer)/booking/[id]',
-                    params:   { id: bookingId },
-                  });
-                }}
-              >
-                <Ionicons name="qr-code-outline" size={16} color={Colors.white} />
-                <Text style={[s.trackBtnText, { color: Colors.white }]}>View Check-In QR</Text>
-              </Pressable>
-              <Pressable
-                style={s.trackBtn}
-                onPress={() => {
-                  reset();
-                  router.replace({
-                    pathname: '/(customer)/track/[id]',
-                    params:   { id: bookingId },
-                  });
-                }}
-              >
-                <Ionicons name="navigate" size={16} color={Colors.accent} />
-                <Text style={s.trackBtnText}>Track My Job</Text>
-              </Pressable>
-            </>
-          ) : null}
-          <Pressable style={s.doneBtn} onPress={handleDone}>
-            <Text style={s.doneBtnText}>Back to Home</Text>
-          </Pressable>
-        </View>
+          {/* Summary card */}
+          <View style={s.summaryCard}>
+            {[
+              {
+                icon: 'layers-outline' as const,
+                label: 'Service',
+                value: draft.selectedPackage?.name ?? 'Custom service',
+              },
+              {
+                icon: 'location-outline' as const,
+                label: 'Location',
+                value: draft.locationType === 'bay'
+                  ? (draft.bay?.label ?? 'Bay service')
+                  : 'Mobile service',
+              },
+              {
+                icon: 'cash-outline' as const,
+                label: 'Payment',
+                value: `${draft.paymentMethod.toUpperCase()}  ·  $${draft.totalPrice.toFixed(2)}`,
+              },
+            ].map((row, i, arr) => (
+              <View key={row.label} style={[s.summaryRow, i < arr.length - 1 && s.summaryRowBorder]}>
+                <View style={s.summaryIconWrap}>
+                  <Ionicons name={row.icon} size={16} color={Colors.accent} />
+                </View>
+                <View style={s.summaryTextWrap}>
+                  <Text style={s.summaryRowLabel}>{row.label}</Text>
+                  <Text style={s.summaryRowValue}>{row.value}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Action buttons */}
+          <View style={s.actions}>
+            {bookingId ? (
+              <>
+                <Pressable
+                  style={s.qrBtn}
+                  onPress={() => {
+                    reset();
+                    router.replace({ pathname: '/(customer)/booking/[id]', params: { id: bookingId } });
+                  }}
+                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
+                >
+                  <Ionicons name="qr-code-outline" size={18} color={Colors.white} />
+                  <Text style={s.qrBtnText}>View Check-In QR</Text>
+                </Pressable>
+
+                <Pressable
+                  style={s.trackBtn}
+                  onPress={() => {
+                    reset();
+                    router.replace({ pathname: '/(customer)/track/[id]', params: { id: bookingId } });
+                  }}
+                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
+                >
+                  <Ionicons name="navigate-outline" size={18} color={Colors.accent} />
+                  <Text style={s.trackBtnText}>Track My Job</Text>
+                </Pressable>
+              </>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [s.doneBtn, pressed && { opacity: 0.88 }]}
+              onPress={handleDone}
+              android_ripple={{ color: Colors.accent + '12', borderless: false }}
+            >
+              <Text style={s.doneBtnText}>Back to Home</Text>
+            </Pressable>
+          </View>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: Colors.white },
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
-
-  checkCircle: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
-    marginBottom: 24,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
-      android: { elevation: 10 },
-    }),
+  safe:      { flex: 1, backgroundColor: Colors.surface },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 24,
   },
-  title:     { fontSize: 26, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
-  sub:       { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 18 },
+
+  // Check circle
+  checkCircleOuter: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: Colors.accent + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  checkCircleInner: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...(IS_IOS
+      ? { shadowColor: Colors.accent, shadowOpacity: 0.45, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } }
+      : { elevation: 12 }),
+  },
+
+  textBlock: { alignItems: 'center', marginBottom: 20, width: '100%' },
+  title:     { fontSize: 26, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10, textAlign: 'center' },
+  sub:       { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', lineHeight: 24 },
   highlight: { color: Colors.accent, fontWeight: '700' },
 
-  notifBadge:   { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 99, paddingHorizontal: 14, paddingVertical: 8, marginBottom: 24 },
-  notifGranted: { backgroundColor: Colors.successBg },
-  notifDenied:  { backgroundColor: Colors.background },
-  notifText:    { fontSize: 13, fontWeight: '600' },
+  // Notif badge
+  notifBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  notifBadgeGranted: { backgroundColor: Colors.successBg },
+  notifBadgeDenied:  { backgroundColor: Colors.background },
+  notifText:         { fontSize: 13, fontWeight: '600' },
+  notifTextGranted:  { color: Colors.successText },
+  notifTextDenied:   { color: Colors.textMuted },
 
-  summaryCard: { width: '100%', backgroundColor: Colors.surfaceAlt, borderRadius: 14, padding: 16, gap: 10, marginBottom: 28 },
-  summaryRow:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  summaryText: { fontSize: 14, color: Colors.textPrimary },
+  // Summary card
+  summaryCard: {
+    width: '100%',
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    marginBottom: 24,
+    ...cardShadow,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  summaryRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  summaryIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: borderRadius.sm,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryTextWrap:  { flex: 1 },
+  summaryRowLabel:  { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryRowValue:  { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginTop: 1 },
 
+  // Actions
   actions: { width: '100%', gap: 10 },
   qrBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: 15,
   },
+  qrBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
   trackBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accentMuted, borderRadius: 14, paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.md,
+    paddingVertical: 15,
+    borderWidth: 1,
+    borderColor: Colors.accent + '40',
   },
-  trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
-  doneBtn: { backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15, alignItems: 'center' },
-  doneBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
+  trackBtnText:{ color: Colors.accent, fontSize: 15, fontWeight: '700' },
+  doneBtn: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+  },
+  doneBtnText: { color: Colors.textSecondary, fontSize: 15, fontWeight: '600' },
 });

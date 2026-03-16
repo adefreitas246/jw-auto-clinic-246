@@ -20,11 +20,12 @@ import React, {
   useCallback, useEffect, useRef, useState,
 } from 'react';
 import {
-  ActivityIndicator, Animated, Platform, Pressable,
+  ActivityIndicator, Animated, Pressable,
   StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -381,10 +382,9 @@ const ki = StyleSheet.create({
     borderRadius: 24,
     alignItems: 'center', justifyContent: 'center',
     padding: 24, gap: 10,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } },
-      android: { elevation: 20 },
-    }),
+    ...(IS_IOS
+      ? { shadowColor: Colors.black, shadowOpacity: 0.4, shadowRadius: 20, shadowOffset: { width: 0, height: 8 } }
+      : { elevation: 20 }),
   },
   toastSuccess: { backgroundColor: Colors.success },
   toastError:   { backgroundColor: Colors.error },

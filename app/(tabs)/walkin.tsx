@@ -1,4 +1,4 @@
-﻿// app/(tabs)/walkin.tsx — Self-Service Walk-in Kiosk
+// app/(tabs)/walkin.tsx — Self-Service Walk-in Kiosk
 // Tablet-optimized, 5-screen flow (idle + 4 steps):
 //   0 — Idle/welcome (tap anywhere to start)
 //   1 — Choose service or package
@@ -33,6 +33,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -344,7 +346,7 @@ export default function WalkinKioskScreen() {
       {step === 0 && (
         <Pressable style={{ flex: 1 }} onPress={() => goTo(1)}>
           <LinearGradient
-            colors={[Colors.primaryDark, Colors.accent, Colors.accent]}
+            colors={[Colors.primaryDark, Colors.accent, Colors.accentDark]}
             style={k.idleScreen}
             start={{ x: 0.1, y: 0 }}
             end={{ x: 0.9, y: 1 }}
@@ -405,6 +407,7 @@ export default function WalkinKioskScreen() {
               onPress={() =>
                 step === 1 ? resetToIdle() : goTo((step - 1) as Step)
               }
+              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
               hitSlop={10}
             >
               <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
@@ -413,7 +416,12 @@ export default function WalkinKioskScreen() {
               <StepDots step={step} />
               <Text style={k.headerTitle}>{STEP_LABELS[step]}</Text>
             </View>
-            <Pressable style={k.headerX} onPress={resetToIdle} hitSlop={10}>
+            <Pressable
+              style={k.headerX}
+              onPress={resetToIdle}
+              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
+              hitSlop={10}
+            >
               <Ionicons name="close" size={22} color={Colors.textMuted} />
             </Pressable>
           </View>
@@ -431,11 +439,13 @@ export default function WalkinKioskScreen() {
               )}
               {!catalogBusy && catalog.length === 0 && (
                 <View style={k.centered}>
-                  <Ionicons
-                    name="alert-circle-outline"
-                    size={40}
-                    color={Colors.border}
-                  />
+                  <View style={k.emptyIconWrap}>
+                    <Ionicons
+                      name="alert-circle-outline"
+                      size={32}
+                      color={Colors.textMuted}
+                    />
+                  </View>
                   <Text style={k.emptyText}>
                     No services available. Please see staff.
                   </Text>
@@ -485,14 +495,18 @@ export default function WalkinKioskScreen() {
                   {/* Selected summary + continue */}
                   {selected && (
                     <View style={k.selectedSummary}>
-                      <View style={{ flex: 1 }}>
+                      <View style={k.selectedInfo}>
                         <Text style={k.selectedName}>{selected.name}</Text>
                         <Text style={k.selectedPrice}>
                           ${selected.price.toFixed(2)} ·{" "}
                           {selected.durationMinutes} min
                         </Text>
                       </View>
-                      <Pressable style={k.continueBtn} onPress={() => goTo(2)}>
+                      <Pressable
+                        style={k.continueBtn}
+                        onPress={() => goTo(2)}
+                        android_ripple={{ color: Colors.accentDark }}
+                      >
                         <Text style={k.continueBtnText}>Continue</Text>
                         <Ionicons name="arrow-forward" size={18} color={Colors.white} />
                       </Pressable>
@@ -516,7 +530,9 @@ export default function WalkinKioskScreen() {
                 {/* Selected service recap */}
                 {selected && (
                   <View style={k.serviceRecap}>
-                    <Ionicons name="layers-outline" size={16} color={Colors.accent} />
+                    <View style={k.serviceRecapIcon}>
+                      <Ionicons name="layers-outline" size={16} color={Colors.accent} />
+                    </View>
                     <Text style={k.serviceRecapText}>
                       {selected.name} · ${selected.price.toFixed(2)}
                     </Text>
@@ -560,6 +576,7 @@ export default function WalkinKioskScreen() {
                   ]}
                   onPress={() => (name.trim() ? goTo(3) : null)}
                   disabled={!name.trim()}
+                  android_ripple={{ color: Colors.accentDark }}
                 >
                   <Text style={k.continueBtnText}>Continue</Text>
                   <Ionicons name="arrow-forward" size={18} color={Colors.white} />
@@ -581,7 +598,11 @@ export default function WalkinKioskScreen() {
                 {/* Pay Now */}
                 <Pressable
                   style={[k.payCard, payMethod === "cash" && k.payCardSelected]}
-                  onPress={() => setPayMethod("cash")}
+                  onPress={() => {
+                    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setPayMethod("cash");
+                  }}
+                  android_ripple={{ color: Colors.accentMuted }}
                 >
                   <View
                     style={[
@@ -619,7 +640,11 @@ export default function WalkinKioskScreen() {
                     k.payCard,
                     payMethod === "counter" && k.payCardSelected,
                   ]}
-                  onPress={() => setPayMethod("counter")}
+                  onPress={() => {
+                    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setPayMethod("counter");
+                  }}
+                  android_ripple={{ color: Colors.accentMuted }}
                 >
                   <View
                     style={[
@@ -661,6 +686,7 @@ export default function WalkinKioskScreen() {
                 ]}
                 onPress={handleSubmit}
                 disabled={submitting}
+                android_ripple={{ color: Colors.accentDark }}
               >
                 {submitting ? (
                   <ActivityIndicator color={Colors.white} />
@@ -740,7 +766,11 @@ export default function WalkinKioskScreen() {
             </View>
 
             {/* Done button */}
-            <Pressable style={k.doneBtn} onPress={resetToIdle}>
+            <Pressable
+              style={k.doneBtn}
+              onPress={resetToIdle}
+              android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+            >
               <Text style={k.doneBtnText}>Done</Text>
             </Pressable>
           </SafeAreaView>
@@ -752,17 +782,6 @@ export default function WalkinKioskScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const SHADOW =
-  Platform.select({
-    ios: {
-      shadowColor: Colors.black,
-      shadowOpacity: 0.08,
-      shadowRadius: 10,
-      shadowOffset: { width: 0, height: 3 },
-    },
-    android: { elevation: 3 },
-  }) ?? {};
-
 const k = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered: {
@@ -771,6 +790,11 @@ const k = StyleSheet.create({
     justifyContent: "center",
     gap: 12,
     padding: 32,
+  },
+  emptyIconWrap: {
+    width: 72, height: 72, borderRadius: borderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
   },
   emptyText: { fontSize: 16, color: Colors.textMuted, textAlign: "center" },
 
@@ -786,7 +810,7 @@ const k = StyleSheet.create({
   idleIconWrap: {
     width: 140,
     height: 140,
-    borderRadius: 70,
+    borderRadius: borderRadius.full,
     backgroundColor: "rgba(255,255,255,0.15)",
     alignItems: "center",
     justifyContent: "center",
@@ -809,9 +833,13 @@ const k = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginTop: 40,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: borderRadius.full,
   },
   idleTapText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
     color: "rgba(255,255,255,0.9)",
     letterSpacing: 2,
@@ -821,21 +849,23 @@ const k = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 12,
     backgroundColor: Colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.background,
+    borderBottomColor: Colors.surfaceAlt,
   },
   headerBack: {
     width: 44,
     height: 44,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
   headerX: {
     width: 44,
     height: 44,
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -845,12 +875,12 @@ const k = StyleSheet.create({
   // Step dots
   dots: { flexDirection: "row", gap: 8 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { backgroundColor: Colors.accent, width: 20 },
+  dotActive: { backgroundColor: Colors.accent, width: 20, borderRadius: 4 },
   dotDone: { backgroundColor: Colors.accent, opacity: 0.4 },
   dotIdle: { backgroundColor: Colors.border },
 
   // ── Step 1: Grid ──
-  gridContent: { padding: 20, paddingBottom: 120 },
+  gridContent: { padding: SCREEN_PADDING, paddingBottom: 120 },
   gridSection: {
     fontSize: 13,
     fontWeight: "700",
@@ -864,19 +894,19 @@ const k = StyleSheet.create({
   tile: {
     width: "47.5%",
     backgroundColor: Colors.white,
-    borderRadius: 18,
+    borderRadius: borderRadius.lg,
     padding: 18,
     borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: Colors.transparent,
     position: "relative",
     minHeight: 130,
-    ...SHADOW,
+    ...cardShadow,
   },
   tileSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   bundleBadge: {
     alignSelf: "flex-start",
     backgroundColor: Colors.accent,
-    borderRadius: 6,
+    borderRadius: borderRadius.sm,
     paddingHorizontal: 8,
     paddingVertical: 3,
     marginBottom: 8,
@@ -906,8 +936,8 @@ const k = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: Colors.background,
-    borderRadius: 999,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: borderRadius.full,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
@@ -916,9 +946,9 @@ const k = StyleSheet.create({
     position: "absolute",
     top: 12,
     right: 12,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: borderRadius.full,
     backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
@@ -930,12 +960,14 @@ const k = StyleSheet.create({
     right: 0,
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
     backgroundColor: Colors.white,
-    padding: 16,
+    padding: SCREEN_PADDING,
     borderTopWidth: 1,
-    borderTopColor: Colors.background,
-    ...SHADOW,
+    borderTopColor: Colors.surfaceAlt,
+    ...cardShadow,
   },
+  selectedInfo: { flex: 1 },
   selectedName: { fontSize: 15, fontWeight: "700", color: Colors.textPrimary },
   selectedPrice: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
 
@@ -945,24 +977,30 @@ const k = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     backgroundColor: Colors.accent,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 24,
     paddingVertical: 14,
+    overflow: 'hidden',
   },
   continueBtnFull: { marginTop: 32, justifyContent: "center" },
   continueBtnDisabled: { backgroundColor: Colors.border },
   continueBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 
   // ── Step 2: Form ──
-  formContent: { padding: 24, paddingBottom: 40 },
+  formContent: { padding: SCREEN_PADDING, paddingBottom: 40 },
   serviceRecap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     backgroundColor: Colors.accentMuted,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     padding: 12,
     marginBottom: 24,
+  },
+  serviceRecapIcon: {
+    width: 32, height: 32, borderRadius: borderRadius.sm,
+    backgroundColor: Colors.white,
+    alignItems: 'center', justifyContent: 'center',
   },
   serviceRecapText: {
     fontSize: 14,
@@ -979,17 +1017,17 @@ const k = StyleSheet.create({
   },
   input: {
     backgroundColor: Colors.white,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     padding: 18,
     fontSize: 18,
     color: Colors.textPrimary,
     borderWidth: 1.5,
     borderColor: Colors.border,
-    ...SHADOW,
+    ...cardShadow,
   },
 
   // ── Step 3: Payment ──
-  paymentScreen: { flex: 1, padding: 24, justifyContent: "center", gap: 24 },
+  paymentScreen: { flex: 1, padding: SCREEN_PADDING, justifyContent: "center", gap: 24 },
   paymentTotal: {
     fontSize: 24,
     fontWeight: "900",
@@ -1000,19 +1038,20 @@ const k = StyleSheet.create({
   payCard: {
     flex: 1,
     backgroundColor: Colors.white,
-    borderRadius: 20,
+    borderRadius: borderRadius.lg,
     padding: 24,
     alignItems: "center",
     gap: 10,
     borderWidth: 2,
-    borderColor: "transparent",
-    ...SHADOW,
+    borderColor: Colors.transparent,
+    overflow: 'hidden',
+    ...cardShadow,
   },
   payCardSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   payIconWrap: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: borderRadius.full,
     backgroundColor: Colors.accentMuted,
     alignItems: "center",
     justifyContent: "center",
@@ -1032,7 +1071,7 @@ const k = StyleSheet.create({
     right: 12,
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: borderRadius.full,
     backgroundColor: Colors.accent,
     alignItems: "center",
     justifyContent: "center",
@@ -1043,9 +1082,10 @@ const k = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     backgroundColor: Colors.accent,
-    borderRadius: 16,
+    borderRadius: borderRadius.md,
     paddingVertical: 18,
-    ...SHADOW,
+    overflow: 'hidden',
+    ...cardShadow,
   },
   confirmBtnText: { color: Colors.white, fontSize: 18, fontWeight: "800" },
 
@@ -1061,7 +1101,7 @@ const k = StyleSheet.create({
   confirmCheck: {
     width: 90,
     height: 90,
-    borderRadius: 45,
+    borderRadius: borderRadius.full,
     backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
@@ -1085,7 +1125,7 @@ const k = StyleSheet.create({
   statsRow: {
     flexDirection: "row",
     backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 20,
+    borderRadius: borderRadius.lg,
     padding: 20,
     gap: 0,
     width: "100%",
@@ -1115,10 +1155,11 @@ const k = StyleSheet.create({
   },
   doneBtn: {
     backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 48,
     paddingVertical: 16,
     marginTop: 12,
+    overflow: 'hidden',
   },
   doneBtnText: { color: Colors.white, fontSize: 18, fontWeight: "700" },
 });

@@ -1,4 +1,4 @@
-﻿// app/(tabs)/reports/index.tsx — Admin Revenue Dashboard + Report Hub
+// app/(tabs)/reports/index.tsx — Admin Revenue Dashboard + Report Hub
 //
 // Sections:
 //   • KPI cards: Today + All-time stats
@@ -13,7 +13,6 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -26,6 +25,8 @@ import { BarChart, LineChart, PieChart } from 'react-native-chart-kit';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -48,13 +49,13 @@ interface DashData {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const W     = Dimensions.get('window').width;
-const CHART = W - 40;  // chart width (20px padding each side)
+const CHART = W - 40;
 
 const CHART_BASE = {
   backgroundGradientFrom: Colors.white,
   backgroundGradientTo:   Colors.white,
   decimalPlaces:          0,
-  color:          (op = 1) => `rgba(106, 13, 173, ${op})`,
+  color:          (op = 1) => `rgba(14, 165, 233, ${op})`,
   labelColor:     ()       => Colors.textMuted,
   propsForBackgroundLines: { stroke: Colors.surfaceAlt },
 };
@@ -97,7 +98,7 @@ type ReportType = (typeof REPORT_CARDS)[number]['type'];
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function monthRange(): { startDate: string; endDate: string } {
-  const now = new Date();
+  const now   = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), 1);
   return {
     startDate: start.toISOString().slice(0, 10),
@@ -110,7 +111,6 @@ function fmtMoney(n: number): string {
 }
 
 function dayLabel(iso: string): string {
-  // Return 3-letter weekday abbreviation
   const day = new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short' });
   return day.slice(0, 3);
 }
@@ -206,13 +206,18 @@ export default function ReportsDashboard() {
 
   return (
     <SafeAreaView style={rd.safe} edges={['top']}>
-      {/* ── Header ── */}
+      {/* Header */}
       <View style={rd.header}>
         <View>
           <Text style={rd.title}>Reports</Text>
           <Text style={rd.sub}>Admin Dashboard</Text>
         </View>
-        <Pressable onPress={() => fetch(false)} style={rd.refreshBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => fetch(false)}
+          style={rd.refreshBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.accentMuted, radius: 20, borderless: true }}
+        >
           <Ionicons name="refresh" size={20} color={Colors.accent} />
         </Pressable>
       </View>
@@ -226,21 +231,43 @@ export default function ReportsDashboard() {
           contentContainerStyle={rd.scroll}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.accent}
+              colors={[Colors.accent]}
+            />
           }
         >
-
-          {/* ── KPI strip ── */}
+          {/* KPI strip */}
           <SectionHeader title="Overview" icon="stats-chart-outline" />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
             <View style={rd.kpiRow}>
-              <KpiCard label="Today's Revenue"  value={fmtMoney(data?.todayRevenue ?? 0)}  icon="today-outline"         color={Colors.accent} sub={`${data?.todayTransactions ?? 0} jobs`} />
-              <KpiCard label="Total Revenue"    value={fmtMoney(data?.totalRevenue ?? 0)}  icon="cash-outline"          color={Colors.success} sub={`${data?.totalServices ?? 0} all-time`} />
-              <KpiCard label="Staff On-clock"   value={String(data?.activeNow ?? 0)}       icon="people-outline"        color={Colors.info} sub={`of ${data?.totalEmployees ?? 0} staff`} />
+              <KpiCard
+                label="Today's Revenue"
+                value={fmtMoney(data?.todayRevenue ?? 0)}
+                icon="today-outline"
+                color={Colors.accent}
+                sub={`${data?.todayTransactions ?? 0} jobs`}
+              />
+              <KpiCard
+                label="Total Revenue"
+                value={fmtMoney(data?.totalRevenue ?? 0)}
+                icon="cash-outline"
+                color={Colors.success}
+                sub={`${data?.totalServices ?? 0} all-time`}
+              />
+              <KpiCard
+                label="Staff On-clock"
+                value={String(data?.activeNow ?? 0)}
+                icon="people-outline"
+                color={Colors.info}
+                sub={`of ${data?.totalEmployees ?? 0} staff`}
+              />
             </View>
           </ScrollView>
 
-          {/* ── Bar chart: 7-day ── */}
+          {/* Bar chart: 7-day */}
           {barData && (
             <View style={rd.chartCard}>
               <SectionHeader title="Last 7 Days — Daily Revenue" icon="bar-chart-outline" />
@@ -249,10 +276,7 @@ export default function ReportsDashboard() {
                   data={barData}
                   width={Math.max(CHART, 280)}
                   height={180}
-                  chartConfig={{
-                    ...CHART_BASE,
-                    barPercentage: 0.65,
-                  }}
+                  chartConfig={{ ...CHART_BASE, barPercentage: 0.65 }}
                   yAxisLabel="$"
                   yAxisSuffix=""
                   fromZero
@@ -265,7 +289,7 @@ export default function ReportsDashboard() {
             </View>
           )}
 
-          {/* ── Line chart: 4-week ── */}
+          {/* Line chart: 4-week */}
           {lineData && (
             <View style={rd.chartCard}>
               <SectionHeader title="Weekly Revenue Trend (4 Weeks)" icon="trending-up-outline" />
@@ -286,7 +310,7 @@ export default function ReportsDashboard() {
             </View>
           )}
 
-          {/* ── Pie chart: top services ── */}
+          {/* Pie chart: top services */}
           {pieData && pieData.length > 0 && (
             <View style={rd.chartCard}>
               <SectionHeader title="Top Services by Revenue" icon="pie-chart-outline" />
@@ -304,7 +328,7 @@ export default function ReportsDashboard() {
             </View>
           )}
 
-          {/* ── Service legend list (if no pie or as supplement) ── */}
+          {/* Service legend list */}
           {data?.serviceChart && data.serviceChart.length > 0 && (
             <View style={rd.chartCard}>
               <SectionHeader title="Service Revenue Breakdown" icon="list-outline" />
@@ -332,13 +356,14 @@ export default function ReportsDashboard() {
             </View>
           )}
 
-          {/* ── Report cards ── */}
+          {/* Report cards */}
           <SectionHeader title="Detailed Reports" icon="document-text-outline" />
           {REPORT_CARDS.map(card => (
             <Pressable
               key={card.type}
-              style={({ pressed }) => [rd.reportCard, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [rd.reportCard, pressed && IS_IOS && { opacity: 0.85 }]}
               onPress={() => openReport(card.type)}
+              android_ripple={{ color: Colors.surfaceAlt }}
             >
               <View style={[rd.reportIcon, { backgroundColor: card.color + '18' }]}>
                 <Ionicons name={card.icon as any} size={22} color={card.color} />
@@ -348,8 +373,12 @@ export default function ReportsDashboard() {
                 <Text style={rd.reportDesc}>{card.desc}</Text>
               </View>
               <View style={rd.exportBadges}>
-                <View style={rd.badge}><Text style={rd.badgeText}>CSV</Text></View>
-                <View style={[rd.badge, rd.badgePdf]}><Text style={[rd.badgeText, { color: Colors.white }]}>PDF</Text></View>
+                <View style={rd.badge}>
+                  <Text style={rd.badgeText}>CSV</Text>
+                </View>
+                <View style={[rd.badge, rd.badgePdf]}>
+                  <Text style={[rd.badgeText, { color: Colors.white }]}>PDF</Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={16} color={Colors.border} style={{ marginLeft: 6 }} />
             </Pressable>
@@ -364,64 +393,106 @@ export default function ReportsDashboard() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const rd = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    ...cardShadow,
   },
   title:      { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
   sub:        { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
-  refreshBtn: { padding: 6 },
+  refreshBtn: { padding: 8 },
 
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
   // Section
-  sectionRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginTop: 4 },
-  sectionTitle:{ fontSize: 13, fontWeight: '700', color: Colors.accent, textTransform: 'uppercase', letterSpacing: 0.5 },
+  sectionRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, marginTop: 4 },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
 
   // KPI
-  kpiRow:   { flexDirection: 'row', gap: 12, paddingRight: 20 },
-  kpiCard:  {
-    width: 140, backgroundColor: Colors.white, borderRadius: 14,
-    padding: 14, borderTopWidth: 3, ...SHADOW,
+  kpiRow: { flexDirection: 'row', gap: 12, paddingRight: 20 },
+  kpiCard: {
+    width: 144,
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    borderTopWidth: 3,
+    ...cardShadow,
   },
-  kpiIconWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  kpiValue:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  kpiLabel:    { fontSize: 11, color: Colors.textMuted, marginTop: 3 },
-  kpiSub:      { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
+  kpiIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  kpiValue: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  kpiLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
+  kpiSub:   { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
 
   // Charts
-  chartCard: { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginBottom: 14, ...SHADOW },
-  chart:     { borderRadius: 8, marginTop: 10 },
+  chartCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    ...cardShadow,
+  },
+  chart: { borderRadius: 10, marginTop: 12 },
 
   // Horizontal bar list
-  barRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
-  colorDot:  { width: 8, height: 8, borderRadius: 4 },
-  barLabel:  { fontSize: 12, color: Colors.textSecondary, width: 100 },
-  barTrack:  { flex: 1, height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
-  barFill:   { height: 6, borderRadius: 3 },
-  barValue:  { fontSize: 12, fontWeight: '700', color: Colors.textPrimary, width: 68, textAlign: 'right' },
+  barRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  colorDot: { width: 8, height: 8, borderRadius: 4 },
+  barLabel: { fontSize: 12, color: Colors.textSecondary, width: 100 },
+  barTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  barFill:  { height: 6, borderRadius: 3 },
+  barValue: { fontSize: 12, fontWeight: '700', color: Colors.textPrimary, width: 68, textAlign: 'right' },
 
   // Report cards
   reportCard: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white, borderRadius: 16,
-    padding: 16, marginBottom: 12, ...SHADOW,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    overflow: 'hidden',
+    ...cardShadow,
   },
   reportIcon:  { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   reportTitle: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
   reportDesc:  { fontSize: 12, color: Colors.textMuted, lineHeight: 17 },
 
   exportBadges: { flexDirection: 'row', gap: 4 },
-  badge:        { borderRadius: 6, backgroundColor: Colors.successBg, paddingHorizontal: 6, paddingVertical: 3 },
-  badgePdf:     { backgroundColor: Colors.error },
-  badgeText:    { fontSize: 9, fontWeight: '800', color: Colors.success, letterSpacing: 0.3 },
+  badge: {
+    borderRadius: 6,
+    backgroundColor: Colors.successBg,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  badgePdf:  { backgroundColor: Colors.error },
+  badgeText: { fontSize: 9, fontWeight: '800', color: Colors.success, letterSpacing: 0.3 },
 });

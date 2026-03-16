@@ -1,4 +1,4 @@
-﻿// app/(tabs)/inventory/index.tsx — Inventory List with Quick-Adjust Steppers
+// app/(tabs)/inventory/index.tsx — Inventory List with Quick-Adjust Steppers
 //
 // Features:
 //   • Live list with green/yellow/red stock indicators
@@ -11,6 +11,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import React, {
   useCallback, useMemo, useRef, useState,
 } from 'react';
@@ -19,7 +20,6 @@ import {
   Alert,
   Animated,
   FlatList,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -28,10 +28,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated2, { FadeIn } from 'react-native-reanimated';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,10 +62,10 @@ function stockLevel(item: InventoryItem): StockLevel {
 }
 
 const LEVEL_CONFIG: Record<StockLevel, { border: string; badge: string; text: string; label: string }> = {
-  ok:   { border: Colors.success, badge: Colors.successBg, text: Colors.success, label: 'In Stock'  },
-  warn: { border: Colors.warning, badge: Colors.warningBg, text: Colors.warning, label: 'Watch'     },
-  low:  { border: Colors.error, badge: Colors.errorBg, text: Colors.error, label: 'Low Stock' },
-  out:  { border: Colors.accent, badge: Colors.accentMuted, text: Colors.accent, label: 'Out'       },
+  ok:   { border: Colors.success, badge: Colors.successBg, text: Colors.successText, label: 'In Stock'  },
+  warn: { border: Colors.warning, badge: Colors.warningBg, text: Colors.warningText, label: 'Watch'     },
+  low:  { border: Colors.error,   badge: Colors.errorBg,   text: Colors.errorText,   label: 'Low Stock' },
+  out:  { border: Colors.accent,  badge: Colors.accentMuted, text: Colors.accent,    label: 'Out'       },
 };
 
 const ALL_CATEGORIES = [
@@ -91,7 +94,7 @@ function StockBar({ item }: { item: InventoryItem }) {
       <View style={sb.track}>
         <View style={[sb.fill, { width: `${Math.max(pct * 100, 2)}%`, backgroundColor: cfg.border }]} />
       </View>
-      <Text style={[sb.threshold, { color: Colors.textMuted }]}>
+      <Text style={sb.threshold}>
         threshold {item.lowStockThreshold} {item.unit}
       </Text>
     </View>
@@ -99,10 +102,10 @@ function StockBar({ item }: { item: InventoryItem }) {
 }
 
 const sb = StyleSheet.create({
-  wrap:      { marginTop: 6, marginBottom: 4 },
-  track:     { height: 5, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
-  fill:      { height: 5, borderRadius: 3 },
-  threshold: { fontSize: 9, marginTop: 3 },
+  wrap:      { marginTop: 8, marginBottom: 4 },
+  track:     { height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden' },
+  fill:      { height: 6, borderRadius: 3 },
+  threshold: { fontSize: 10, marginTop: 4, color: Colors.textMuted },
 });
 
 // ── Stepper ───────────────────────────────────────────────────────────────────
@@ -116,8 +119,15 @@ function Stepper({
     <View style={stp.row}>
       <Pressable
         style={({ pressed }) => [stp.btn, pressed && stp.pressed]}
-        onPress={() => onDelta(-1)}
-        onLongPress={() => onDelta(-10)}
+        onPress={() => {
+          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onDelta(-1);
+        }}
+        onLongPress={() => {
+          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onDelta(-10);
+        }}
+        android_ripple={{ color: Colors.border }}
         disabled={loading}
         delayLongPress={500}
       >
@@ -133,9 +143,16 @@ function Stepper({
       </View>
 
       <Pressable
-        style={({ pressed }) => [stp.btn, stp.btnPlus, pressed && stp.pressed]}
-        onPress={() => onDelta(1)}
-        onLongPress={() => onDelta(10)}
+        style={({ pressed }) => [stp.btn, stp.btnPlus, pressed && stp.pressedPlus]}
+        onPress={() => {
+          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onDelta(1);
+        }}
+        onLongPress={() => {
+          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          onDelta(10);
+        }}
+        android_ripple={{ color: Colors.accentDark }}
         disabled={loading}
         delayLongPress={500}
       >
@@ -146,14 +163,16 @@ function Stepper({
 }
 
 const stp = StyleSheet.create({
-  row:     { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  btn:     {
-    width: 32, height: 32, borderRadius: 8,
+  row:       { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  btn: {
+    width: 36, height: 36, borderRadius: borderRadius.sm,
     backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
-  btnPlus: { backgroundColor: Colors.accent },
-  pressed: { opacity: 0.65 },
-  btnText: { fontSize: 18, fontWeight: '700', color: Colors.accent, lineHeight: 22 },
+  btnPlus:    { backgroundColor: Colors.accent },
+  pressed:    { opacity: 0.65 },
+  pressedPlus:{ opacity: 0.8 },
+  btnText:    { fontSize: 18, fontWeight: '700', color: Colors.accent, lineHeight: 22 },
   display: {
     flexDirection: 'row', alignItems: 'baseline', gap: 4,
     minWidth: 80, justifyContent: 'center',
@@ -195,10 +214,20 @@ function InventoryCard({
         </View>
         {isAdmin && (
           <View style={ic.actions}>
-            <Pressable onPress={() => onEdit(item)} hitSlop={8} style={ic.iconBtn}>
+            <Pressable
+              onPress={() => onEdit(item)}
+              hitSlop={8}
+              style={ic.iconBtn}
+              android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 16 }}
+            >
               <Ionicons name="create-outline" size={17} color={Colors.accent} />
             </Pressable>
-            <Pressable onPress={() => onDelete(item)} hitSlop={8} style={ic.iconBtn}>
+            <Pressable
+              onPress={() => onDelete(item)}
+              hitSlop={8}
+              style={ic.iconBtn}
+              android_ripple={{ color: Colors.errorBg, borderless: true, radius: 16 }}
+            >
               <Ionicons name="trash-outline" size={17} color={Colors.error} />
             </Pressable>
           </View>
@@ -226,22 +255,18 @@ function InventoryCard({
 
 const ic = StyleSheet.create({
   card: {
-    backgroundColor: Colors.white, borderRadius: 14,
-    padding: 14, marginBottom: 10,
-    borderLeftWidth: 4,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-      android: { elevation: 2 },
-    }),
+    backgroundColor: Colors.white, borderRadius: borderRadius.md,
+    padding: 14, borderLeftWidth: 4,
+    ...cardShadow,
   },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  name:      { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
+  name:      { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   category:  { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  badge:     { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
+  badge:     { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
   badgeText: { fontSize: 10, fontWeight: '700' },
   actions:   { flexDirection: 'row', gap: 4 },
-  iconBtn:   { padding: 4 },
-  footer:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  iconBtn:   { width: 32, height: 32, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  footer:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
   notes:     { fontSize: 11, color: Colors.textMuted, flex: 1, marginLeft: 12, textAlign: 'right' },
 });
 
@@ -272,7 +297,7 @@ const lb = StyleSheet.create({
   wrap: {
     position: 'absolute', top: 0, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.error, borderRadius: 99,
+    backgroundColor: Colors.error, borderRadius: borderRadius.full,
     paddingHorizontal: 14, paddingVertical: 7,
     zIndex: 100,
     ...Platform.select({
@@ -284,6 +309,8 @@ const lb = StyleSheet.create({
 });
 
 // ── Screen ────────────────────────────────────────────────────────────────────
+
+import { Platform } from 'react-native';
 
 export default function InventoryScreen() {
   const { user } = useAuth();
@@ -413,17 +440,22 @@ export default function InventoryScreen() {
       <View style={s.header}>
         <View>
           <Text style={s.title}>Inventory</Text>
-          <Text style={s.sub}>
-            {items.length} items
-            {lowCount > 0 && ` · `}
-            {lowCount > 0 && <Text style={{ color: Colors.error }}>{lowCount} low</Text>}
-          </Text>
+          <View style={s.subRow}>
+            <Text style={s.sub}>{items.length} items</Text>
+            {lowCount > 0 && (
+              <View style={s.lowBadge}>
+                <Ionicons name="warning-outline" size={11} color={Colors.errorText} />
+                <Text style={s.lowBadgeText}>{lowCount} low</Text>
+              </View>
+            )}
+          </View>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {isAdmin && (
             <Pressable
               style={s.headerBtn}
               onPress={() => router.push('/(tabs)/inventory/service-map')}
+              android_ripple={{ color: Colors.accentMuted }}
               hitSlop={8}
             >
               <Ionicons name="git-branch-outline" size={16} color={Colors.accent} />
@@ -436,7 +468,7 @@ export default function InventoryScreen() {
       {/* Offline banner */}
       {isOffline && (
         <View style={s.offlineBanner}>
-          <Ionicons name="cloud-offline-outline" size={14} color={Colors.warning}Text />
+          <Ionicons name="cloud-offline-outline" size={14} color={Colors.warningText} />
           <Text style={s.offlineText}>Offline — showing cached data</Text>
         </View>
       )}
@@ -465,7 +497,11 @@ export default function InventoryScreen() {
         renderItem={({ item: cat }) => (
           <Pressable
             style={[s.catChip, category === cat && s.catChipActive]}
-            onPress={() => setCategory(cat)}
+            onPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setCategory(cat);
+            }}
+            android_ripple={{ color: Colors.accentMuted }}
           >
             <Text style={[s.catText, category === cat && s.catTextActive]}>{cat}</Text>
           </Pressable>
@@ -484,12 +520,15 @@ export default function InventoryScreen() {
           keyExtractor={it => it._id}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={s.separator} />}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
           ListEmptyComponent={
-            <View style={s.empty}>
-              <Ionicons name="cube-outline" size={52} color={Colors.border} />
+            <Animated2.View entering={FadeIn.duration(300)} style={s.empty}>
+              <View style={s.emptyIconWrap}>
+                <Ionicons name="cube-outline" size={36} color={Colors.textMuted} />
+              </View>
               <Text style={s.emptyTitle}>
                 {search || category !== 'All' ? 'No items match' : 'No inventory items'}
               </Text>
@@ -498,7 +537,7 @@ export default function InventoryScreen() {
                   ? 'Tap + to add your first item.'
                   : 'Ask an admin to add inventory items.'}
               </Text>
-            </View>
+            </Animated2.View>
           }
           renderItem={({ item }) => (
             <InventoryCard
@@ -516,8 +555,12 @@ export default function InventoryScreen() {
       {/* FAB — admin only */}
       {isAdmin && (
         <Pressable
-          style={({ pressed }) => [s.fab, pressed && { opacity: 0.85 }]}
-          onPress={() => openEdit()}
+          style={({ pressed }) => [s.fab, pressed && { opacity: 0.88 }]}
+          onPress={() => {
+            if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            openEdit();
+          }}
+          android_ripple={{ color: Colors.accentDark }}
         >
           <Ionicons name="add" size={26} color={Colors.white} />
         </Pressable>
@@ -528,63 +571,71 @@ export default function InventoryScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 6, paddingBottom: 10,
+    paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 12,
   },
-  title:       { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
-  sub:         { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  title:  { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 },
+  sub:    { fontSize: 12, color: Colors.textMuted },
+  lowBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: Colors.errorBg, borderRadius: borderRadius.full,
+    paddingHorizontal: 7, paddingVertical: 2,
+  },
+  lowBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.errorText },
   headerBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 7,
+    backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
+    paddingHorizontal: 12, paddingVertical: 7, overflow: 'hidden',
   },
   headerBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   offlineBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.warningBg, marginHorizontal: 16, borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 6, marginBottom: 8,
+    backgroundColor: Colors.warningBg, marginHorizontal: SCREEN_PADDING, borderRadius: borderRadius.sm,
+    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8,
+    borderLeftWidth: 3, borderLeftColor: Colors.warning,
   },
   offlineText: { fontSize: 12, color: Colors.warningText, fontWeight: '600' },
 
   // Search
   searchWrap: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.white, borderRadius: 12, marginHorizontal: 16, marginBottom: 8,
-    ...SHADOW,
+    backgroundColor: Colors.white, borderRadius: borderRadius.md,
+    marginHorizontal: SCREEN_PADDING, marginBottom: 8,
+    ...cardShadow,
   },
   searchInput: {
-    flex: 1, paddingHorizontal: 10, paddingVertical: 10,
+    flex: 1, paddingHorizontal: 10, paddingVertical: 12,
     fontSize: 14, color: Colors.textPrimary,
   },
 
   // Category chips
-  catList: { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
+  catList: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 8 },
   catChip: {
-    borderRadius: 99, borderWidth: 1.5, borderColor: Colors.border,
-    paddingHorizontal: 14, paddingVertical: 6, backgroundColor: Colors.white,
+    borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: Colors.border,
+    paddingHorizontal: 14, paddingVertical: 7, backgroundColor: Colors.white,
+    overflow: 'hidden',
   },
   catChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
   catText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
   catTextActive: { color: Colors.accent },
 
   // List
-  listContent: { paddingHorizontal: 16, paddingBottom: 100 },
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100 },
+  separator:   { height: 8 },
 
   // FAB
   fab: {
-    position: 'absolute', bottom: 28, right: 20,
-    width: 54, height: 54, borderRadius: 27,
+    position: 'absolute', bottom: 28, right: SCREEN_PADDING,
+    width: 56, height: 56, borderRadius: borderRadius.full,
     backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
     ...Platform.select({
       ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 8 },
@@ -592,7 +643,12 @@ const s = StyleSheet.create({
   },
 
   // Empty
-  empty:      { alignItems: 'center', paddingTop: 60 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginTop: 16, marginBottom: 6 },
-  emptyText:  { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  empty:       { alignItems: 'center', paddingTop: 60 },
+  emptyIconWrap: {
+    width: 72, height: 72, borderRadius: borderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  emptyTitle:  { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
+  emptyText:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
 });

@@ -1,4 +1,4 @@
-﻿// app/(customer)/booking/[id].tsx — Customer Booking Detail + QR Code
+// app/(customer)/booking/[id].tsx — Customer Booking Detail + QR Code
 // Fetches the booking and displays:
 //  • Booking status badge
 //  • BookingQR component (customer shows this to staff at check-in)
@@ -9,13 +9,15 @@ import axios from 'axios';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Platform, Pressable,
+  ActivityIndicator, Alert, Pressable,
   RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookingQR } from '@/components/BookingQR';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,10 +44,10 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bg: string; icon: string }
 > = {
-  pending_payment: { label: 'Awaiting Payment', color: Colors.warning, bg: Colors.warningBg, icon: 'time-outline'          },
-  confirmed:       { label: 'Confirmed',         color: Colors.accent, bg: Colors.accentMuted, icon: 'checkmark-circle'     },
-  cancelled:       { label: 'Cancelled',          color: Colors.error, bg: Colors.errorBg, icon: 'close-circle'        },
-  completed:       { label: 'Completed',          color: Colors.success, bg: Colors.successBg, icon: 'checkmark-done-circle'},
+  pending_payment: { label: 'Awaiting Payment', color: Colors.warning,  bg: Colors.warningBg,   icon: 'time-outline'          },
+  confirmed:       { label: 'Confirmed',         color: Colors.accent,   bg: Colors.accentMuted, icon: 'checkmark-circle'      },
+  cancelled:       { label: 'Cancelled',          color: Colors.error,    bg: Colors.errorBg,     icon: 'close-circle'          },
+  completed:       { label: 'Completed',          color: Colors.success,  bg: Colors.successBg,   icon: 'checkmark-done-circle' },
 };
 
 const JOB_STATUS_LABELS: Record<string, string> = {
@@ -63,7 +65,9 @@ function SummaryRow({
 }) {
   return (
     <View style={s.summaryRow}>
-      <Ionicons name={icon as any} size={16} color={Colors.accent} style={{ marginTop: 1 }} />
+      <View style={s.summaryIconWrap}>
+        <Ionicons name={icon as any} size={15} color={Colors.accent} />
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={s.summaryLabel}>{label}</Text>
         <Text style={s.summaryValue}>{value}</Text>
@@ -85,7 +89,6 @@ export default function BookingDetailScreen() {
   const fetchBooking = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      // GET /api/jobs/:id works for customers (filters by userId server-side)
       const { data } = await axios.get<BookingDetail>(`/api/jobs/${id}`);
       setBooking(data);
       setError(null);
@@ -138,14 +141,25 @@ export default function BookingDetailScreen() {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={s.header}>
-          <Pressable style={s.backBtn} onPress={() => router.back()} hitSlop={8}>
+          <Pressable
+            style={s.headerIconBtn}
+            onPress={() => router.back()}
+            hitSlop={8}
+            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+          >
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
         </View>
         <View style={s.centered}>
-          <Ionicons name="alert-circle-outline" size={40} color={Colors.border} />
+          <View style={s.errorIconWrap}>
+            <Ionicons name="alert-circle-outline" size={36} color={Colors.error} />
+          </View>
           <Text style={s.errorText}>{error ?? 'Booking not found'}</Text>
-          <Pressable style={s.retryBtn} onPress={() => fetchBooking()}>
+          <Pressable
+            style={s.retryBtn}
+            onPress={() => fetchBooking()}
+            android_ripple={{ color: Colors.primaryDark }}
+          >
             <Text style={s.retryText}>Retry</Text>
           </Pressable>
         </View>
@@ -166,7 +180,12 @@ export default function BookingDetailScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* ── Header ── */}
       <View style={s.header}>
-        <Pressable style={s.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Pressable
+          style={s.headerIconBtn}
+          onPress={() => router.back()}
+          hitSlop={8}
+          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Booking Details</Text>
@@ -184,9 +203,11 @@ export default function BookingDetailScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Status badge ── */}
+        {/* ── Status banner ── */}
         <View style={[s.statusCard, { backgroundColor: statusCfg.bg }]}>
-          <Ionicons name={statusCfg.icon as any} size={22} color={statusCfg.color} />
+          <View style={[s.statusIconWrap, { backgroundColor: statusCfg.color + '22' }]}>
+            <Ionicons name={statusCfg.icon as any} size={20} color={statusCfg.color} />
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={[s.statusLabel, { color: statusCfg.color }]}>
               {statusCfg.label}
@@ -200,7 +221,10 @@ export default function BookingDetailScreen() {
         {/* ── QR Code section ── */}
         {showQr && (
           <View style={s.qrSection}>
-            <Text style={s.sectionTitle}>Your Check-In Code</Text>
+            <View style={s.qrHeader}>
+              <Ionicons name="qr-code-outline" size={18} color={Colors.accent} />
+              <Text style={s.sectionTitle}>Your Check-In Code</Text>
+            </View>
             <Text style={s.qrSub}>
               Show this to your technician when you arrive at the wash bay.
             </Text>
@@ -247,7 +271,7 @@ export default function BookingDetailScreen() {
           ) : null}
         </View>
 
-        {/* ── Already checked in notice ── */}
+        {/* ── Checked-in notice ── */}
         {booking.status === 'confirmed' && booking.jobStatus !== 'assigned' && (
           <View style={s.checkedInBanner}>
             <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
@@ -266,6 +290,7 @@ export default function BookingDetailScreen() {
                 pathname: '/(customer)/track/[id]',
                 params:   { id: booking._id },
               })}
+              android_ripple={{ color: Colors.accent }}
             >
               <Ionicons name="navigate" size={16} color={Colors.accent} />
               <Text style={s.trackBtnText}>Track My Job</Text>
@@ -275,11 +300,12 @@ export default function BookingDetailScreen() {
             <Pressable
               style={({ pressed }) => [
                 s.cancelBtn,
-                pressed     && { opacity: 0.85 },
-                cancelling  && { opacity: 0.6  },
+                pressed    && { opacity: 0.85 },
+                cancelling && { opacity: 0.6  },
               ]}
               onPress={handleCancel}
               disabled={cancelling}
+              android_ripple={{ color: Colors.errorBg }}
             >
               {cancelling
                 ? <ActivityIndicator size="small" color={Colors.error} />
@@ -295,75 +321,121 @@ export default function BookingDetailScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  safe:    { flex: 1, backgroundColor: Colors.background },
+  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
 
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
+    paddingHorizontal: 20, paddingVertical: 14,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
   },
-  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerIconBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
   headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
 
-  content: { paddingBottom: 40 },
+  content: { paddingBottom: 44, paddingTop: 4 },
 
+  errorIconWrap: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: Colors.errorBg,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  errorText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
+  retryBtn:  {
+    paddingHorizontal: 28, paddingVertical: 12,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.full,
+    overflow: 'hidden',
+  },
+  retryText: { color: Colors.white, fontWeight: '700' },
+
+  // Status banner
   statusCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    marginHorizontal: 16, borderRadius: 16, padding: 16,
-    marginBottom: 14, ...SHADOW,
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    marginHorizontal: 20, borderRadius: borderRadius.lg,
+    padding: 16, marginTop: 16, marginBottom: 12,
+    ...cardShadow,
+  },
+  statusIconWrap: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
   },
   statusLabel:   { fontSize: 15, fontWeight: '800' },
   jobStatusText: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
 
   // QR section
   qrSection: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 16, borderRadius: 20,
-    padding: 20, marginBottom: 14, alignItems: 'center',
-    ...SHADOW,
+    backgroundColor: Colors.surface,
+    marginHorizontal: 20,
+    borderRadius: borderRadius.xl,
+    padding: 20,
+    marginBottom: 12,
+    alignItems: 'center',
+    ...cardShadow,
   },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
-  qrSub:        { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 18 },
+  qrHeader:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
+  qrSub:        { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 20, lineHeight: 19 },
   qrCenter:     { alignItems: 'center' },
 
+  // Summary card
   card: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 16, borderRadius: 16,
-    padding: 18, marginBottom: 14, ...SHADOW,
+    backgroundColor: Colors.surface,
+    marginHorizontal: 20,
+    borderRadius: borderRadius.lg,
+    padding: 20,
+    marginBottom: 12,
+    ...cardShadow,
   },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 16 },
+  cardTitle: { fontSize: 13, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 },
 
   summaryRow: {
     flexDirection: 'row', alignItems: 'flex-start',
-    gap: 12, marginBottom: 12,
+    gap: 12, marginBottom: 14,
   },
-  summaryLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  summaryIconWrap: {
+    width: 32, height: 32, borderRadius: 8,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 1,
+  },
+  summaryLabel: { fontSize: 11, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
   summaryValue: { fontSize: 14, color: Colors.textPrimary, fontWeight: '600', marginTop: 2 },
 
+  // Checked-in banner
   checkedInBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: Colors.successBg, borderRadius: 12, padding: 14,
-    marginHorizontal: 16, marginBottom: 14,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+    backgroundColor: Colors.successBg,
+    borderRadius: borderRadius.md,
+    padding: 14,
+    marginHorizontal: 20,
+    marginBottom: 12,
     borderLeftWidth: 3, borderLeftColor: Colors.success,
   },
   checkedInText: { flex: 1, fontSize: 13, color: Colors.success, fontWeight: '600', lineHeight: 18 },
 
-  actions:  { marginHorizontal: 16, gap: 10 },
+  // Actions
+  actions:  { marginHorizontal: 20, gap: 10, marginTop: 4 },
   trackBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accentMuted, borderRadius: 14, paddingVertical: 14,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 15,
+    overflow: 'hidden',
   },
   trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
-  cancelBtn:    { borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.error },
+  cancelBtn:    {
+    borderRadius: borderRadius.lg,
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderWidth: 1.5, borderColor: Colors.error,
+    overflow: 'hidden',
+  },
   cancelBtnText:{ color: Colors.error, fontSize: 15, fontWeight: '700' },
-
-  errorText: { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
-  retryBtn:  { paddingHorizontal: 24, paddingVertical: 10, backgroundColor: Colors.accentMuted, borderRadius: 999 },
-  retryText: { color: Colors.accent, fontWeight: '700' },
 });

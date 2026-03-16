@@ -1,18 +1,25 @@
-﻿// app/(customer)/book/datetime.tsx — Step 3: Pick date + available time slot
+// app/(customer)/book/datetime.tsx — Step 3: Pick date + available time slot
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Platform, Pressable,
-  ScrollView, StyleSheet, Text, View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookingProgressBar } from './_layout';
+import { Colors } from '@/constants/Colors';
 import { useBooking } from '@/context/BookingContext';
 import { TimeSlot } from '@/types/booking';
-import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Calendar helpers ─────────────────────────────────────────────────────────
 
@@ -20,7 +27,8 @@ function isoDate(y: number, m: number, d: number) {
   return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTH_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAY_NAMES   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 function buildCalendarDays(year: number, month: number) {
@@ -80,9 +88,10 @@ export default function BookDateTimeStep() {
 
   const handleDayPress = (day: number) => {
     const d = isoDate(calYear, calMonth, day);
-    if (d < todayStr) return; // no past dates
+    if (d < todayStr) return;
+    Haptics.selectionAsync();
     setSelectedDate(d);
-    setSelectedTime(''); // reset time when date changes
+    setSelectedTime('');
   };
 
   const canContinue = !!selectedDate && !!selectedTime;
@@ -95,50 +104,82 @@ export default function BookDateTimeStep() {
   const formatDate = (iso: string) => {
     if (!iso) return '';
     const [y, m, d] = iso.split('-').map(Number);
-    return `${MONTH_NAMES[m - 1]} ${d}, ${y}`;
+    return `${MONTH_SHORT[m - 1]} ${d}, ${y}`;
   };
 
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
       <BookingProgressBar step={3} />
 
-      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
-
-        {/* ── Calendar ── */}
+      <ScrollView
+        contentContainerStyle={s.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Calendar card ── */}
         <View style={s.calCard}>
           {/* Month nav */}
           <View style={s.calHeader}>
-            <Pressable onPress={prevMonth} style={s.calNavBtn} hitSlop={8}>
+            <Pressable
+              onPress={prevMonth}
+              style={s.calNavBtn}
+              hitSlop={12}
+              android_ripple={{ color: Colors.accent + '12', borderless: false }}
+            >
               <Ionicons name="chevron-back" size={20} color={Colors.accent} />
             </Pressable>
             <Text style={s.calTitle}>{MONTH_NAMES[calMonth]} {calYear}</Text>
-            <Pressable onPress={nextMonth} style={s.calNavBtn} hitSlop={8}>
+            <Pressable
+              onPress={nextMonth}
+              style={s.calNavBtn}
+              hitSlop={12}
+              android_ripple={{ color: Colors.accent + '12', borderless: false }}
+            >
               <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
             </Pressable>
           </View>
 
           {/* Day-of-week labels */}
           <View style={s.calDOW}>
-            {DAY_NAMES.map(d => <Text key={d} style={s.calDOWText}>{d}</Text>)}
+            {DAY_NAMES.map(d => (
+              <View key={d} style={s.calDOWCell}>
+                <Text style={s.calDOWText}>{d}</Text>
+              </View>
+            ))}
           </View>
+
+          {/* Divider */}
+          <View style={s.calDivider} />
 
           {/* Day grid */}
           <View style={s.calGrid}>
             {days.map((day, i) => {
               if (day === null) return <View key={`null-${i}`} style={s.calDayCell} />;
-              const iso  = isoDate(calYear, calMonth, day);
-              const past = iso < todayStr;
-              const sel  = iso === selectedDate;
+              const iso    = isoDate(calYear, calMonth, day);
+              const past   = iso < todayStr;
+              const sel    = iso === selectedDate;
+              const isToday = iso === todayStr;
               return (
                 <Pressable
                   key={iso}
-                  style={[s.calDayCell, sel && s.calDaySel, past && s.calDayPast]}
+                  style={[
+                    s.calDayCell,
+                    isToday && !sel && s.calDayToday,
+                    sel && s.calDaySel,
+                    past && s.calDayPast,
+                  ]}
                   onPress={() => handleDayPress(day)}
                   disabled={past}
+                  android_ripple={{ color: Colors.accent + '12', borderless: false }}
                 >
-                  <Text style={[s.calDayText, sel && s.calDayTextSel, past && s.calDayTextPast]}>
+                  <Text style={[
+                    s.calDayText,
+                    isToday && !sel && s.calDayTextToday,
+                    sel && s.calDayTextSel,
+                    past && s.calDayTextPast,
+                  ]}>
                     {day}
                   </Text>
+                  {isToday && !sel && <View style={s.todayDot} />}
                 </Pressable>
               );
             })}
@@ -147,16 +188,26 @@ export default function BookDateTimeStep() {
 
         {/* ── Time slots ── */}
         {selectedDate ? (
-          <View style={s.slotsWrap}>
-            <Text style={s.slotsTitle}>
-              Available times for{' '}
-              <Text style={{ color: Colors.accent }}>{formatDate(selectedDate)}</Text>
-            </Text>
+          <View style={s.slotsSection}>
+            <View style={s.slotsTitleRow}>
+              <Ionicons name="time-outline" size={16} color={Colors.accent} />
+              <Text style={s.slotsTitle}>
+                Available times for{' '}
+                <Text style={s.slotsTitleDate}>{formatDate(selectedDate)}</Text>
+              </Text>
+            </View>
 
             {loading ? (
-              <ActivityIndicator color={Colors.accent} style={{ marginTop: 12 }} />
+              <View style={s.slotsLoading}>
+                <ActivityIndicator color={Colors.accent} />
+                <Text style={s.slotsLoadingText}>Checking availability…</Text>
+              </View>
             ) : slots.length === 0 ? (
-              <Text style={s.noSlots}>No availability data. Please try again.</Text>
+              <View style={s.noSlotsWrap}>
+                <Ionicons name="calendar-outline" size={32} color={Colors.border} />
+                <Text style={s.noSlotsText}>No availability on this date.</Text>
+                <Text style={s.noSlotsHint}>Try selecting a different day.</Text>
+              </View>
             ) : (
               <View style={s.slotsGrid}>
                 {slots.map(slot => {
@@ -169,12 +220,25 @@ export default function BookDateTimeStep() {
                         !slot.available && s.slotBtnUnavail,
                         isSel && s.slotBtnSel,
                       ]}
-                      onPress={() => slot.available && setSelectedTime(slot.time)}
+                      onPress={() => {
+                        if (slot.available) {
+                          Haptics.selectionAsync();
+                          setSelectedTime(slot.time);
+                        }
+                      }}
                       disabled={!slot.available}
+                      android_ripple={{ color: Colors.accent + '12', borderless: false }}
                     >
-                      <Text style={[s.slotText, !slot.available && s.slotTextUnavail, isSel && s.slotTextSel]}>
+                      <Text style={[
+                        s.slotText,
+                        !slot.available && s.slotTextUnavail,
+                        isSel && s.slotTextSel,
+                      ]}>
                         {slot.time}
                       </Text>
+                      {isSel && (
+                        <View style={s.slotCheckDot} />
+                      )}
                     </Pressable>
                   );
                 })}
@@ -182,21 +246,32 @@ export default function BookDateTimeStep() {
             )}
           </View>
         ) : (
-          <Text style={s.pickDateHint}>← Select a date to see available times</Text>
+          <View style={s.pickDateHintWrap}>
+            <Ionicons name="calendar-outline" size={24} color={Colors.textMuted} />
+            <Text style={s.pickDateHint}>Select a date to see available times</Text>
+          </View>
         )}
-
       </ScrollView>
 
+      {/* Footer */}
       <View style={s.footer}>
         {canContinue && (
-          <Text style={s.footerSummary}>
-            {formatDate(selectedDate)} at {selectedTime}
-          </Text>
+          <View style={s.footerSummaryWrap}>
+            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+            <Text style={s.footerSummary}>
+              {formatDate(selectedDate)} at {selectedTime}
+            </Text>
+          </View>
         )}
         <Pressable
-          style={[s.nextBtn, !canContinue && s.nextBtnOff]}
+          style={({ pressed }) => [
+            s.nextBtn,
+            !canContinue && s.nextBtnOff,
+            pressed && canContinue && { opacity: 0.88 },
+          ]}
           onPress={handleNext}
           disabled={!canContinue}
+          android_ripple={{ color: Colors.accent + '12', borderless: false }}
         >
           <Text style={s.nextBtnText}>Next — Location</Text>
           <Ionicons name="arrow-forward" size={17} color={Colors.white} />
@@ -206,42 +281,129 @@ export default function BookDateTimeStep() {
   );
 }
 
-const CELL = 44;
+const CELL = 42;
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
-  content: { padding: 16, paddingBottom: 120 },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 20, paddingBottom: 120 },
 
-  calCard:   { backgroundColor: Colors.white, borderRadius: 16, padding: 16, marginBottom: 20, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 2 } }) },
-  calHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  calNavBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  calTitle:  { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  calDOW:    { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 6 },
-  calDOWText:{ width: CELL, textAlign: 'center', fontSize: 11, fontWeight: '700', color: Colors.textMuted },
-  calGrid:   { flexDirection: 'row', flexWrap: 'wrap' },
-  calDayCell:{ width: CELL, height: CELL, alignItems: 'center', justifyContent: 'center', borderRadius: CELL / 2 },
-  calDaySel: { backgroundColor: Colors.accent },
-  calDayPast:{ opacity: 0.3 },
-  calDayText:{ fontSize: 14, color: Colors.textPrimary },
-  calDayTextSel:  { color: Colors.white, fontWeight: '700' },
-  calDayTextPast: { color: Colors.textMuted },
+  // Calendar card
+  calCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    marginBottom: 20,
+    ...cardShadow,
+  },
+  calHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  calNavBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  calDOW:   { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8 },
+  calDOWCell: { width: CELL, alignItems: 'center' },
+  calDOWText: { fontSize: 11, fontWeight: '700', color: Colors.textMuted },
+  calDivider: { height: 1, backgroundColor: Colors.border, marginBottom: 8, opacity: 0.5 },
+  calGrid:  { flexDirection: 'row', flexWrap: 'wrap' },
+  calDayCell: {
+    width: CELL,
+    height: CELL,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: CELL / 2,
+    marginBottom: 2,
+  },
+  calDaySel:   { backgroundColor: Colors.accent },
+  calDayToday: { backgroundColor: Colors.accentMuted },
+  calDayPast:  { opacity: 0.25 },
+  calDayText:      { fontSize: 14, color: Colors.textPrimary, fontWeight: '500' },
+  calDayTextSel:   { color: Colors.white, fontWeight: '700' },
+  calDayTextToday: { color: Colors.accent, fontWeight: '700' },
+  calDayTextPast:  { color: Colors.textMuted },
+  todayDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.accent,
+    position: 'absolute',
+    bottom: 4,
+  },
 
-  slotsWrap:  { marginBottom: 20 },
-  slotsTitle: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, marginBottom: 12 },
-  noSlots:    { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 12 },
-  slotsGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  slotBtn:         { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, backgroundColor: Colors.white, borderWidth: 1.5, borderColor: Colors.border },
+  // Slots section
+  slotsSection: { marginBottom: 20 },
+  slotsTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  slotsTitle:    { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  slotsTitleDate: { color: Colors.accent, fontWeight: '700' },
+  slotsLoading: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  slotsLoadingText: { fontSize: 13, color: Colors.textMuted },
+  noSlotsWrap: { alignItems: 'center', paddingVertical: 24, gap: 8 },
+  noSlotsText: { fontSize: 14, fontWeight: '600', color: Colors.textPrimary },
+  noSlotsHint: { fontSize: 13, color: Colors.textMuted },
+  slotsGrid:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  slotBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: borderRadius.sm,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    ...cardShadow,
+  },
   slotBtnSel:      { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  slotBtnUnavail:  { backgroundColor: Colors.background, borderColor: Colors.background },
+  slotBtnUnavail:  { backgroundColor: Colors.background, borderColor: Colors.background, opacity: 0.5 },
   slotText:        { fontSize: 13, fontWeight: '600', color: Colors.textPrimary },
   slotTextSel:     { color: Colors.white },
-  slotTextUnavail: { color: Colors.border },
+  slotTextUnavail: { color: Colors.textMuted },
+  slotCheckDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.white,
+    marginTop: 3,
+  },
 
-  pickDateHint: { textAlign: 'center', color: Colors.textMuted, marginTop: 20, fontSize: 13 },
+  pickDateHintWrap: { alignItems: 'center', gap: 8, paddingVertical: 32 },
+  pickDateHint:     { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
 
-  footer:      { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.white, paddingHorizontal: 20, paddingTop: 14, paddingBottom: Platform.OS === 'ios' ? 32 : 16, borderTopWidth: 1, borderTopColor: Colors.background, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
-  footerSummary:{ fontSize: 12, color: Colors.accent, fontWeight: '600', marginBottom: 8 },
-  nextBtn:      { backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  nextBtnOff:   { opacity: 0.4 },
-  nextBtnText:  { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 14,
+    paddingBottom: IS_IOS ? 32 : 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+    gap: 8,
+    ...(IS_IOS
+      ? { shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: -4 } }
+      : { elevation: 8 }),
+  },
+  footerSummaryWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  footerSummary: { fontSize: 13, color: Colors.success, fontWeight: '600' },
+  nextBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  nextBtnOff:  { opacity: 0.4 },
+  nextBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

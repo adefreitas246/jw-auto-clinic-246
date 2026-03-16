@@ -1,22 +1,25 @@
-﻿// app/(customer)/vehicles/index.tsx
+// app/(customer)/vehicles/index.tsx
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Colors } from '@/constants/Colors';
 import { useVehicles } from '@/hooks/useVehicles';
 import { Vehicle } from '@/types/vehicle';
-import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Swipeable right actions ────────────────────────────────────────────────
 function RightActions({
@@ -34,15 +37,41 @@ function RightActions({
   });
   return (
     <Animated.View style={[styles.actions, { transform: [{ translateX }] }]}>
-      <Pressable style={[styles.actionBtn, styles.editBtn]} onPress={onEdit}>
+      <Pressable
+        style={[styles.actionBtn, styles.editBtn]}
+        onPress={onEdit}
+        android_ripple={{ color: Colors.accent + '12', borderless: false }}
+      >
         <Ionicons name="create-outline" size={20} color={Colors.white} />
         <Text style={styles.actionText}>Edit</Text>
       </Pressable>
-      <Pressable style={[styles.actionBtn, styles.deleteBtn]} onPress={onDelete}>
+      <Pressable
+        style={[styles.actionBtn, styles.deleteBtn]}
+        onPress={onDelete}
+        android_ripple={{ color: Colors.accent + '12', borderless: false }}
+      >
         <Ionicons name="trash-outline" size={20} color={Colors.white} />
         <Text style={styles.actionText}>Delete</Text>
       </Pressable>
     </Animated.View>
+  );
+}
+
+// ─── Plate badge ─────────────────────────────────────────────────────────────
+function PlateBadge({ plate }: { plate: string }) {
+  return (
+    <View style={styles.plateBadge}>
+      <Text style={styles.plateBadgeText}>{plate}</Text>
+    </View>
+  );
+}
+
+// ─── Size tag ─────────────────────────────────────────────────────────────────
+function SizeTag({ size }: { size: string }) {
+  return (
+    <View style={styles.sizeTag}>
+      <Text style={styles.sizeTagText}>{size}</Text>
+    </View>
   );
 }
 
@@ -60,6 +89,7 @@ function VehicleCard({
 
   const handleDelete = () => {
     swipeRef.current?.close();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Delete Vehicle',
       `Remove ${vehicle.make} ${vehicle.model}?`,
@@ -88,25 +118,36 @@ function VehicleCard({
       overshootRight={false}
     >
       <View style={styles.card}>
-        <View style={styles.cardIcon}>
-          <Ionicons name="car-outline" size={28} color={Colors.accent} />
+        {/* Icon */}
+        <View style={styles.cardIconWrap}>
+          <Ionicons name="car-sport-outline" size={26} color={Colors.accent} />
         </View>
+
+        {/* Body */}
         <View style={styles.cardBody}>
           <Text style={styles.cardTitle}>
             {vehicle.make} {vehicle.model}
           </Text>
-          <Text style={styles.cardSub}>
-            {[vehicle.size, vehicle.color, vehicle.licensePlate]
-              .filter(Boolean)
-              .join('  ·  ')}
-          </Text>
+
+          <View style={styles.cardTagRow}>
+            {!!vehicle.size && <SizeTag size={vehicle.size} />}
+            {!!vehicle.color && (
+              <Text style={styles.cardColor}>{vehicle.color}</Text>
+            )}
+          </View>
+
+          {!!vehicle.licensePlate && (
+            <PlateBadge plate={vehicle.licensePlate} />
+          )}
+
           {!!vehicle.notes && (
             <Text style={styles.cardNotes} numberOfLines={1}>
               {vehicle.notes}
             </Text>
           )}
         </View>
-        <Ionicons name="chevron-forward" size={18} color={Colors.border} />
+
+        <Ionicons name="chevron-forward" size={16} color={Colors.border} />
       </View>
     </Swipeable>
   );
@@ -126,18 +167,24 @@ export default function VehicleListScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={Colors.accent} />
-      </View>
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       {error && (
         <View style={styles.errorBanner}>
+          <Ionicons name="alert-circle-outline" size={16} color={Colors.error} />
           <Text style={styles.errorText}>{error}</Text>
-          <Pressable onPress={refresh}>
+          <Pressable
+            onPress={refresh}
+            android_ripple={{ color: Colors.accent + '12', borderless: false }}
+          >
             <Text style={styles.retryText}>Retry</Text>
           </Pressable>
         </View>
@@ -145,11 +192,21 @@ export default function VehicleListScreen() {
 
       {vehicles.length === 0 && !error ? (
         <View style={styles.center}>
-          <Ionicons name="car-outline" size={56} color={Colors.border} />
+          <View style={styles.emptyIconWrap}>
+            <Ionicons name="car-outline" size={40} color={Colors.accent} />
+          </View>
           <Text style={styles.emptyTitle}>No vehicles yet</Text>
           <Text style={styles.emptySubtitle}>
             Add your car to speed up future bookings.
           </Text>
+          <Pressable
+            style={styles.emptyAddBtn}
+            onPress={() => router.push('/(customer)/vehicles/add')}
+            android_ripple={{ color: Colors.accent + '12', borderless: false }}
+          >
+            <Ionicons name="add" size={18} color={Colors.white} />
+            <Text style={styles.emptyAddText}>Add Vehicle</Text>
+          </Pressable>
         </View>
       ) : (
         <Animated.FlatList
@@ -166,52 +223,84 @@ export default function VehicleListScreen() {
           ItemSeparatorComponent={() => <View style={styles.separator} />}
           onRefresh={refresh}
           refreshing={loading}
+          showsVerticalScrollIndicator={false}
         />
       )}
 
       {/* FAB */}
       <Pressable
-        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.85 }]}
-        onPress={() => router.push('/(customer)/vehicles/add')}
+        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.88 }]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          router.push('/(customer)/vehicles/add');
+        }}
+        android_ripple={{ color: Colors.accent + '12', borderless: false }}
       >
         <Ionicons name="add" size={28} color={Colors.white} />
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  list: { padding: 16 },
+  safeArea: { flex: 1, backgroundColor: Colors.surfaceAlt },
+  center:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SCREEN_PADDING },
+  list:     { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
   separator: { height: 8 },
 
+  // Card
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 12,
-    padding: 14,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-      android: { elevation: 2 },
-    }),
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
+    padding: 16,
+    ...cardShadow,
   },
-  cardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  cardIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.sm,
     backgroundColor: Colors.accentMuted,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  cardBody: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
-  cardSub:   { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  cardNotes: { fontSize: 12, color: Colors.textMuted, marginTop: 3 },
+  cardBody:   { flex: 1 },
+  cardTitle:  { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  cardTagRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  cardColor:  { fontSize: 12, color: Colors.textSecondary },
+  cardNotes:  { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
+  // Plate badge
+  plateBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.chrome,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginTop: 4,
+  },
+  plateBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    letterSpacing: 1.5,
+  },
+
+  // Size tag
+  sizeTag: {
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  sizeTagText: { fontSize: 11, fontWeight: '600', color: Colors.accent },
+
+  // Swipe actions
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -219,45 +308,70 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     width: 60,
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     marginLeft: 4,
-    paddingVertical: 10,
+    gap: 4,
   },
-  editBtn:   { backgroundColor: Colors.accent },
-  deleteBtn: { backgroundColor: Colors.error },
-  actionText: { color: Colors.white, fontSize: 11, marginTop: 2 },
+  editBtn:    { backgroundColor: Colors.accent },
+  deleteBtn:  { backgroundColor: Colors.error },
+  actionText: { color: Colors.white, fontSize: 11, fontWeight: '600' },
 
+  // FAB
   fab: {
     position: 'absolute',
-    right: 20,
-    bottom: 28,
+    right: SCREEN_PADDING,
+    bottom: 32,
     width: 56,
     height: 56,
     borderRadius: 28,
     backgroundColor: Colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 6 },
-    }),
+    ...(IS_IOS
+      ? { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 6 } }
+      : { elevation: 8 }),
   },
 
+  // Error banner
   errorBanner: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
     backgroundColor: Colors.errorBg,
-    padding: 12,
-    marginHorizontal: 16,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 12,
+    marginHorizontal: SCREEN_PADDING,
     marginTop: 12,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.error + '30',
   },
-  errorText: { color: Colors.error, fontSize: 13, flex: 1 },
-  retryText: { color: Colors.accent, fontWeight: '600', marginLeft: 8 },
+  errorText:  { flex: 1, color: Colors.errorText, fontSize: 13 },
+  retryText:  { color: Colors.accent, fontWeight: '700', fontSize: 13 },
 
-  emptyTitle:    { fontSize: 18, fontWeight: '600', color: Colors.textPrimary, marginTop: 16 },
-  emptySubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 6 },
+  // Empty state
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle:    { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
+  emptySubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginBottom: 24 },
+  emptyAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+  },
+  emptyAddText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

@@ -11,7 +11,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -233,7 +234,7 @@ export default function EditInventoryScreen() {
     <SafeAreaView style={es.safe} edges={['top']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={IS_IOS ? 'padding' : undefined}
       >
         {/* Header */}
         <View style={es.header}>
@@ -391,10 +392,9 @@ export default function EditInventoryScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const es = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
@@ -413,7 +413,7 @@ const es = StyleSheet.create({
   },
   saveBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 
-  scroll: { paddingHorizontal: 20, paddingTop: 8 },
+  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 100 },
 
   input: {
     borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,

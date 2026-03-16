@@ -1,9 +1,9 @@
-﻿// app/(customer)/book/payment.tsx — Step 6: WiPay / BIMPay WebView redirect
+// app/(customer)/book/payment.tsx — Step 6: WiPay / BIMPay WebView redirect
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Platform, Pressable,
+  ActivityIndicator, Alert, Pressable,
   StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,8 @@ import WebView, { WebViewNavigation } from 'react-native-webview';
 
 import { useBooking } from '@/context/BookingContext';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // Detect when the gateway redirects back to our return URL
 const RETURN_HOST = 'jw-auto-clinic-246.onrender.com';
@@ -85,7 +87,11 @@ export default function BookPaymentStep() {
       <View style={s.overlay}>
         <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
         <Text style={s.overlayText}>No payment URL received.</Text>
-        <Pressable style={s.backBtn} onPress={() => router.back()}>
+        <Pressable
+          style={s.backBtn}
+          onPress={() => router.back()}
+          android_ripple={{ color: Colors.white + '30', borderless: false }}
+        >
           <Text style={s.backBtnText}>Go Back</Text>
         </Pressable>
       </View>
@@ -96,7 +102,12 @@ export default function BookPaymentStep() {
     <View style={s.container}>
       {/* Safe area + close button */}
       <SafeAreaView style={s.header} edges={['top']}>
-        <Pressable onPress={() => router.back()} style={s.closeBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={s.closeBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.accent + '20', borderless: true }}
+        >
           <Ionicons name="close" size={24} color={Colors.textPrimary} />
         </Pressable>
         <Text style={s.headerTitle}>Secure Payment</Text>
@@ -126,15 +137,15 @@ export default function BookPaymentStep() {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
+  container:   { flex: 1, backgroundColor: Colors.background },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border },
   headerTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   closeBtn:    { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
 
-  webLoader: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.white, zIndex: 10 },
+  webLoader: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background, zIndex: 10 },
 
-  overlay: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: Colors.white },
+  overlay:     { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, backgroundColor: Colors.background },
   overlayText: { fontSize: 15, color: Colors.textSecondary, marginTop: 16, textAlign: 'center' },
-  backBtn:     { marginTop: 24, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12 },
+  backBtn:     { marginTop: 24, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 12, overflow: 'hidden' },
   backBtnText: { color: Colors.white, fontWeight: '700' },
 });

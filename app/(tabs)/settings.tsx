@@ -29,6 +29,8 @@ import {
 } from "react-native";
 import * as Animatable from "react-native-animatable";
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 type ChangeItem = { type: "New" | "Improved" | "Fixed" | string; text: string };
 type WhatsNewItem = { version: string; date?: string; changes: ChangeItem[] };

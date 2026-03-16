@@ -1,17 +1,20 @@
-﻿// app/(customer)/home.tsx
+// app/(customer)/home.tsx
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { IS_IOS } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type QuickAction = {
@@ -84,74 +87,87 @@ export default function CustomerHome() {
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <View>
-            <Text style={s.greeting}>{greeting}, {firstName} 👋</Text>
-            <Text style={s.sub}>What would you like to do today?</Text>
-          </View>
-          <Pressable
-            style={s.avatarBtn}
-            onPress={async () => { await logout(); router.replace('/auth/login'); }}
-            hitSlop={8}
-          >
-            <Text style={s.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
-          </Pressable>
-        </View>
-
-        {/* ── Hero card ── */}
-        <Pressable
-          style={({ pressed }) => [s.hero, pressed && { opacity: 0.92 }]}
-          onPress={() => router.push('/(customer)/book')}
-        >
-          <View style={s.heroContent}>
-            <Text style={s.heroEyebrow}>READY TO BOOK?</Text>
-            <Text style={s.heroTitle}>Browse Services{'\n'}& Packages</Text>
-            <View style={s.heroCta}>
-              <Text style={s.heroCtaText}>Book a Wash</Text>
-              <Ionicons name="arrow-forward" size={14} color={Colors.white} />
+        <Animated.View entering={FadeIn.duration(300)}>
+          {/* ── Header ── */}
+          <View style={s.header}>
+            <View style={s.headerText}>
+              <Text style={s.greeting}>{greeting}, {firstName} 👋</Text>
+              <Text style={s.sub}>What would you like to do today?</Text>
             </View>
-          </View>
-          <Ionicons
-            name="car-sport"
-            size={80}
-            color="rgba(255,255,255,0.12)"
-            style={s.heroIcon}
-          />
-        </Pressable>
-
-        {/* ── Quick actions grid ── */}
-        <Text style={s.sectionTitle}>Quick Access</Text>
-        <View style={s.grid}>
-          {QUICK_ACTIONS.map(action => (
             <Pressable
-              key={action.route}
-              style={({ pressed }) => [s.card, pressed && { opacity: 0.85 }]}
-              onPress={() => router.push(action.route as any)}
+              style={({ pressed }) => [s.avatarBtn, pressed && { opacity: 0.8 }]}
+              onPress={async () => {
+                if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                await logout();
+                router.replace('/auth/login');
+              }}
+              hitSlop={8}
+              android_ripple={{ color: Colors.accentDark, borderless: true }}
             >
-              <View style={[s.cardIcon, { backgroundColor: action.bg }]}>
-                <Ionicons name={action.icon} size={24} color={action.color} />
-              </View>
-              <Text style={s.cardLabel}>{action.label}</Text>
-              <Text style={s.cardSub}>{action.sub}</Text>
+              <Text style={s.avatarText}>{firstName.charAt(0).toUpperCase()}</Text>
             </Pressable>
-          ))}
-        </View>
+          </View>
+
+          {/* ── Hero card ── */}
+          <Pressable
+            style={({ pressed }) => [s.hero, pressed && { opacity: 0.93 }]}
+            onPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/(customer)/book');
+            }}
+            android_ripple={{ color: 'rgba(255,255,255,0.15)', borderless: false }}
+          >
+            <View style={s.heroContent}>
+              <Text style={s.heroEyebrow}>READY TO BOOK?</Text>
+              <Text style={s.heroTitle}>Browse Services{'\n'}& Packages</Text>
+              <View style={s.heroCta}>
+                <Text style={s.heroCtaText}>Book a Wash</Text>
+                <Ionicons name="arrow-forward" size={14} color={Colors.white} />
+              </View>
+            </View>
+            <Ionicons
+              name="car-sport"
+              size={80}
+              color="rgba(255,255,255,0.12)"
+              style={s.heroIcon}
+            />
+          </Pressable>
+
+          {/* ── Quick actions grid ── */}
+          <Text style={s.sectionTitle}>Quick Access</Text>
+          <View style={s.grid}>
+            {QUICK_ACTIONS.map((action) => (
+              <Pressable
+                key={action.route}
+                style={({ pressed }) => [s.card, pressed && { opacity: 0.82 }]}
+                onPress={() => {
+                  if (IS_IOS) Haptics.selectionAsync();
+                  router.push(action.route as any);
+                }}
+                android_ripple={{ color: Colors.border, borderless: false }}
+              >
+                <View style={[s.cardIcon, { backgroundColor: action.bg }]}>
+                  <Ionicons name={action.icon} size={24} color={action.color} />
+                </View>
+                <Text style={s.cardLabel}>{action.label}</Text>
+                <Text style={s.cardSub}>{action.sub}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const shadow = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 3 },
-  default: {},
-});
-
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.background },
-  scroll:  { flex: 1 },
-  content: { padding: 20, paddingBottom: 110 },
+  safe: { flex: 1, backgroundColor: Colors.background },
+  scroll: { flex: 1 },
+  content: {
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 20,
+    paddingBottom: 100,
+  },
 
   // Header
   header: {
@@ -160,62 +176,94 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 24,
   },
+  headerText: { flex: 1 },
   greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
-  sub:      { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  sub: { fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
   avatarBtn: {
-    width: 42, height: 42, borderRadius: 21,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.accent,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...cardShadow,
   },
   avatarText: { color: Colors.white, fontWeight: '800', fontSize: 16 },
 
   // Hero card
   hero: {
     backgroundColor: Colors.primary,
-    borderRadius: 20,
+    borderRadius: borderRadius.lg,
     padding: 24,
     marginBottom: 28,
     overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
-    ...Platform.select({
-      ios:     { shadowColor: Colors.primary, shadowOpacity: 0.35, shadowRadius: 16, shadowOffset: { width: 0, height: 6 } },
-      android: { elevation: 8 },
-    }),
+    ...cardShadow,
   },
   heroContent: { flex: 1 },
   heroEyebrow: {
-    fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '700',
-    textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: 6,
   },
   heroTitle: {
-    fontSize: 22, fontWeight: '800', color: Colors.white,
-    lineHeight: 28, marginBottom: 16,
+    fontSize: 22,
+    fontWeight: '800',
+    color: Colors.white,
+    lineHeight: 28,
+    marginBottom: 16,
   },
   heroCta: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     backgroundColor: Colors.accent,
     alignSelf: 'flex-start',
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 99,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: borderRadius.full,
   },
   heroCtaText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
-  heroIcon:    { position: 'absolute', right: -8, bottom: -10 },
+  heroIcon: { position: 'absolute', right: -8, bottom: -10 },
 
   // Grid
   sectionTitle: {
-    fontSize: 18, fontWeight: '700',
-    color: Colors.textPrimary, marginBottom: 14,
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 14,
   },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
   card: {
     width: '47%',
     backgroundColor: Colors.surface,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
     padding: 16,
-    ...shadow,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
   },
-  cardIcon:  { width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  cardLabel: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 2 },
-  cardSub:   { fontSize: 12, color: Colors.textSecondary },
+  cardIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  cardLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  cardSub: { fontSize: 12, color: Colors.textSecondary },
 });

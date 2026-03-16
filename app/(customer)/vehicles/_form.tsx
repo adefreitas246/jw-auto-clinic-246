@@ -9,7 +9,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +18,8 @@ import {
 } from "react-native";
 
 import { Colors } from "@/constants/Colors";
+import { IS_IOS } from "@/utils/platform";
+import { SCREEN_PADDING } from "@/utils/platformStyles";
 import { useVehicles } from "@/hooks/useVehicles";
 import {
   EMPTY_VEHICLE_FORM,
@@ -223,7 +224,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={IS_IOS ? "padding" : undefined}
       >
         <ScrollView
           style={s.container}
@@ -264,6 +265,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
               style={[s.scanBtn, scanning && { opacity: 0.6 }]}
               onPress={() => setCameraOpen(true)}
               disabled={scanning}
+              android_ripple={{ color: Colors.white + '30', borderless: false }}
             >
               {scanning ? (
                 <ActivityIndicator color={Colors.white} size="small" />
@@ -293,6 +295,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
                 onPress={() =>
                   setForm((prev) => ({ ...prev, size: sz as VehicleSize }))
                 }
+                android_ripple={{ color: Colors.accent + '20', borderless: false }}
               >
                 <Text
                   style={[
@@ -323,6 +326,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
             style={[s.saveBtn, saving && { opacity: 0.7 }]}
             onPress={handleSave}
             disabled={saving}
+            android_ripple={{ color: Colors.white + '30', borderless: false }}
           >
             {saving ? (
               <ActivityIndicator color={Colors.white} />
@@ -341,7 +345,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.surfaceAlt },
-  content: { padding: 20, paddingBottom: 48 },
+  content: { padding: SCREEN_PADDING, paddingBottom: 100 },
 
   label: {
     fontSize: 13,

@@ -11,7 +11,7 @@ import axios         from 'axios';
 import { router }    from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator, Animated, Platform,
+  ActivityIndicator,
   Pressable, ScrollView, StyleSheet, Text,
   TextInput, View,
 } from 'react-native';
@@ -19,6 +19,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -319,15 +321,14 @@ export default function SmartScheduleScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
-  content: { padding: 20, paddingBottom: 60, gap: 14 },
+  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 14 },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
@@ -378,10 +379,7 @@ const s = StyleSheet.create({
   askBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: Colors.accent, borderRadius: 16, paddingVertical: 16,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 6 },
-    }),
+    ...(IS_IOS ? { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } } : IS_ANDROID ? { elevation: 6 } : {}),
   },
   askBtnText: { color: Colors.white, fontWeight: '800', fontSize: 16 },
 
@@ -410,10 +408,7 @@ const b = StyleSheet.create({
     gap: 16,
     borderWidth: 2,
     borderColor: Colors.accentLight,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 6 },
-    }),
+    ...(IS_IOS ? { shadowColor: Colors.accent, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 4 } } : IS_ANDROID ? { elevation: 6 } : {}),
   },
   bannerHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

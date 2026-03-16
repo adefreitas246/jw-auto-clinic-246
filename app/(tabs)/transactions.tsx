@@ -20,6 +20,8 @@ import {
 import * as Animatable from 'react-native-animatable';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 interface Transaction {
   _id: string;

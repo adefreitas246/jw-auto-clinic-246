@@ -21,7 +21,9 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { PaperProvider, MD3LightTheme } from "react-native-paper";
 import { Colors } from '@/constants/Colors';
+import { MATERIAL_SEED_COLOR, StaticM3Colors } from '@/constants/MaterialTheme';
 
 const ONBOARDING_ROUTE = "/onboarding-screen";
 
@@ -148,6 +150,20 @@ function AuthGate() {
   return <Slot key={slotKey} />;
 }
 
+const PaperTheme = {
+  ...MD3LightTheme,
+  colors: {
+    ...MD3LightTheme.colors,
+    primary:           StaticM3Colors.primary,
+    onPrimary:         StaticM3Colors.onPrimary,
+    primaryContainer:  StaticM3Colors.primaryContainer,
+    secondary:         StaticM3Colors.secondary,
+    surface:           StaticM3Colors.surface,
+    background:        StaticM3Colors.background,
+    error:             StaticM3Colors.error,
+  },
+};
+
 const WashHubTheme = {
   ...DefaultTheme,
   colors: {
@@ -170,12 +186,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <ThemeProvider value={WashHubTheme}>
-            <AuthGate />
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </AuthProvider>
+        <PaperProvider theme={PaperTheme}>
+          <AuthProvider>
+            <ThemeProvider value={WashHubTheme}>
+              <AuthGate />
+              <StatusBar style="auto" />
+            </ThemeProvider>
+          </AuthProvider>
+        </PaperProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

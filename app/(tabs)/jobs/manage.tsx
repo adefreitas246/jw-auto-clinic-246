@@ -1,4 +1,4 @@
-﻿// app/(tabs)/jobs/manage.tsx — Admin Job Management Dashboard
+// app/(tabs)/jobs/manage.tsx — Admin Job Management Dashboard
 // Full oversight and control: view all jobs, change any status, assign staff.
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,8 +8,8 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator, Animated, FlatList, Modal,
-  Platform, Pressable, RefreshControl,
-  ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  Pressable, RefreshControl,
+  ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
@@ -24,6 +24,8 @@ import {
   STAFF_STATUS_LABELS,
 } from '@/types/job';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Worker {
@@ -59,6 +61,7 @@ function StatusBadge({
       style={[ad.badge, { backgroundColor: bg }, onPress && { paddingRight: 6 }]}
       onPress={onPress}
       hitSlop={4}
+      android_ripple={{ color: text }}
     >
       <Text style={[ad.badgeText, { color: text }]}>
         {STAFF_STATUS_LABELS[status]}
@@ -106,6 +109,7 @@ function StatusPickerModal({
               key={step.status}
               style={[ad.statusOption, isCurrent && { backgroundColor: bg }]}
               onPress={() => { onSelect(job._id, step.status); onClose(); }}
+              android_ripple={{ color: Colors.border }}
             >
               <View style={[ad.statusDot, { backgroundColor: isCurrent ? text : Colors.border }]} />
               <Text style={[ad.statusOptionText, isCurrent && { color: text, fontWeight: '700' }]}>
@@ -116,7 +120,11 @@ function StatusPickerModal({
           );
         })}
 
-        <Pressable style={ad.cancelBtn} onPress={onClose}>
+        <Pressable
+          style={ad.cancelBtn}
+          onPress={onClose}
+          android_ripple={{ color: Colors.border }}
+        >
           <Text style={ad.cancelBtnText}>Cancel</Text>
         </Pressable>
       </Animated.View>
@@ -156,10 +164,10 @@ function AssignModal({
         <Text style={ad.sheetTitle}>Assign Technician</Text>
         <Text style={ad.sheetSub} numberOfLines={1}>{job.serviceLabel}</Text>
 
-        {/* Unassign option */}
         <Pressable
           style={[ad.assignOption, !job.assignedStaffId && ad.assignOptionActive]}
           onPress={() => { onSelect(job._id, '', ''); onClose(); }}
+          android_ripple={{ color: Colors.border }}
         >
           <View style={ad.assignAvatar}>
             <Ionicons name="person-outline" size={18} color={Colors.textMuted} />
@@ -177,6 +185,7 @@ function AssignModal({
               key={w._id}
               style={[ad.assignOption, isSelected && ad.assignOptionActive]}
               onPress={() => { onSelect(job._id, w._id, w.name); onClose(); }}
+              android_ripple={{ color: Colors.border }}
             >
               <View style={[ad.assignAvatar, isSelected && { backgroundColor: Colors.accentMuted }]}>
                 <Text style={[ad.assignInitials, isSelected && { color: Colors.accent }]}>
@@ -194,7 +203,11 @@ function AssignModal({
           );
         })}
 
-        <Pressable style={ad.cancelBtn} onPress={onClose}>
+        <Pressable
+          style={ad.cancelBtn}
+          onPress={onClose}
+          android_ripple={{ color: Colors.border }}
+        >
           <Text style={ad.cancelBtnText}>Cancel</Text>
         </Pressable>
       </Animated.View>
@@ -230,7 +243,6 @@ function AdminJobCard({
               : (job.bayLabel     || 'Bay')}
           </Text>
         </View>
-        {/* Tappable badge → status picker */}
         <StatusBadge status={job.jobStatus} onPress={() => onStatusPress(job)} />
       </View>
 
@@ -245,10 +257,13 @@ function AdminJobCard({
         </Text>
       </View>
 
-      {/* Row 4: assignment + price */}
+      {/* Row 4: assignment + price + view */}
       <View style={ad.cardBottomRow}>
-        {/* Tappable assignment chip → assign modal */}
-        <Pressable style={ad.assignChip} onPress={() => onAssignPress(job)}>
+        <Pressable
+          style={ad.assignChip}
+          onPress={() => onAssignPress(job)}
+          android_ripple={{ color: Colors.border }}
+        >
           <Ionicons
             name={job.assignedStaffId ? 'person-circle-outline' : 'person-add-outline'}
             size={13}
@@ -268,10 +283,10 @@ function AdminJobCard({
           <Text style={ad.durText}>{job.durationMinutes}m</Text>
         </View>
 
-        {/* Navigate to full workflow */}
         <Pressable
           style={ad.viewBtn}
           onPress={() => router.push({ pathname: '/(tabs)/jobs/[id]', params: { id: job._id } })}
+          android_ripple={{ color: Colors.accent }}
         >
           <Text style={ad.viewBtnText}>View</Text>
           <Ionicons name="arrow-forward" size={12} color={Colors.accent} />
@@ -320,7 +335,6 @@ export default function AdminJobManage() {
   useEffect(() => { fetchWorkers(); }, [fetchWorkers]);
   useEffect(() => { fetchJobs(); },   [fetchJobs]);
 
-  // Refresh when screen comes into focus
   useFocusEffect(useCallback(() => { fetchJobs(true); }, [fetchJobs]));
 
   const onRefresh = useCallback(() => {
@@ -330,14 +344,13 @@ export default function AdminJobManage() {
 
   // ── Status change ──────────────────────────────────────────────────────────
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
-    // Optimistic update
     setJobs(prev =>
       prev.map(j => j._id === jobId ? { ...j, jobStatus: newStatus } : j)
     );
     try {
       await axios.patch(`/api/jobs/${jobId}/status`, { jobStatus: newStatus });
     } catch {
-      fetchJobs(true); // rollback on error
+      fetchJobs(true);
     }
   };
 
@@ -354,7 +367,6 @@ export default function AdminJobManage() {
       if (staffId) {
         await axios.patch(`/api/jobs/${jobId}/assign`, { staffId, technicianName: name });
       } else {
-        // Unassign: patch with empty staffId
         await axios.patch(`/api/jobs/${jobId}/assign`, { staffId: null, technicianName: '' });
       }
     } catch {
@@ -387,36 +399,49 @@ export default function AdminJobManage() {
 
       {/* ── Header ── */}
       <View style={ad.header}>
-        <Pressable style={ad.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Pressable
+          style={ad.headerIconBtn}
+          onPress={() => router.back()}
+          hitSlop={8}
+          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={ad.headerTitle}>Job Management</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/fleet')} hitSlop={8}>
-            <Ionicons name="navigate" size={20} color={Colors.accent} />
+        <View style={ad.headerActions}>
+          {[
+            { icon: 'navigate',           path: '/(tabs)/fleet'               },
+            { icon: 'people-outline',     path: '/(tabs)/queue'               },
+            { icon: 'bar-chart-outline',  path: '/(tabs)/reports'             },
+            { icon: 'cube-outline',       path: '/(tabs)/inventory'           },
+            { icon: 'star-outline',       path: '/(tabs)/reviews'             },
+            { icon: 'card-outline',       path: '/(tabs)/subscription-plans'  },
+            { icon: 'megaphone-outline',  path: '/(tabs)/marketing'           },
+          ].map(({ icon, path }) => (
+            <Pressable
+              key={path}
+              style={ad.headerIconBtn}
+              onPress={() => router.push(path as any)}
+              hitSlop={8}
+              android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+            >
+              <Ionicons name={icon as any} size={20} color={Colors.accent} />
+            </Pressable>
+          ))}
+          <Pressable
+            style={[ad.headerIconBtn, ad.aiBtn]}
+            onPress={() => router.push('/(tabs)/ai' as any)}
+            hitSlop={8}
+            android_ripple={{ color: Colors.accent }}
+          >
+            <Text style={ad.aiBtnText}>AI</Text>
           </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/queue')} hitSlop={8}>
-            <Ionicons name="people-outline" size={20} color={Colors.accent} />
-          </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/reports')} hitSlop={8}>
-            <Ionicons name="bar-chart-outline" size={20} color={Colors.accent} />
-          </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/inventory')} hitSlop={8}>
-            <Ionicons name="cube-outline" size={20} color={Colors.accent} />
-          </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/reviews')} hitSlop={8}>
-            <Ionicons name="star-outline" size={20} color={Colors.accent} />
-          </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/subscription-plans')} hitSlop={8}>
-            <Ionicons name="card-outline" size={20} color={Colors.accent} />
-          </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => router.push('/(tabs)/marketing')} hitSlop={8}>
-            <Ionicons name="megaphone-outline" size={20} color={Colors.accent} />
-          </Pressable>
-          <Pressable style={[ad.refreshBtn, { backgroundColor: Colors.accentMuted }]} onPress={() => router.push('/(tabs)/ai')} hitSlop={8}>
-            <Text style={{ fontSize: 14, fontWeight: '900', color: Colors.accent }}>✨</Text>
-          </Pressable>
-          <Pressable style={ad.refreshBtn} onPress={() => fetchJobs(true)} hitSlop={8}>
+          <Pressable
+            style={ad.headerIconBtn}
+            onPress={() => fetchJobs(true)}
+            hitSlop={8}
+            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+          >
             <Ionicons name="refresh" size={20} color={Colors.accent} />
           </Pressable>
         </View>
@@ -424,7 +449,12 @@ export default function AdminJobManage() {
 
       {/* ── Date navigation ── */}
       <View style={ad.datePicker}>
-        <Pressable onPress={() => setDate(d => shiftISO(d, -1))} hitSlop={10}>
+        <Pressable
+          style={ad.dateNavBtn}
+          onPress={() => setDate(d => shiftISO(d, -1))}
+          hitSlop={10}
+          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+        >
           <Ionicons name="chevron-back" size={20} color={Colors.accent} />
         </Pressable>
         <Pressable
@@ -434,7 +464,12 @@ export default function AdminJobManage() {
           <Text style={ad.dateText}>{formatDate(date)}</Text>
           {isToday && <Text style={ad.todayLabel}>Today — tap to reset</Text>}
         </Pressable>
-        <Pressable onPress={() => setDate(d => shiftISO(d, 1))} hitSlop={10}>
+        <Pressable
+          style={ad.dateNavBtn}
+          onPress={() => setDate(d => shiftISO(d, 1))}
+          hitSlop={10}
+          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+        >
           <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
         </Pressable>
       </View>
@@ -447,10 +482,10 @@ export default function AdminJobManage() {
         style={ad.statsRow}
       >
         {[
-          { label: 'Total',      value: stats.total,              color: Colors.textPrimary },
-          { label: 'Active',     value: stats.active,             color: Colors.warning },
-          { label: 'Done',       value: stats.done,               color: Colors.success },
-          { label: 'Unassigned', value: stats.unassigned,         color: Colors.error },
+          { label: 'Total',      value: stats.total,                    color: Colors.textPrimary },
+          { label: 'Active',     value: stats.active,                   color: Colors.warning },
+          { label: 'Done',       value: stats.done,                     color: Colors.success },
+          { label: 'Unassigned', value: stats.unassigned,               color: Colors.error },
           { label: 'Revenue',    value: `$${stats.revenue.toFixed(0)}`, color: Colors.accent },
         ].map(s => (
           <View key={s.label} style={ad.statCard}>
@@ -462,7 +497,6 @@ export default function AdminJobManage() {
 
       {/* ── Filter strip ── */}
       <View style={ad.filterSection}>
-        {/* Status filter */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -479,6 +513,7 @@ export default function AdminJobManage() {
                   active && { backgroundColor: col?.bg ?? Colors.accentMuted, borderColor: col?.text ?? Colors.accent },
                 ]}
                 onPress={() => setStatusFilter(f.key as JobStatus | 'all')}
+                android_ripple={{ color: Colors.border }}
               >
                 <Text style={[ad.filterPillText, active && { color: col?.text ?? Colors.accent, fontWeight: '700' }]}>
                   {f.label}
@@ -488,7 +523,6 @@ export default function AdminJobManage() {
           })}
         </ScrollView>
 
-        {/* Worker filter */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -496,7 +530,7 @@ export default function AdminJobManage() {
         >
           {[
             { key: 'all',        label: 'All Staff'   },
-            { key: 'unassigned', label: '⚠ Unassigned' },
+            { key: 'unassigned', label: 'Unassigned'  },
             ...workers.map(w => ({ key: w._id, label: w.name })),
           ].map(f => {
             const active = workerFilter === f.key;
@@ -505,6 +539,7 @@ export default function AdminJobManage() {
                 key={f.key}
                 style={[ad.filterPill, active && ad.filterPillWorkerActive]}
                 onPress={() => setWorkerFilter(f.key)}
+                android_ripple={{ color: Colors.border }}
               >
                 <Text style={[ad.filterPillText, active && ad.filterPillWorkerActiveText]}>
                   {f.label}
@@ -537,7 +572,9 @@ export default function AdminJobManage() {
           }
           ListEmptyComponent={
             <View style={ad.empty}>
-              <Ionicons name="calendar-outline" size={52} color={Colors.border} />
+              <View style={ad.emptyIconWrap}>
+                <Ionicons name="calendar-outline" size={40} color={Colors.textMuted} />
+              </View>
               <Text style={ad.emptyTitle}>No jobs found</Text>
               <Text style={ad.emptyText}>
                 {statusFilter !== 'all' || workerFilter !== 'all'
@@ -573,81 +610,105 @@ export default function AdminJobManage() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const ad = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 12,
+    paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
   },
-  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  refreshBtn:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerIconBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  headerTitle:   { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+
+  aiBtn:    { backgroundColor: Colors.accentMuted },
+  aiBtnText:{ fontSize: 11, fontWeight: '900', color: Colors.accent },
 
   // Date picker
   datePicker: {
     flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: Colors.white, borderRadius: 14,
+    marginHorizontal: 20, marginVertical: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
     paddingVertical: 10, paddingHorizontal: 12,
-    ...SHADOW,
+    ...cardShadow,
+  },
+  dateNavBtn: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
   dateText:   { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   todayLabel: { fontSize: 11, color: Colors.accent, fontWeight: '600', marginTop: 2 },
 
   // Stats
-  statsRow:   { maxHeight: 82, marginBottom: 10 },
-  statsScroll:{ paddingHorizontal: 16, gap: 10 },
-  statCard:   {
-    backgroundColor: Colors.white, borderRadius: 12,
+  statsRow:    { maxHeight: 84, marginBottom: 8 },
+  statsScroll: { paddingHorizontal: 20, gap: 10 },
+  statCard:    {
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
     paddingHorizontal: 16, paddingVertical: 10,
-    alignItems: 'center', minWidth: 80,
-    ...SHADOW,
+    alignItems: 'center', minWidth: 76,
+    ...cardShadow,
   },
-  statVal:    { fontSize: 20, fontWeight: '800' },
-  statLabel:  { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  statVal:   { fontSize: 20, fontWeight: '800' },
+  statLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 
   // Filter
   filterSection: { marginBottom: 8 },
-  filterScroll:  { paddingHorizontal: 16, gap: 8 },
+  filterScroll:  { paddingHorizontal: 20, gap: 8 },
   filterPill:    {
-    borderRadius: 99, paddingHorizontal: 14, paddingVertical: 7,
-    backgroundColor: Colors.white, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 14, paddingVertical: 7,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5, borderColor: Colors.border,
+    overflow: 'hidden',
   },
-  filterPillText:        { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
-  filterPillWorkerActive:{ backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
+  filterPillText:             { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  filterPillWorkerActive:     { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
   filterPillWorkerActiveText: { color: Colors.accent, fontWeight: '700' },
 
   // List
-  listContent: { paddingHorizontal: 16, paddingBottom: 110 },
-  listCount:   { fontSize: 12, color: Colors.textMuted, fontWeight: '600', marginBottom: 10, marginTop: 4 },
+  listContent: { paddingHorizontal: 20, paddingBottom: 110, paddingTop: 4 },
+  listCount:   { fontSize: 12, color: Colors.textMuted, fontWeight: '600', marginBottom: 8 },
 
   // Admin job card
   card: {
-    backgroundColor: Colors.white, borderRadius: 16, padding: 15,
-    marginBottom: 12, ...SHADOW,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    marginBottom: 12,
+    ...cardShadow,
   },
-  cardTopRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  timeBlock:   { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  timeText:    { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
-  locText:     { fontSize: 12, color: Colors.textMuted, flex: 1 },
-  svcName:     { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 5 },
-  vehicleRow:  { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
-  vehicleText: { fontSize: 13, color: Colors.textMuted, flex: 1 },
-  cardBottomRow:{ flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: Colors.background, paddingTop: 10 },
+  cardTopRow:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  timeBlock:    { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
+  timeText:     { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  locText:      { fontSize: 12, color: Colors.textMuted, flex: 1 },
+  svcName:      { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 6 },
+  vehicleRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  vehicleText:  { fontSize: 13, color: Colors.textMuted, flex: 1 },
+  cardBottomRow:{
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: Colors.border,
+    paddingTop: 10,
+  },
 
   // Assignment chip
   assignChip:     {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.surfaceAlt, borderRadius: 99,
-    paddingHorizontal: 10, paddingVertical: 5,
+    backgroundColor: Colors.background,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10, paddingVertical: 6,
+    overflow: 'hidden',
   },
   assignChipText: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, flex: 1 },
 
@@ -656,14 +717,16 @@ const ad = StyleSheet.create({
   durText:    { fontSize: 11, color: Colors.textMuted },
 
   viewBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: Colors.accentMuted, borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 10, paddingVertical: 7,
+    overflow: 'hidden',
   },
   viewBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
-  // Status badge (tappable version)
-  badge:     { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
+  // Status badge
+  badge:     { flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 5, overflow: 'hidden' },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
   // Modal backdrop + sheet
@@ -673,13 +736,17 @@ const ad = StyleSheet.create({
   },
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: Colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingHorizontal: 20,
+    paddingBottom: IS_IOS ? 36 : 24,
     paddingTop: 12,
+    ...cardShadow,
   },
   sheetHandle: {
     width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border,
-    alignSelf: 'center', marginBottom: 16,
+    alignSelf: 'center', marginBottom: 20,
   },
   sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
   sheetSub:   { fontSize: 13, color: Colors.textMuted, marginBottom: 16 },
@@ -687,7 +754,10 @@ const ad = StyleSheet.create({
   // Status options
   statusOption: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 13, paddingHorizontal: 10, borderRadius: 10, marginBottom: 4,
+    paddingVertical: 13, paddingHorizontal: 10,
+    borderRadius: borderRadius.sm,
+    marginBottom: 4,
+    overflow: 'hidden',
   },
   statusDot:        { width: 10, height: 10, borderRadius: 5 },
   statusOptionText: { flex: 1, fontSize: 15, color: Colors.textSecondary, fontWeight: '500' },
@@ -695,11 +765,14 @@ const ad = StyleSheet.create({
   // Assign options
   assignOption: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 11, paddingHorizontal: 10, borderRadius: 10, marginBottom: 4,
+    paddingVertical: 11, paddingHorizontal: 10,
+    borderRadius: borderRadius.sm,
+    marginBottom: 4,
+    overflow: 'hidden',
   },
   assignOptionActive: { backgroundColor: Colors.accentMuted },
   assignAvatar: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: Colors.background,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -708,13 +781,16 @@ const ad = StyleSheet.create({
   assignRole:     { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
 
   cancelBtn: {
-    marginTop: 8, backgroundColor: Colors.background, borderRadius: 12,
-    paddingVertical: 13, alignItems: 'center',
+    marginTop: 8, backgroundColor: Colors.background,
+    borderRadius: borderRadius.md,
+    paddingVertical: 14, alignItems: 'center',
+    overflow: 'hidden',
   },
   cancelBtnText: { fontSize: 15, fontWeight: '700', color: Colors.textSecondary },
 
   // Empty
-  empty:      { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginTop: 16, marginBottom: 6 },
-  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  emptyIconWrap:{ width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  empty:        { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
+  emptyTitle:   { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
+  emptyText:    { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 22 },
 });

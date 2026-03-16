@@ -2,7 +2,14 @@
 // Customer-facing service catalog with offline support.
 // Packages are shown first; remaining à-la-carte services as add-ons.
 // A sticky footer shows the running price total.
+import { Colors } from '@/constants/Colors';
+import { useBooking } from '@/context/BookingContext';
+import { useServiceCatalog } from '@/hooks/useServiceCatalog';
+import { Package, packageDuration, packagePrice, Service } from '@/types/catalog';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { IS_IOS } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import {
@@ -14,18 +21,14 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useBooking } from '@/context/BookingContext';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { useServiceCatalog } from '@/hooks/useServiceCatalog';
-import { Package, packageDuration, packagePrice, Service } from '@/types/catalog';
-import { Colors } from '@/constants/Colors';
-
-// ─── Format helpers ───────────────────────────────────────────────────────────
+// ─── Format helpers ────────────────────────────────────────────────────────────
 const fmt = (n: number) => `$${n.toFixed(2)}`;
 const fmtMins = (m: number) =>
   m < 60 ? `${m} min` : `${Math.floor(m / 60)}h ${m % 60 > 0 ? `${m % 60}m` : ''}`.trim();
 
-// ─── Offline banner ───────────────────────────────────────────────────────────
+// ─── Offline banner ────────────────────────────────────────────────────────────
 function OfflineBanner({ lastSyncedAt }: { lastSyncedAt: number | null }) {
   const when = lastSyncedAt
     ? new Date(lastSyncedAt).toLocaleString(undefined, {
@@ -34,7 +37,7 @@ function OfflineBanner({ lastSyncedAt }: { lastSyncedAt: number | null }) {
     : 'unknown';
   return (
     <View style={s.offlineBanner}>
-      <Ionicons name="cloud-offline-outline" size={15} color={Colors.warning}Text />
+      <Ionicons name="cloud-offline-outline" size={15} color={Colors.warningText} />
       <Text style={s.offlineText}>
         Offline — showing cached services{lastSyncedAt ? ` (synced ${when})` : ''}
       </Text>
@@ -42,7 +45,7 @@ function OfflineBanner({ lastSyncedAt }: { lastSyncedAt: number | null }) {
   );
 }
 
-// ─── Package card ─────────────────────────────────────────────────────────────
+// ─── Package card ──────────────────────────────────────────────────────────────
 function PackageCard({
   pkg,
   selected,
@@ -57,13 +60,21 @@ function PackageCard({
 
   return (
     <Pressable
-      style={[s.pkgCard, selected && s.pkgCardSelected]}
-      onPress={onToggle}
+      style={({ pressed }) => [
+        s.pkgCard,
+        selected && s.pkgCardSelected,
+        pressed && { opacity: 0.88 },
+      ]}
+      onPress={() => {
+        if (IS_IOS) Haptics.selectionAsync();
+        onToggle();
+      }}
+      android_ripple={{ color: Colors.accentMuted, borderless: false }}
     >
       <View style={s.pkgHeader}>
         <Text style={[s.pkgName, selected && s.pkgNameSelected]}>{pkg.name}</Text>
-        <View style={s.pkgPriceBadge}>
-          <Text style={s.pkgPrice}>{fmt(total)}</Text>
+        <View style={[s.pkgPriceBadge, selected && s.pkgPriceBadgeSelected]}>
+          <Text style={[s.pkgPrice, selected && s.pkgPriceSelected]}>{fmt(total)}</Text>
         </View>
       </View>
 
@@ -73,28 +84,32 @@ function PackageCard({
 
       <View style={s.pkgServices}>
         {pkg.serviceIds.map(svc => (
-          <View key={svc._id} style={s.pkgServicePill}>
-            <Text style={s.pkgServiceText}>{svc.name}</Text>
+          <View key={svc._id} style={[s.pkgServicePill, selected && s.pkgServicePillSelected]}>
+            <Text style={[s.pkgServiceText, selected && s.pkgServiceTextSelected]}>{svc.name}</Text>
           </View>
         ))}
       </View>
 
       <View style={s.pkgFooter}>
-        <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-        <Text style={s.pkgFooterText}>{fmtMins(duration)}</Text>
+        <View style={s.pkgDurationBadge}>
+          <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
+          <Text style={s.pkgFooterText}>{fmtMins(duration)}</Text>
+        </View>
         <View style={{ flex: 1 }} />
-        {selected && (
-          <>
-            <Ionicons name="checkmark-circle" size={18} color={Colors.accent} />
+        {selected ? (
+          <View style={s.selectedBadge}>
+            <Ionicons name="checkmark-circle" size={14} color={Colors.accent} />
             <Text style={s.selectedLabel}>Selected</Text>
-          </>
+          </View>
+        ) : (
+          <Text style={s.tapToSelect}>Tap to select</Text>
         )}
       </View>
     </Pressable>
   );
 }
 
-// ─── Add-on row ───────────────────────────────────────────────────────────────
+// ─── Add-on row ────────────────────────────────────────────────────────────────
 function AddOnRow({
   service,
   qty,
@@ -110,20 +125,39 @@ function AddOnRow({
     <View style={s.addonRow}>
       <View style={s.addonInfo}>
         <Text style={s.addonName}>{service.name}</Text>
-        <Text style={s.addonMeta}>
-          {fmt(service.price)}  ·  {fmtMins(service.duration)}
-        </Text>
+        <View style={s.addonMetaRow}>
+          <View style={s.addonMetaBadge}>
+            <Text style={s.addonMetaText}>{fmt(service.price)}</Text>
+          </View>
+          <View style={s.addonMetaBadge}>
+            <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+            <Text style={s.addonMetaText}>{fmtMins(service.duration)}</Text>
+          </View>
+        </View>
       </View>
       <View style={s.qtyControl}>
         <Pressable
           style={[s.qtyBtn, qty === 0 && s.qtyBtnDisabled]}
-          onPress={onDecrease}
+          onPress={() => {
+            if (IS_IOS && qty > 0) Haptics.selectionAsync();
+            onDecrease();
+          }}
           disabled={qty === 0}
+          android_ripple={{ color: Colors.accentMuted, borderless: true }}
+          hitSlop={8}
         >
           <Ionicons name="remove" size={16} color={qty === 0 ? Colors.border : Colors.accent} />
         </Pressable>
         <Text style={s.qtyText}>{qty}</Text>
-        <Pressable style={s.qtyBtn} onPress={onIncrease}>
+        <Pressable
+          style={s.qtyBtn}
+          onPress={() => {
+            if (IS_IOS) Haptics.selectionAsync();
+            onIncrease();
+          }}
+          android_ripple={{ color: Colors.accentMuted, borderless: true }}
+          hitSlop={8}
+        >
           <Ionicons name="add" size={16} color={Colors.accent} />
         </Pressable>
       </View>
@@ -131,7 +165,7 @@ function AddOnRow({
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ─── Screen ────────────────────────────────────────────────────────────────────
 type TabKey = 'packages' | 'addons';
 
 export default function CatalogScreen() {
@@ -202,6 +236,7 @@ export default function CatalogScreen() {
     return (
       <View style={s.center}>
         <ActivityIndicator size="large" color={Colors.accent} />
+        <Text style={s.loadingText}>Loading catalog…</Text>
       </View>
     );
   }
@@ -209,10 +244,16 @@ export default function CatalogScreen() {
   if (error && services.length === 0 && packages.length === 0) {
     return (
       <View style={s.center}>
-        <Ionicons name="cloud-offline-outline" size={48} color={Colors.border} />
+        <View style={s.emptyIconWrap}>
+          <Ionicons name="cloud-offline-outline" size={32} color={Colors.textMuted} />
+        </View>
         <Text style={s.emptyTitle}>No services available</Text>
         <Text style={s.emptySubtitle}>{error}</Text>
-        <Pressable style={s.retryBtn} onPress={refresh}>
+        <Pressable
+          style={s.retryBtn}
+          onPress={refresh}
+          android_ripple={{ color: Colors.accentDark, borderless: false }}
+        >
           <Text style={s.retryBtnText}>Retry</Text>
         </Pressable>
       </View>
@@ -231,7 +272,11 @@ export default function CatalogScreen() {
           <Pressable
             key={key}
             style={[s.segment, tab === key && s.segmentActive]}
-            onPress={() => setTab(key)}
+            onPress={() => {
+              if (IS_IOS) Haptics.selectionAsync();
+              setTab(key);
+            }}
+            android_ripple={{ color: Colors.accentMuted, borderless: false }}
           >
             <Text style={[s.segmentText, tab === key && s.segmentTextActive]}>
               {key === 'packages' ? 'Packages' : 'Add-ons'}
@@ -241,75 +286,97 @@ export default function CatalogScreen() {
       </View>
 
       {/* Content */}
-      {tab === 'packages' ? (
-        packages.length === 0 ? (
-          <View style={s.center}>
-            <Text style={s.emptySubtitle}>No packages available.</Text>
-          </View>
+      <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1 }}>
+        {tab === 'packages' ? (
+          packages.length === 0 ? (
+            <View style={s.center}>
+              <View style={s.emptyIconWrap}>
+                <Ionicons name="layers-outline" size={32} color={Colors.textMuted} />
+              </View>
+              <Text style={s.emptyTitle}>No packages available</Text>
+              <Text style={s.emptySubtitle}>Check back soon for new packages.</Text>
+            </View>
+          ) : (
+            <SectionList
+              sections={[{ title: '', data: packages }]}
+              keyExtractor={p => p._id}
+              renderItem={({ item }) => (
+                <PackageCard
+                  pkg={item}
+                  selected={selectedPkg === item._id}
+                  onToggle={() =>
+                    setSelectedPkg(prev => (prev === item._id ? null : item._id))
+                  }
+                />
+              )}
+              ItemSeparatorComponent={() => <View style={s.separator} />}
+              renderSectionHeader={() => null}
+              contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : 32 }]}
+              onRefresh={refresh}
+              refreshing={loading}
+              showsVerticalScrollIndicator={false}
+            />
+          )
         ) : (
-          <SectionList
-            sections={[{ title: '', data: packages }]}
-            keyExtractor={p => p._id}
-            renderItem={({ item }) => (
-              <PackageCard
-                pkg={item}
-                selected={selectedPkg === item._id}
-                onToggle={() =>
-                  setSelectedPkg(prev => (prev === item._id ? null : item._id))
-                }
-              />
-            )}
-            renderSectionHeader={() => null}
-            contentContainerStyle={s.list}
-            onRefresh={refresh}
-            refreshing={loading}
-          />
-        )
-      ) : (
-        addonSections.length === 0 ? (
-          <View style={s.center}>
-            <Text style={s.emptySubtitle}>No add-on services available.</Text>
-          </View>
-        ) : (
-          <SectionList
-            sections={addonSections}
-            keyExtractor={s => s._id}
-            renderSectionHeader={({ section: { title } }) => (
-              <Text style={s.sectionHeader}>{title}</Text>
-            )}
-            renderItem={({ item }) => (
-              <AddOnRow
-                service={item}
-                qty={addonQty[item._id] ?? 0}
-                onIncrease={() => changeQty(item._id, 1)}
-                onDecrease={() => changeQty(item._id, -1)}
-              />
-            )}
-            contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : 32 }]}
-            onRefresh={refresh}
-            refreshing={loading}
-          />
-        )
-      )}
+          addonSections.length === 0 ? (
+            <View style={s.center}>
+              <View style={s.emptyIconWrap}>
+                <Ionicons name="add-circle-outline" size={32} color={Colors.textMuted} />
+              </View>
+              <Text style={s.emptyTitle}>No add-ons available</Text>
+              <Text style={s.emptySubtitle}>Add-on services will appear here.</Text>
+            </View>
+          ) : (
+            <SectionList
+              sections={addonSections}
+              keyExtractor={s => s._id}
+              renderSectionHeader={({ section: { title } }) => (
+                <View style={s.sectionHeaderWrap}>
+                  <Text style={s.sectionHeader}>{title}</Text>
+                </View>
+              )}
+              renderItem={({ item }) => (
+                <AddOnRow
+                  service={item}
+                  qty={addonQty[item._id] ?? 0}
+                  onIncrease={() => changeQty(item._id, 1)}
+                  onDecrease={() => changeQty(item._id, -1)}
+                />
+              )}
+              ItemSeparatorComponent={() => <View style={s.separator} />}
+              contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : 32 }]}
+              onRefresh={refresh}
+              refreshing={loading}
+              showsVerticalScrollIndicator={false}
+            />
+          )
+        )}
+      </Animated.View>
 
       {/* Sticky total footer */}
       {hasSelection && (
         <View style={s.footer}>
-          <View>
+          <View style={s.footerInfo}>
             <Text style={s.footerLabel}>Estimated total</Text>
-            <Text style={s.footerDuration}>{fmtMins(totalDuration)}</Text>
+            <View style={s.footerDurationRow}>
+              <Ionicons name="time-outline" size={12} color={Colors.accent} />
+              <Text style={s.footerDuration}>{fmtMins(totalDuration)}</Text>
+            </View>
           </View>
           <Text style={s.footerTotal}>{fmt(total)}</Text>
           <Pressable
-            style={s.bookBtn}
+            style={({ pressed }) => [s.bookBtn, pressed && { opacity: 0.88 }]}
             onPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               // Pre-load the selection into BookingContext then start the wizard
               const pkg = selectedPkg ? packages.find(p => p._id === selectedPkg) ?? null : null;
               setServices(pkg, addonQty, services);
               router.push('/(customer)/book');
             }}
+            android_ripple={{ color: Colors.accentDark, borderless: false }}
           >
             <Text style={s.bookBtnText}>Book Now</Text>
+            <Ionicons name="arrow-forward" size={16} color={Colors.white} />
           </Pressable>
         </View>
       )}
@@ -317,100 +384,118 @@ export default function CatalogScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles ────────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.surfaceAlt },
+  container: { flex: 1, backgroundColor: Colors.background },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  list:      { padding: 16, paddingBottom: 32 },
+  list:      { paddingHorizontal: SCREEN_PADDING, paddingTop: 12 },
+
+  loadingText: { fontSize: 14, color: Colors.textMuted, marginTop: 12 },
 
   // Offline banner
   offlineBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     backgroundColor: Colors.warningBg,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.warningBg,
+    borderBottomColor: Colors.border,
   },
   offlineText: { fontSize: 12, color: Colors.warningText, flex: 1 },
 
   // Segment control
   segmentWrap: {
     flexDirection: 'row',
-    margin: 16,
-    backgroundColor: Colors.accentMuted,
-    borderRadius: 10,
-    padding: 3,
+    marginHorizontal: SCREEN_PADDING,
+    marginVertical: 12,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: borderRadius.md,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   segment: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
   },
-  segmentActive:     { backgroundColor: Colors.white, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } }, android: { elevation: 2 } }) },
+  segmentActive: {
+    backgroundColor: Colors.white,
+    ...cardShadow,
+  },
   segmentText:       { fontSize: 14, color: Colors.textMuted, fontWeight: '500' },
   segmentTextActive: { color: Colors.accent, fontWeight: '700' },
 
+  // Separator
+  separator: { height: 8 },
+
   // Package cards
   pkgCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
     padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-      android: { elevation: 2 },
-    }),
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    ...cardShadow,
   },
-  pkgCardSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  pkgHeader:       { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  pkgName:         { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
-  pkgNameSelected: { color: Colors.accent },
-  pkgPriceBadge:   { backgroundColor: Colors.accentMuted, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
-  pkgPrice:        { fontSize: 14, fontWeight: '700', color: Colors.accent },
-  pkgDesc:         { fontSize: 13, color: Colors.textSecondary, marginBottom: 8 },
-  pkgServices:     { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
-  pkgServicePill:  { backgroundColor: Colors.background, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
-  pkgServiceText:  { fontSize: 12, color: Colors.textPrimary },
-  pkgFooter:       { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  pkgFooterText:   { fontSize: 12, color: Colors.textMuted, marginRight: 4 },
-  selectedLabel:   { fontSize: 13, color: Colors.accent, fontWeight: '600', marginLeft: 2 },
+  pkgCardSelected: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accentMuted,
+  },
+  pkgHeader:             { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  pkgName:               { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, flex: 1 },
+  pkgNameSelected:       { color: Colors.accent },
+  pkgPriceBadge:         { backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.sm, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1, borderColor: Colors.border },
+  pkgPriceBadgeSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  pkgPrice:              { fontSize: 14, fontWeight: '700', color: Colors.accent },
+  pkgPriceSelected:      { color: Colors.white },
+  pkgDesc:               { fontSize: 13, color: Colors.textSecondary, marginBottom: 10, lineHeight: 18 },
+  pkgServices:           { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  pkgServicePill:        { backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: Colors.border },
+  pkgServicePillSelected: { backgroundColor: 'rgba(14,165,233,0.15)', borderColor: Colors.accentLight },
+  pkgServiceText:        { fontSize: 12, color: Colors.textSecondary },
+  pkgServiceTextSelected: { color: Colors.accentDark },
+  pkgFooter:             { flexDirection: 'row', alignItems: 'center' },
+  pkgDurationBadge:      { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 4 },
+  pkgFooterText:         { fontSize: 12, color: Colors.textMuted },
+  selectedBadge:         { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
+  selectedLabel:         { fontSize: 12, color: Colors.accent, fontWeight: '700' },
+  tapToSelect:           { fontSize: 12, color: Colors.textMuted },
 
   // Add-on rows
+  sectionHeaderWrap: {
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
   sectionHeader: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: 12,
-    marginBottom: 4,
-    paddingHorizontal: 4,
+    letterSpacing: 1,
   },
   addonRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.white,
-    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
     padding: 14,
-    marginBottom: 8,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 6, shadowOffset: { width: 0, height: 1 } },
-      android: { elevation: 1 },
-    }),
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
   },
-  addonInfo:   { flex: 1 },
-  addonName:   { fontSize: 15, color: Colors.textPrimary, fontWeight: '500' },
-  addonMeta:   { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
-  qtyControl:  { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  qtyBtn:      { width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
+  addonInfo:     { flex: 1 },
+  addonName:     { fontSize: 15, color: Colors.textPrimary, fontWeight: '600', marginBottom: 6 },
+  addonMetaRow:  { flexDirection: 'row', gap: 6 },
+  addonMetaBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3 },
+  addonMetaText: { fontSize: 11, color: Colors.textMuted },
+  qtyControl:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  qtyBtn:        { width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, borderColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
   qtyBtnDisabled: { borderColor: Colors.border },
-  qtyText:     { fontSize: 15, fontWeight: '600', color: Colors.textPrimary, minWidth: 20, textAlign: 'center' },
+  qtyText:       { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, minWidth: 20, textAlign: 'center' },
 
   // Footer
   footer: {
@@ -420,26 +505,30 @@ const s = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: Colors.white,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
     ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },
+      ios:     { shadowColor: Colors.shadow, shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
       android: { elevation: 8 },
     }),
-    paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+    paddingBottom: IS_IOS ? 28 : 12,
+    gap: 12,
   },
-  footerLabel:    { fontSize: 11, color: Colors.textMuted },
-  footerDuration: { fontSize: 12, color: Colors.accent, marginTop: 1 },
-  footerTotal:    { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginHorizontal: 12 },
-  bookBtn:        { backgroundColor: Colors.accent, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12, marginLeft: 'auto' },
-  bookBtnText:    { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  footerInfo:        { flex: 1 },
+  footerLabel:       { fontSize: 11, color: Colors.textMuted, fontWeight: '500' },
+  footerDurationRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
+  footerDuration:    { fontSize: 12, color: Colors.accent, fontWeight: '600' },
+  footerTotal:       { fontSize: 24, fontWeight: '900', color: Colors.textPrimary },
+  bookBtn:           { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.accent, borderRadius: borderRadius.md, paddingHorizontal: 20, paddingVertical: 12 },
+  bookBtnText:       { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Empty / error
-  emptyTitle:    { fontSize: 17, fontWeight: '600', color: Colors.textPrimary, marginTop: 12 },
-  emptySubtitle: { fontSize: 14, color: Colors.textMuted, textAlign: 'center', marginTop: 6 },
-  retryBtn:      { marginTop: 16, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryBtnText:  { color: Colors.white, fontWeight: '600' },
+  emptyIconWrap:  { width: 64, height: 64, borderRadius: 32, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  emptyTitle:     { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  emptySubtitle:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  retryBtn:       { marginTop: 16, backgroundColor: Colors.accent, borderRadius: borderRadius.md, paddingHorizontal: 28, paddingVertical: 12 },
+  retryBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 14 },
 });

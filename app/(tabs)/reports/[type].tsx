@@ -11,7 +11,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -22,6 +21,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -570,10 +571,9 @@ export default function ReportViewer() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const rv = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
@@ -593,8 +593,8 @@ const rv = StyleSheet.create({
 
   // Filter card
   filterCard: {
-    marginHorizontal: 16, marginBottom: 14,
-    backgroundColor: Colors.white, borderRadius: 14, padding: 14, ...SHADOW,
+    marginHorizontal: SCREEN_PADDING, marginBottom: 14,
+    backgroundColor: Colors.surface, borderRadius: 14, padding: 14, ...SHADOW,
   },
   chipRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   chip: {
@@ -668,10 +668,10 @@ const rv = StyleSheet.create({
   exportRow: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', gap: 12,
-    paddingHorizontal: 16, paddingBottom: Platform.OS === 'ios' ? 28 : 16, paddingTop: 12,
-    backgroundColor: Colors.white,
-    borderTopWidth: 1, borderTopColor: Colors.background,
-    ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: -2 } }, android: { elevation: 4 } }),
+    paddingHorizontal: SCREEN_PADDING, paddingBottom: IS_IOS ? 28 : 16, paddingTop: 12,
+    backgroundColor: Colors.surface,
+    borderTopWidth: 1, borderTopColor: Colors.border,
+    ...(IS_IOS ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: -2 } } : IS_ANDROID ? { elevation: 4 } : {}),
   },
   exportBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

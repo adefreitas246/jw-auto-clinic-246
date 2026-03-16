@@ -1,32 +1,41 @@
-﻿// app/(customer)/book/location.tsx — Step 4: Fixed bay or mobile address
+// app/(customer)/book/location.tsx — Step 4: Fixed bay or mobile address
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
+import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Platform, Pressable,
-  ScrollView, StyleSheet, Text, TextInput, View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookingProgressBar } from './_layout';
+import { Colors } from '@/constants/Colors';
 import { useBooking } from '@/context/BookingContext';
 import { BusinessLocation } from '@/types/booking';
-import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 export default function BookLocationStep() {
   const { draft, setLocation } = useBooking();
 
-  const [locType,   setLocType]   = useState<'bay' | 'mobile'>(draft.locationType);
-  const [bays,      setBays]      = useState<BusinessLocation[]>([]);
-  const [selBay,    setSelBay]    = useState<BusinessLocation | null>(draft.bay);
-  const [address,   setAddress]   = useState(draft.mobileAddress);
-  const [locating,  setLocating]  = useState(false);
+  const [locType,     setLocType]     = useState<'bay' | 'mobile'>(draft.locationType);
+  const [bays,        setBays]        = useState<BusinessLocation[]>([]);
+  const [selBay,      setSelBay]      = useState<BusinessLocation | null>(draft.bay);
+  const [address,     setAddress]     = useState(draft.mobileAddress);
+  const [locating,    setLocating]    = useState(false);
   const [loadingBays, setLoadingBays] = useState(true);
 
   useEffect(() => {
-    // Fetch business locations from the Business settings
     axios.get<{ locations: BusinessLocation[] }>('/api/profile/business')
       .then(res => setBays(res.data.locations ?? []))
       .catch(() => setBays([]))
@@ -71,40 +80,68 @@ export default function BookLocationStep() {
     router.push('/(customer)/book/review');
   };
 
+  const handleTypeSwitch = (type: 'bay' | 'mobile') => {
+    Haptics.selectionAsync();
+    setLocType(type);
+  };
+
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
       <BookingProgressBar step={4} />
 
-      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-
-        {/* Type selector */}
+      <ScrollView
+        contentContainerStyle={s.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Type selector ── */}
         <View style={s.typeRow}>
-          {(['bay', 'mobile'] as const).map(type => (
-            <Pressable
-              key={type}
-              style={[s.typeBtn, locType === type && s.typeBtnActive]}
-              onPress={() => setLocType(type)}
-            >
-              <Ionicons
-                name={type === 'bay' ? 'business' : 'car'}
-                size={20}
-                color={locType === type ? Colors.accent : Colors.textMuted}
-              />
-              <Text style={[s.typeBtnText, locType === type && s.typeBtnTextActive]}>
-                {type === 'bay' ? 'Visit our bay' : 'Mobile service'}
-              </Text>
-            </Pressable>
-          ))}
+          {(['bay', 'mobile'] as const).map(type => {
+            const active = locType === type;
+            return (
+              <Pressable
+                key={type}
+                style={[s.typeBtn, active && s.typeBtnActive]}
+                onPress={() => handleTypeSwitch(type)}
+                android_ripple={{ color: Colors.accent + '12', borderless: false }}
+              >
+                <View style={[s.typeIconWrap, active && s.typeIconWrapActive]}>
+                  <Ionicons
+                    name={type === 'bay' ? 'business-outline' : 'car-outline'}
+                    size={22}
+                    color={active ? Colors.accent : Colors.textMuted}
+                  />
+                </View>
+                <Text style={[s.typeBtnLabel, active && s.typeBtnLabelActive]}>
+                  {type === 'bay' ? 'Visit Our Bay' : 'Mobile Service'}
+                </Text>
+                <Text style={[s.typeBtnSub, active && s.typeBtnSubActive]}>
+                  {type === 'bay' ? 'Come to us' : 'We come to you'}
+                </Text>
+                {active && (
+                  <View style={s.typeCheckmark}>
+                    <Ionicons name="checkmark" size={12} color={Colors.white} />
+                  </View>
+                )}
+              </Pressable>
+            );
+          })}
         </View>
 
-        {/* Bay list */}
+        {/* ── Bay list ── */}
         {locType === 'bay' && (
-          <View>
-            <Text style={s.sectionTitle}>Choose a location</Text>
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Choose a Location</Text>
             {loadingBays ? (
-              <ActivityIndicator color={Colors.accent} />
+              <View style={s.loadingRow}>
+                <ActivityIndicator color={Colors.accent} />
+                <Text style={s.loadingText}>Loading locations…</Text>
+              </View>
             ) : bays.length === 0 ? (
-              <Text style={s.hint}>No bay locations configured for this business.</Text>
+              <View style={s.emptyBays}>
+                <Ionicons name="business-outline" size={28} color={Colors.border} />
+                <Text style={s.emptyBaysText}>No bay locations configured.</Text>
+              </View>
             ) : (
               bays.map((bay, i) => {
                 const isSel = selBay?.label === bay.label;
@@ -112,17 +149,32 @@ export default function BookLocationStep() {
                   <Pressable
                     key={i}
                     style={[s.bayCard, isSel && s.bayCardSel]}
-                    onPress={() => setSelBay(bay)}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setSelBay(bay);
+                    }}
+                    android_ripple={{ color: Colors.accent + '12', borderless: false }}
                   >
-                    <View style={s.bayIconWrap}>
-                      <Ionicons name="location" size={22} color={isSel ? Colors.accent : Colors.textMuted} />
+                    <View style={[s.bayIconWrap, isSel && s.bayIconWrapSel]}>
+                      <Ionicons
+                        name="location-outline"
+                        size={20}
+                        color={isSel ? Colors.accent : Colors.textMuted}
+                      />
                     </View>
                     <View style={s.bayBody}>
-                      <Text style={[s.bayLabel, isSel && { color: Colors.accent }]}>{bay.label}</Text>
-                      {!!bay.address && <Text style={s.bayAddr}>{bay.address}</Text>}
-                      {!!bay.phone  && <Text style={s.bayAddr}>{bay.phone}</Text>}
+                      <Text style={[s.bayLabel, isSel && s.bayLabelSel]}>{bay.label}</Text>
+                      {!!bay.address && (
+                        <Text style={s.bayAddr} numberOfLines={1}>{bay.address}</Text>
+                      )}
+                      {!!bay.phone && (
+                        <Text style={s.bayAddr}>{bay.phone}</Text>
+                      )}
                     </View>
-                    {isSel && <Ionicons name="checkmark-circle" size={20} color={Colors.accent} />}
+                    {isSel
+                      ? <Ionicons name="checkmark-circle" size={22} color={Colors.accent} />
+                      : <Ionicons name="chevron-forward" size={16} color={Colors.border} />
+                    }
                   </Pressable>
                 );
               })
@@ -130,41 +182,60 @@ export default function BookLocationStep() {
           </View>
         )}
 
-        {/* Mobile address */}
+        {/* ── Mobile address ── */}
         {locType === 'mobile' && (
-          <View>
-            <Text style={s.sectionTitle}>Your address</Text>
-            <TextInput
-              style={s.addressInput}
-              value={address}
-              onChangeText={setAddress}
-              placeholder="Street address, city…"
-              multiline
-              numberOfLines={2}
-              textAlignVertical="top"
-            />
+          <View style={s.section}>
+            <Text style={s.sectionTitle}>Your Address</Text>
+            <Text style={s.sectionSub}>Enter the address where you'd like the service.</Text>
+            <View style={[s.addressInputWrap, address.trim().length > 3 && s.addressInputWrapActive]}>
+              <Ionicons
+                name="location-outline"
+                size={18}
+                color={address.trim().length > 3 ? Colors.accent : Colors.textMuted}
+                style={s.addressIcon}
+              />
+              <TextInput
+                style={s.addressInput}
+                value={address}
+                onChangeText={setAddress}
+                placeholder="Street address, city…"
+                placeholderTextColor={Colors.textMuted}
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+              />
+            </View>
             {Platform.OS !== 'web' && (
               <Pressable
-                style={[s.gpsBtn, locating && { opacity: 0.6 }]}
+                style={({ pressed }) => [s.gpsBtn, (locating || pressed) && { opacity: 0.75 }]}
                 onPress={useMyLocation}
                 disabled={locating}
+                android_ripple={{ color: Colors.accent + '12', borderless: false }}
               >
                 {locating
                   ? <ActivityIndicator color={Colors.accent} size="small" />
-                  : <Ionicons name="navigate" size={16} color={Colors.accent} />
+                  : <Ionicons name="navigate-outline" size={16} color={Colors.accent} />
                 }
-                <Text style={s.gpsBtnText}>Use my current location</Text>
+                <Text style={s.gpsBtnText}>
+                  {locating ? 'Getting location…' : 'Use my current location'}
+                </Text>
               </Pressable>
             )}
           </View>
         )}
       </ScrollView>
 
+      {/* Footer */}
       <View style={s.footer}>
         <Pressable
-          style={[s.nextBtn, !canContinue && s.nextBtnOff]}
+          style={({ pressed }) => [
+            s.nextBtn,
+            !canContinue && s.nextBtnOff,
+            pressed && canContinue && { opacity: 0.88 },
+          ]}
           onPress={handleNext}
           disabled={!canContinue}
+          android_ripple={{ color: Colors.accent + '12', borderless: false }}
         >
           <Text style={s.nextBtnText}>Next — Review</Text>
           <Ionicons name="arrow-forward" size={17} color={Colors.white} />
@@ -176,30 +247,154 @@ export default function BookLocationStep() {
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
-  content: { padding: 20, paddingBottom: 120 },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 20, paddingBottom: 120 },
 
-  typeRow:         { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  typeBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: Colors.white, borderRadius: 12, paddingVertical: 14, borderWidth: 2, borderColor: Colors.border },
-  typeBtnActive:   { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  typeBtnText:     { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
-  typeBtnTextActive: { color: Colors.accent },
+  // Type selector
+  typeRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
+  typeBtn: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    gap: 6,
+    ...cardShadow,
+  },
+  typeBtnActive: {
+    borderColor: Colors.accent,
+    backgroundColor: Colors.accentMuted,
+  },
+  typeIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  typeIconWrapActive: {
+    backgroundColor: Colors.accent + '25',
+  },
+  typeBtnLabel:       { fontSize: 13, fontWeight: '700', color: Colors.textMuted, textAlign: 'center' },
+  typeBtnLabelActive: { color: Colors.accent },
+  typeBtnSub:         { fontSize: 11, color: Colors.textMuted, textAlign: 'center' },
+  typeBtnSubActive:   { color: Colors.accentDark },
+  typeCheckmark: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
-  hint:         { fontSize: 13, color: Colors.textMuted, fontStyle: 'italic' },
+  // Section
+  section:     { marginBottom: 16 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  sectionSub:   { fontSize: 13, color: Colors.textMuted, marginBottom: 12 },
+  loadingRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12 },
+  loadingText:  { fontSize: 13, color: Colors.textMuted },
+  emptyBays:    { alignItems: 'center', paddingVertical: 24, gap: 8 },
+  emptyBaysText:{ fontSize: 14, color: Colors.textMuted },
 
-  bayCard:    { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.white, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 2, borderColor: 'transparent', ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }, android: { elevation: 1 } }) },
-  bayCardSel: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  bayIconWrap:{ width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  bayBody:    { flex: 1 },
-  bayLabel:   { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  bayAddr:    { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+  // Bay card
+  bayCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: Colors.transparent,
+    gap: 12,
+    ...cardShadow,
+  },
+  bayCardSel:    { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
+  bayIconWrap:   {
+    width: 42,
+    height: 42,
+    borderRadius: borderRadius.sm,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bayIconWrapSel:{ backgroundColor: Colors.accent + '20' },
+  bayBody:       { flex: 1 },
+  bayLabel:      { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  bayLabelSel:   { color: Colors.accent },
+  bayAddr:       { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
-  addressInput: { backgroundColor: Colors.white, borderRadius: 12, borderWidth: 1, borderColor: Colors.border, padding: 12, fontSize: 14, minHeight: 72, marginBottom: 12, color: Colors.textPrimary },
-  gpsBtn:     { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: Colors.accentMuted, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  // Address input
+  addressInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.md,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 12,
+    gap: 8,
+  },
+  addressInputWrapActive: { borderColor: Colors.accent },
+  addressIcon: { marginTop: 2 },
+  addressInput: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    minHeight: 60,
+    lineHeight: 20,
+  },
+
+  // GPS button
+  gpsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    borderWidth: 1,
+    borderColor: Colors.accent + '40',
+  },
   gpsBtnText: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
-  footer:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: Colors.white, padding: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20, borderTopWidth: 1, borderTopColor: Colors.background, ...Platform.select({ ios: { shadowColor: Colors.black, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } }, android: { elevation: 6 } }) },
-  nextBtn:    { backgroundColor: Colors.accent, borderRadius: 12, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  nextBtnOff: { opacity: 0.4 },
-  nextBtnText:{ color: Colors.white, fontWeight: '700', fontSize: 15 },
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 16,
+    paddingBottom: IS_IOS ? 36 : 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.border,
+    ...(IS_IOS
+      ? { shadowColor: Colors.shadow, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: -4 } }
+      : { elevation: 8 }),
+  },
+  nextBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  nextBtnOff:  { opacity: 0.4 },
+  nextBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

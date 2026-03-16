@@ -1,4 +1,4 @@
-﻿// app/(tabs)/marketing/index.tsx
+// app/(tabs)/marketing/index.tsx
 // Marketing hub — four feature cards linking to sub-modules.
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,8 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 type Card = {
   icon:    React.ComponentProps<typeof Ionicons>['name'];
@@ -59,14 +61,22 @@ export default function MarketingIndex() {
   return (
     <SafeAreaView style={st.safe}>
       <View style={st.header}>
-        <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={st.backBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.border, radius: 20, borderless: true }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={st.headerTitle}>Marketing Tools</Text>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={st.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={st.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={st.intro}>
           Engage customers, drive repeat visits, and grow your wash business.
         </Text>
@@ -75,8 +85,13 @@ export default function MarketingIndex() {
           {CARDS.map(card => (
             <Pressable
               key={card.route}
-              style={({ pressed }) => [st.card, { backgroundColor: card.bg }, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [
+                st.card,
+                { backgroundColor: card.bg },
+                pressed && { opacity: IS_IOS ? 0.82 : 1 },
+              ]}
               onPress={() => router.push(card.route as any)}
+              android_ripple={{ color: card.color + '22' }}
             >
               {card.badge && (
                 <View style={st.badge}>
@@ -100,25 +115,59 @@ export default function MarketingIndex() {
 }
 
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
-  scroll: { padding: 16 },
+  safe:   { flex: 1, backgroundColor: Colors.background },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    ...cardShadow,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  intro: { fontSize: 14, color: Colors.textSecondary, marginBottom: 20, lineHeight: 21 },
+  scroll: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 100 },
+  intro:  { fontSize: 14, color: Colors.textSecondary, marginBottom: 20, lineHeight: 22 },
 
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  grid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   card: {
-    width: '47%', borderRadius: 16, padding: 16,
-    shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    width: '47%',
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    overflow: 'hidden',
+    ...cardShadow,
   },
-  iconWrap:  { width: 52, height: 52, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  iconWrap:  {
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.md,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   cardLabel: { fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  cardSub:   { fontSize: 12, color: Colors.textSecondary, lineHeight: 17 },
-  cardArrow: { marginTop: 10 },
-  badge:     { position: 'absolute', top: 10, right: 10, backgroundColor: Colors.warning, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 },
+  cardSub:   { fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
+  cardArrow: { marginTop: 12 },
+  badge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: Colors.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
   badgeText: { fontSize: 9, fontWeight: '700', color: Colors.white },
 });

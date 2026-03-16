@@ -39,6 +39,8 @@ import {
 } from "react-native-paper-dates";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID, IS_WEB } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 const { width: screenWidth } = Dimensions.get("window");
 const isTablet = screenWidth >= 600 && screenWidth < 1024;

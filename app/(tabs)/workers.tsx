@@ -24,6 +24,8 @@ import "react-native-gesture-handler";
 import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 type Role = "admin" | "staff";
 

@@ -12,7 +12,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ function AddMappingModal({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <Pressable style={am.overlay} onPress={handleClose} />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={IS_IOS ? 'padding' : undefined}
         style={am.sheet}
       >
         <View style={am.handle} />
@@ -164,7 +165,7 @@ const am = StyleSheet.create({
   overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
   sheet: {
     backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 36 : 20,
+    paddingHorizontal: SCREEN_PADDING, paddingBottom: IS_IOS ? 36 : 20,
   },
   handle: {
     width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border,
@@ -281,7 +282,7 @@ export default function ServiceMapScreen() {
         <Ionicons name="information-circle-outline" size={16} color={Colors.accent} />
         <Text style={sm.infoText}>
           After marking a job finished, call{' '}
-          <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace' }}>
+          <Text style={{ fontFamily: IS_IOS ? 'Courier' : 'monospace' }}>
             POST /api/inventory/deduct-for-booking/:id
           </Text>{' '}
           to auto-deduct stock.
@@ -364,10 +365,9 @@ export default function ServiceMapScreen() {
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const sm = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },

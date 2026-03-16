@@ -1,4 +1,4 @@
-﻿// app/(customer)/referral.tsx
+// app/(customer)/referral.tsx
 // Customer referral screen — shows their unique code, sharing options,
 // and a count of successful referrals with points earned.
 import { Ionicons } from '@expo/vector-icons';
@@ -17,9 +17,13 @@ import {
   StyleSheet,
   Text,
   View,
+  ActivityIndicator,
 } from 'react-native';
+import Reanimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 type ReferralData = {
   _id:               string;
@@ -46,7 +50,6 @@ export default function ReferralScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [copied,     setCopied]     = useState(false);
 
-  // Toast animation
   const toastAnim = useRef(new Animated.Value(0)).current;
 
   const headers = { Authorization: `Bearer ${token}` };
@@ -92,8 +95,6 @@ export default function ReferralScreen() {
 
     try {
       if (await Sharing.isAvailableAsync()) {
-        // expo-sharing doesn't do text-only natively, so we share a simple text file
-        // or fall back to Clipboard + alert on unsupported platforms
         await Clipboard.setStringAsync(message);
         showCopiedToast();
         Alert.alert(
@@ -113,7 +114,7 @@ export default function ReferralScreen() {
   if (loading || !data) {
     return (
       <SafeAreaView style={rf.center}>
-        <Text style={rf.muted}>Loading your referral code…</Text>
+        <ActivityIndicator color={Colors.accent} size="large" />
       </SafeAreaView>
     );
   }
@@ -126,7 +127,12 @@ export default function ReferralScreen() {
     <SafeAreaView style={rf.safe}>
       {/* Header */}
       <View style={rf.header}>
-        <Pressable onPress={() => router.back()} style={rf.backBtn} hitSlop={8}>
+        <Pressable
+          onPress={() => router.back()}
+          style={rf.backBtn}
+          hitSlop={8}
+          android_ripple={{ color: Colors.accent + '20', borderless: true }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={rf.headerTitle}>Refer a Friend</Text>
@@ -139,45 +145,57 @@ export default function ReferralScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Hero card */}
-        <View style={rf.heroCard}>
+        <Reanimated.View entering={FadeIn.duration(300)} style={rf.heroCard}>
           <Text style={rf.heroEmoji}>🎁</Text>
           <Text style={rf.heroTitle}>Share & Earn</Text>
           <Text style={rf.heroDesc}>
             Give friends <Text style={rf.heroHighlight}>{discountLabel}</Text> on their first wash.{'\n'}
             You earn <Text style={rf.heroHighlight}>{data.pointsPerReferral} loyalty points</Text> for each friend who books.
           </Text>
-        </View>
+        </Reanimated.View>
 
         {/* Code card */}
-        <View style={rf.codeCard}>
+        <Reanimated.View entering={FadeInDown.delay(60).duration(300)} style={rf.codeCard}>
           <Text style={rf.codeLabel}>Your Referral Code</Text>
-          <Pressable style={rf.codeBox} onPress={handleCopy} activeOpacity={0.7}>
+          <Pressable
+            style={rf.codeBox}
+            onPress={handleCopy}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
             <Text style={rf.code}>{data.code}</Text>
             <Ionicons name={copied ? 'checkmark-circle' : 'copy-outline'} size={22} color={copied ? Colors.success : Colors.accent} />
           </Pressable>
           <Text style={rf.codeTip}>Tap to copy · Share with friends</Text>
-        </View>
+        </Reanimated.View>
 
         {/* Share buttons */}
-        <View style={rf.shareRow}>
-          <Pressable style={rf.shareBtn} onPress={handleCopy}>
+        <Reanimated.View entering={FadeInDown.delay(120).duration(300)} style={rf.shareRow}>
+          <Pressable
+            style={rf.shareBtn}
+            onPress={handleCopy}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
             <Ionicons name="copy-outline" size={18} color={Colors.accent} />
             <Text style={rf.shareBtnText}>Copy Code</Text>
           </Pressable>
-          <Pressable style={[rf.shareBtn, rf.shareBtnPrimary]} onPress={handleShare}>
+          <Pressable
+            style={[rf.shareBtn, rf.shareBtnPrimary]}
+            onPress={handleShare}
+            android_ripple={{ color: Colors.white + '30', borderless: false }}
+          >
             <Ionicons name="share-social-outline" size={18} color={Colors.white} />
             <Text style={[rf.shareBtnText, { color: Colors.white }]}>Share Message</Text>
           </Pressable>
-        </View>
+        </Reanimated.View>
 
         {/* How it works */}
-        <View style={rf.howCard}>
+        <Reanimated.View entering={FadeInDown.delay(180).duration(300)} style={rf.howCard}>
           <Text style={rf.howTitle}>How It Works</Text>
           {[
-            { icon: 'share-outline',         label: 'Share your code with a friend' },
-            { icon: 'calendar-outline',      label: 'Friend uses code on first booking' },
-            { icon: 'gift-outline',          label: `Friend gets ${discountLabel} off automatically` },
-            { icon: 'star-outline',          label: `You earn ${data.pointsPerReferral} points after their wash` },
+            { icon: 'share-outline',    label: 'Share your code with a friend' },
+            { icon: 'calendar-outline', label: 'Friend uses code on first booking' },
+            { icon: 'gift-outline',     label: `Friend gets ${discountLabel} off automatically` },
+            { icon: 'star-outline',     label: `You earn ${data.pointsPerReferral} points after their wash` },
           ].map((s, i) => (
             <View key={i} style={rf.howRow}>
               <View style={rf.howDot}>
@@ -186,10 +204,10 @@ export default function ReferralScreen() {
               <Text style={rf.howText}>{s.label}</Text>
             </View>
           ))}
-        </View>
+        </Reanimated.View>
 
         {/* Stats */}
-        <View style={rf.statsRow}>
+        <Reanimated.View entering={FadeInDown.delay(240).duration(300)} style={rf.statsRow}>
           <View style={rf.statBox}>
             <Text style={rf.statVal}>{data.totalReferrals}</Text>
             <Text style={rf.statLbl}>Friends Referred</Text>
@@ -199,7 +217,7 @@ export default function ReferralScreen() {
             <Text style={rf.statVal}>{data.totalPointsEarned}</Text>
             <Text style={rf.statLbl}>Points Earned</Text>
           </View>
-        </View>
+        </Reanimated.View>
 
         {/* Recent referrals */}
         {data.referrals.length > 0 && (
@@ -217,13 +235,16 @@ export default function ReferralScreen() {
           </>
         )}
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Copied toast */}
       <Animated.View
         pointerEvents="none"
-        style={[rf.toast, { opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}
+        style={[rf.toast, {
+          opacity: toastAnim,
+          transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
+        }]}
       >
         <Ionicons name="checkmark-circle" size={16} color={Colors.white} />
         <Text style={rf.toastText}>Copied!</Text>
@@ -235,10 +256,9 @@ export default function ReferralScreen() {
 const rf = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: 16 },
-  muted:  { color: Colors.textMuted, fontSize: 14 },
+  scroll: { padding: SCREEN_PADDING },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.white, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
@@ -248,34 +268,34 @@ const rf = StyleSheet.create({
   heroDesc:      { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
   heroHighlight: { color: Colors.accent, fontWeight: '800' },
 
-  codeCard:  { backgroundColor: Colors.white, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
+  codeCard:  { backgroundColor: Colors.surface, borderRadius: 16, padding: 20, marginBottom: 14, borderWidth: 1, borderColor: Colors.border, alignItems: 'center' },
   codeLabel: { fontSize: 12, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
-  codeBox:   { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.surfaceAlt, borderRadius: 12, borderWidth: 2, borderColor: Colors.accent, borderStyle: 'dashed', paddingHorizontal: 20, paddingVertical: 12, marginBottom: 8 },
+  codeBox:   { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.surfaceAlt, borderRadius: 12, borderWidth: 2, borderColor: Colors.accent, borderStyle: 'dashed', paddingHorizontal: 20, paddingVertical: 12, marginBottom: 8, overflow: 'hidden' },
   code:      { fontSize: 26, fontWeight: '900', color: Colors.accent, letterSpacing: 3 },
   codeTip:   { fontSize: 11, color: Colors.textMuted },
 
   shareRow:        { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  shareBtn:        { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, padding: 13, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.accent, backgroundColor: Colors.white },
+  shareBtn:        { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.accent, backgroundColor: Colors.surface, overflow: 'hidden' },
   shareBtnPrimary: { backgroundColor: Colors.accent, borderColor: Colors.accent },
   shareBtnText:    { fontSize: 13, fontWeight: '700', color: Colors.accent },
 
-  howCard:  { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  howCard:  { backgroundColor: Colors.surface, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
   howTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
   howRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   howDot:   { width: 28, height: 28, borderRadius: 14, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center' },
   howText:  { fontSize: 13, color: Colors.textSecondary, flex: 1 },
 
-  statsRow: { flexDirection: 'row', backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
+  statsRow: { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 14, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
   statBox:  { flex: 1, alignItems: 'center' },
   statVal:  { fontSize: 28, fontWeight: '900', color: Colors.accent },
   statLbl:  { fontSize: 11, color: Colors.textMuted, marginTop: 3, textAlign: 'center' },
-  statDiv:  { width: 1, backgroundColor: Colors.surfaceAlt },
+  statDiv:  { width: 1, backgroundColor: Colors.border },
 
   sectionTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  refRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  refRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: Colors.border },
   refDate:   { flex: 1, fontSize: 13, color: Colors.textSecondary },
   refPts:    { fontSize: 13, fontWeight: '700', color: Colors.success },
 
-  toast:     { position: 'absolute', bottom: 32, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.textPrimary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, shadowColor: Colors.black, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  toast:     { position: 'absolute', bottom: 32, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: Colors.textPrimary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20 },
   toastText: { color: Colors.white, fontSize: 13, fontWeight: '600' },
 });

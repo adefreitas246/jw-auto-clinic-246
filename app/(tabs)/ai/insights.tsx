@@ -9,13 +9,15 @@ import axios         from 'axios';
 import { router }    from 'expo-router';
 import React, { useState } from 'react';
 import {
-  ActivityIndicator, Animated, Platform, Pressable,
+  ActivityIndicator, Pressable,
   ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -232,7 +234,7 @@ export default function DemandInsightsScreen() {
                 </View>
                 <View style={s.chipRow}>
                   {result.peakHours.map((h, i) => (
-                    <HourChip key={i} time={h} color={Colors.error} bg={Colors.error}Bg />
+                    <HourChip key={i} time={h} color={Colors.error} bg={Colors.errorBg} />
                   ))}
                 </View>
               </View>
@@ -247,7 +249,7 @@ export default function DemandInsightsScreen() {
                 </View>
                 <View style={s.chipRow}>
                   {result.slowDays.map((d, i) => (
-                    <DayChip key={i} day={d} color={Colors.textSecondary} bg={Colors.surface}Alt />
+                    <DayChip key={i} day={d} color={Colors.textSecondary} bg={Colors.surfaceAlt} />
                   ))}
                 </View>
               </View>
@@ -275,15 +277,14 @@ export default function DemandInsightsScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
-  content: { padding: 20, paddingBottom: 60, gap: 14 },
+  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 14 },
 
   header: {
     flexDirection: 'row', alignItems: 'center',
@@ -306,10 +307,7 @@ const s = StyleSheet.create({
   loadBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     backgroundColor: Colors.accent, borderRadius: 16, paddingVertical: 16,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 6 },
-    }),
+    ...(IS_IOS ? { shadowColor: Colors.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } } : IS_ANDROID ? { elevation: 6 } : {}),
   },
   loadBtnText: { color: Colors.white, fontWeight: '800', fontSize: 16 },
 
@@ -361,10 +359,9 @@ const chip = StyleSheet.create({
 
 // ─── Top-slots chart styles ───────────────────────────────────────────────────
 
-const SHADOW_CARD = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW_CARD = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const ch = StyleSheet.create({
   wrap:  { backgroundColor: Colors.white, borderRadius: 16, padding: 16, gap: 10, ...SHADOW_CARD },

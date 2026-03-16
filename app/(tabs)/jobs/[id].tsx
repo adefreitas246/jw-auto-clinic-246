@@ -1,4 +1,4 @@
-﻿// app/(tabs)/jobs/[id].tsx — Staff Job Workflow
+// app/(tabs)/jobs/[id].tsx — Staff Job Workflow
 // Status stepper, photo capture / gallery upload with progress, staff notes.
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import {
   ActivityIndicator, Alert, Animated, Image, Modal,
-  Platform, Pressable, ScrollView, StyleSheet,
+  Pressable, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,13 +25,15 @@ import { useAuth }          from '@/context/AuthContext';
 import VoiceNoteRecorder    from '@/components/VoiceNoteRecorder';
 import VoiceNotePlayer, { VoiceNoteMeta } from '@/components/VoiceNotePlayer';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 // ─── Photo item type ──────────────────────────────────────────────────────────
 interface PhotoItem {
   id:        string;
   localUri:  string;
   label:     'before' | 'after';
-  pct:       number;    // 0-100
+  pct:       number;
   done:      boolean;
   error:     boolean;
 }
@@ -81,11 +83,13 @@ function JobStepper({ status }: { status: JobStatus }) {
               <Text style={[wf.stepLabel, (done || active) && wf.stepLabelOn]}>
                 {STAFF_STATUS_LABELS[step.status]}
               </Text>
-              {active && <View style={[wf.activePill, { backgroundColor: STAFF_STATUS_COLORS[step.status].bg }]}>
-                <Text style={[wf.activePillText, { color: STAFF_STATUS_COLORS[step.status].text }]}>
-                  Current
-                </Text>
-              </View>}
+              {active && (
+                <View style={[wf.activePill, { backgroundColor: STAFF_STATUS_COLORS[step.status].bg }]}>
+                  <Text style={[wf.activePillText, { color: STAFF_STATUS_COLORS[step.status].text }]}>
+                    Current
+                  </Text>
+                </View>
+              )}
             </View>
             {i < JOB_STEPS.length - 1 && (
               <View style={[wf.connector, done && wf.connectorDone]} />
@@ -103,12 +107,10 @@ function PhotoThumb({ item, onRemove }: { item: PhotoItem; onRemove: () => void 
     <View style={wf.thumbWrap}>
       <Image source={{ uri: item.localUri }} style={wf.thumb} />
 
-      {/* Label badge */}
       <View style={[wf.thumbLabel, item.label === 'before' ? wf.thumbBefore : wf.thumbAfter]}>
         <Text style={wf.thumbLabelText}>{item.label}</Text>
       </View>
 
-      {/* Upload progress overlay */}
       {!item.done && !item.error && (
         <View style={wf.thumbOverlay}>
           <View style={[wf.progressBar, { width: `${item.pct}%` as any }]} />
@@ -116,23 +118,25 @@ function PhotoThumb({ item, onRemove }: { item: PhotoItem; onRemove: () => void 
         </View>
       )}
 
-      {/* Done tick */}
       {item.done && (
-        <View style={wf.thumbDone}>
+        <View style={wf.thumbBadge}>
           <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
         </View>
       )}
 
-      {/* Error */}
       {item.error && (
-        <View style={wf.thumbDone}>
+        <View style={wf.thumbBadge}>
           <Ionicons name="alert-circle" size={20} color={Colors.error} />
         </View>
       )}
 
-      {/* Remove (only when not uploading) */}
       {(item.done || item.error) && (
-        <Pressable style={wf.thumbRemove} onPress={onRemove} hitSlop={6}>
+        <Pressable
+          style={wf.thumbRemove}
+          onPress={onRemove}
+          hitSlop={6}
+          android_ripple={{ color: Colors.border, radius: 14 }}
+        >
           <Ionicons name="close-circle" size={18} color={Colors.white} />
         </Pressable>
       )}
@@ -189,16 +193,27 @@ function JobCameraModal({
       <Modal visible animationType="slide">
         <SafeAreaView style={cam.safe}>
           <View style={cam.permBox}>
-            <Ionicons name="camera-outline" size={52} color={Colors.border} />
+            <View style={cam.permIconWrap}>
+              <Ionicons name="camera-outline" size={40} color={Colors.accent} />
+            </View>
             <Text style={cam.permTitle}>Camera Access Needed</Text>
             <Text style={cam.permSub}>
               Allow camera access to take before/after photos.
             </Text>
-            <Pressable style={cam.permBtn} onPress={requestPermission}>
+            <Pressable
+              style={cam.permBtn}
+              onPress={requestPermission}
+              android_ripple={{ color: Colors.primaryDark }}
+            >
               <Text style={cam.permBtnText}>Grant Permission</Text>
             </Pressable>
-            <Pressable onPress={onClose} style={{ marginTop: 12 }} hitSlop={8}>
-              <Text style={{ color: Colors.textMuted, fontSize: 14 }}>Cancel</Text>
+            <Pressable
+              onPress={onClose}
+              style={cam.permCancel}
+              hitSlop={8}
+              android_ripple={{ color: Colors.border }}
+            >
+              <Text style={cam.permCancelText}>Cancel</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -210,7 +225,6 @@ function JobCameraModal({
     <Modal visible animationType="slide" statusBarTranslucent>
       <View style={cam.container}>
         <CameraView ref={cameraRef} style={cam.camera} facing={facing}>
-          {/* Top bar */}
           <SafeAreaView style={cam.topBar} edges={['top']}>
             <Pressable style={cam.iconBtn} onPress={onClose} hitSlop={8}>
               <Ionicons name="close" size={26} color={Colors.white} />
@@ -227,7 +241,6 @@ function JobCameraModal({
             </Pressable>
           </SafeAreaView>
 
-          {/* Shutter */}
           <View style={cam.shutterRow}>
             <TouchableOpacity style={cam.shutter} onPress={shoot} disabled={capturing}>
               {capturing
@@ -265,7 +278,6 @@ export default function JobWorkflowScreen() {
       const { data } = await axios.get<JobTracking>(`/api/jobs/${id}`);
       setJob(data);
       setNotes(data.staffNotes ?? '');
-      // Convert server photos to local items (already uploaded, show as done)
       if (data.photos?.length) {
         setPhotos(data.photos.map(p => ({
           id:       p._id,
@@ -283,7 +295,7 @@ export default function JobWorkflowScreen() {
     }
   }, [id]);
 
-  // ── Fetch voice notes (with audio data for playback) ──────────────────────
+  // ── Fetch voice notes ──────────────────────────────────────────────────────
   const fetchVoiceNotes = useCallback(async () => {
     if (!id) return;
     try {
@@ -292,7 +304,7 @@ export default function JobWorkflowScreen() {
       );
       setVoiceNotes(data);
     } catch {
-      // Non-critical — don't alert
+      // Non-critical
     }
   }, [id]);
 
@@ -336,7 +348,7 @@ export default function JobWorkflowScreen() {
   };
 
   const processPhoto = async (uri: string) => {
-    const itemId  = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const itemId   = Date.now().toString(36) + Math.random().toString(36).slice(2);
     const localUri = await copyToCache(uri, itemId).catch(() => uri);
 
     const item: PhotoItem = {
@@ -348,7 +360,6 @@ export default function JobWorkflowScreen() {
 
   const uploadPhoto = async (item: PhotoItem) => {
     try {
-      // Read as base64
       const base64 = await FileSystem.readAsStringAsync(item.localUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
@@ -400,9 +411,15 @@ export default function JobWorkflowScreen() {
   if (!job) {
     return (
       <View style={wf.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+        <View style={wf.errorIconWrap}>
+          <Ionicons name="alert-circle-outline" size={36} color={Colors.error} />
+        </View>
         <Text style={wf.errText}>Job not found.</Text>
-        <Pressable style={wf.retryBtn} onPress={() => router.back()}>
+        <Pressable
+          style={wf.retryBtn}
+          onPress={() => router.back()}
+          android_ripple={{ color: Colors.primaryDark }}
+        >
           <Text style={wf.retryText}>Go Back</Text>
         </Pressable>
       </View>
@@ -417,7 +434,12 @@ export default function JobWorkflowScreen() {
     <SafeAreaView style={wf.safe} edges={['top']}>
       {/* ── Header ── */}
       <View style={wf.header}>
-        <Pressable style={wf.backBtn} onPress={() => router.back()} hitSlop={8}>
+        <Pressable
+          style={wf.headerIconBtn}
+          onPress={() => router.back()}
+          hitSlop={8}
+          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+        >
           <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
         </Pressable>
         <Text style={wf.headerTitle} numberOfLines={1}>{job.serviceLabel}</Text>
@@ -433,29 +455,39 @@ export default function JobWorkflowScreen() {
         {/* ── Job summary card ── */}
         <View style={wf.card}>
           <Text style={wf.svcName}>{job.serviceLabel}</Text>
+          <View style={wf.divider} />
+
           <View style={wf.infoRow}>
-            <Ionicons name="car-outline" size={14} color={Colors.textMuted} />
+            <View style={wf.infoIconWrap}>
+              <Ionicons name="car-outline" size={14} color={Colors.accent} />
+            </View>
             <Text style={wf.infoText}>{job.vehicleLabel || 'No vehicle info'}</Text>
           </View>
           <View style={wf.infoRow}>
-            <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
+            <View style={wf.infoIconWrap}>
+              <Ionicons name="time-outline" size={14} color={Colors.accent} />
+            </View>
             <Text style={wf.infoText}>
               {job.appointmentDate} · {job.appointmentTime}
             </Text>
           </View>
           <View style={wf.infoRow}>
-            <Ionicons
-              name={job.locationType === 'mobile' ? 'navigate' : 'business'}
-              size={14} color={Colors.textMuted}
-            />
+            <View style={wf.infoIconWrap}>
+              <Ionicons
+                name={job.locationType === 'mobile' ? 'navigate' : 'business'}
+                size={14} color={Colors.accent}
+              />
+            </View>
             <Text style={wf.infoText}>
               {job.locationType === 'mobile'
                 ? (job.mobileAddress || 'Mobile service')
                 : (job.bayLabel || 'Bay service')}
             </Text>
           </View>
-          <View style={wf.infoRow}>
-            <Ionicons name="cash-outline" size={14} color={Colors.textMuted} />
+          <View style={[wf.infoRow, { marginBottom: 0 }]}>
+            <View style={wf.infoIconWrap}>
+              <Ionicons name="cash-outline" size={14} color={Colors.accent} />
+            </View>
             <Text style={wf.infoText}>
               ${job.totalPrice.toFixed(2)} · {job.durationMinutes} min
             </Text>
@@ -463,7 +495,7 @@ export default function JobWorkflowScreen() {
         </View>
 
         {/* ── Status stepper ── */}
-        <View style={[wf.card, { paddingVertical: 22 }]}>
+        <View style={wf.card}>
           <Text style={wf.sectionTitle}>Job Progress</Text>
           <JobStepper status={job.jobStatus} />
         </View>
@@ -478,6 +510,7 @@ export default function JobWorkflowScreen() {
             ]}
             onPress={advanceStatus}
             disabled={advancing}
+            android_ripple={{ color: Colors.primaryDark }}
           >
             {advancing ? (
               <ActivityIndicator color={Colors.white} />
@@ -492,7 +525,9 @@ export default function JobWorkflowScreen() {
 
         {isDone && (
           <View style={wf.doneCard}>
-            <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
+            <View style={wf.doneIconWrap}>
+              <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
+            </View>
             <Text style={wf.doneText}>Job Finished — Customer Notified</Text>
           </View>
         )}
@@ -508,6 +543,7 @@ export default function JobWorkflowScreen() {
                 key={l}
                 style={[wf.labelBtn, label === l && wf.labelBtnActive]}
                 onPress={() => setLabel(l)}
+                android_ripple={{ color: Colors.accent }}
               >
                 <Text style={[wf.labelBtnText, label === l && wf.labelBtnTextActive]}>
                   {l.charAt(0).toUpperCase() + l.slice(1)}
@@ -519,18 +555,20 @@ export default function JobWorkflowScreen() {
           {/* Capture buttons */}
           <View style={wf.captureRow}>
             <Pressable
-              style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.82 }]}
               onPress={() => setCameraOpen(true)}
+              android_ripple={{ color: Colors.accent }}
             >
-              <Ionicons name="camera" size={20} color={Colors.accent} />
+              <Ionicons name="camera" size={18} color={Colors.accent} />
               <Text style={wf.captureBtnText}>Take Photo</Text>
             </Pressable>
 
             <Pressable
-              style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [wf.captureBtn, pressed && { opacity: 0.82 }]}
               onPress={pickFromGallery}
+              android_ripple={{ color: Colors.accent }}
             >
-              <Ionicons name="images" size={20} color={Colors.accent} />
+              <Ionicons name="images" size={18} color={Colors.accent} />
               <Text style={wf.captureBtnText}>Gallery</Text>
             </Pressable>
           </View>
@@ -547,9 +585,9 @@ export default function JobWorkflowScreen() {
               ))}
             </View>
           ) : (
-            <View style={wf.noPhotos}>
+            <View style={wf.emptyState}>
               <Ionicons name="image-outline" size={32} color={Colors.border} />
-              <Text style={wf.noPhotosText}>No photos added yet</Text>
+              <Text style={wf.emptyStateText}>No photos added yet</Text>
             </View>
           )}
         </View>
@@ -568,7 +606,7 @@ export default function JobWorkflowScreen() {
             textAlignVertical="top"
           />
           <Pressable
-            style={({ pressed }) => [wf.saveNotesBtn, pressed && { opacity: 0.8 }]}
+            style={({ pressed }) => [wf.saveNotesBtn, pressed && { opacity: 0.82 }]}
             onPress={async () => {
               try {
                 await axios.patch(`/api/jobs/${id}/status`, {
@@ -580,11 +618,13 @@ export default function JobWorkflowScreen() {
                 Alert.alert('Error', 'Could not save notes.');
               }
             }}
+            android_ripple={{ color: Colors.accent }}
           >
             <Ionicons name="save-outline" size={16} color={Colors.accent} />
             <Text style={wf.saveNotesBtnText}>Save Notes</Text>
           </Pressable>
         </View>
+
         {/* ── Voice notes ── */}
         <View style={wf.card}>
           <View style={wf.sectionHeaderRow}>
@@ -594,22 +634,21 @@ export default function JobWorkflowScreen() {
                 style={wf.micBtn}
                 onPress={() => setRecorderOpen(true)}
                 hitSlop={6}
+                android_ripple={{ color: Colors.accent }}
               >
-                <Ionicons name="mic-outline" size={16} color={Colors.accent} />
+                <Ionicons name="mic-outline" size={15} color={Colors.accent} />
                 <Text style={wf.micBtnText}>Record</Text>
               </Pressable>
             )}
           </View>
 
-          {/* Inline recorder */}
           {recorderOpen && (
             <View style={{ marginBottom: 14 }}>
               <VoiceNoteRecorder
                 jobId={id!}
                 token={token ?? ''}
-                onSaved={(note) => {
+                onSaved={(_note) => {
                   setRecorderOpen(false);
-                  // Reload with audio data so it's immediately playable
                   fetchVoiceNotes();
                 }}
                 onCancel={() => setRecorderOpen(false)}
@@ -617,11 +656,10 @@ export default function JobWorkflowScreen() {
             </View>
           )}
 
-          {/* Saved notes list */}
           {voiceNotes.length === 0 && !recorderOpen ? (
-            <View style={wf.noPhotos}>
+            <View style={wf.emptyState}>
               <Ionicons name="mic-outline" size={32} color={Colors.border} />
-              <Text style={wf.noPhotosText}>No voice notes yet</Text>
+              <Text style={wf.emptyStateText}>No voice notes yet</Text>
             </View>
           ) : (
             <View style={{ gap: 8 }}>
@@ -645,120 +683,178 @@ export default function JobWorkflowScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const wf = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  errText: { fontSize: 15, color: Colors.textSecondary, marginTop: 12, textAlign: 'center' },
-  retryBtn:{ marginTop: 16, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
-  retryText:{ color: Colors.white, fontWeight: '700' },
+
+  errorIconWrap: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: Colors.errorBg,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+  },
+  errText:  { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginBottom: 20 },
+  retryBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 28, paddingVertical: 12,
+    overflow: 'hidden',
+  },
+  retryText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
+    paddingHorizontal: 20, paddingVertical: 14,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
   },
-  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, flex: 1, textAlign: 'center', marginHorizontal: 8 },
+  headerIconBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  headerTitle: {
+    fontSize: 16, fontWeight: '800', color: Colors.textPrimary,
+    flex: 1, textAlign: 'center', marginHorizontal: 8,
+  },
 
   // Card
   card: {
-    backgroundColor: Colors.white, marginHorizontal: 16, borderRadius: 16,
-    padding: 18, marginBottom: 14, ...SHADOW,
+    backgroundColor: Colors.surface,
+    marginHorizontal: 20,
+    borderRadius: borderRadius.lg,
+    padding: 20,
+    marginBottom: 16,
+    marginTop: 4,
+    ...cardShadow,
   },
-  sectionTitle:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 14 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  micBtn:     { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.accentMuted, borderRadius: 99, paddingHorizontal: 12, paddingVertical: 6 },
+  sectionTitle:     { fontSize: 13, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  divider:          { height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginBottom: 16 },
+
+  micBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 12, paddingVertical: 6,
+    overflow: 'hidden',
+  },
   micBtnText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
 
   // Summary
-  svcName:  { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
-  infoRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  infoText: { fontSize: 13, color: Colors.textSecondary, flex: 1 },
+  svcName:     { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 16 },
+  infoRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  infoIconWrap:{ width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
+  infoText:    { fontSize: 13, color: Colors.textSecondary, flex: 1 },
 
   // Stepper
-  stepRow:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 3 },
-  dot:           { width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  stepRow:       { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
+  dot:           { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   dotPulse:      { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.white },
   stepLabel:     { fontSize: 14, fontWeight: '600', color: Colors.border, flex: 1 },
   stepLabelOn:   { color: Colors.textPrimary },
-  activePill:    { borderRadius: 99, paddingHorizontal: 8, paddingVertical: 3 },
+  activePill:    { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3 },
   activePillText:{ fontSize: 11, fontWeight: '700' },
-  connector:     { width: 2, height: 18, backgroundColor: Colors.border, marginLeft: 12, marginVertical: 2 },
+  connector:     { width: 2, height: 20, backgroundColor: Colors.border, marginLeft: 13, marginVertical: 2 },
   connectorDone: { backgroundColor: Colors.accent },
 
   // Advance button
   advanceBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15,
-    marginHorizontal: 16, marginBottom: 14,
-    ...SHADOW,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    overflow: 'hidden',
+    ...cardShadow,
   },
   advanceBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 
   // Done card
   doneCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.successBg, borderRadius: 14, padding: 16,
-    marginHorizontal: 16, marginBottom: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.successBg,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 16,
+  },
+  doneIconWrap: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: Colors.white,
+    alignItems: 'center', justifyContent: 'center',
   },
   doneText: { fontSize: 14, fontWeight: '700', color: Colors.success, flex: 1 },
 
   // Label toggle
-  labelToggle: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  labelToggle: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   labelBtn: {
-    flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
-    backgroundColor: Colors.background,
+    flex: 1, paddingVertical: 10, borderRadius: borderRadius.sm,
+    alignItems: 'center', backgroundColor: Colors.background,
+    borderWidth: 1.5, borderColor: Colors.border,
+    overflow: 'hidden',
   },
-  labelBtnActive:     { backgroundColor: Colors.accentMuted },
+  labelBtnActive:     { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
   labelBtnText:       { fontSize: 14, fontWeight: '600', color: Colors.textMuted },
   labelBtnTextActive: { color: Colors.accent },
 
   // Capture buttons
-  captureRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+  captureRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   captureBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7,
-    backgroundColor: Colors.accentMuted, borderRadius: 12, paddingVertical: 12,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+    overflow: 'hidden',
   },
   captureBtnText: { fontSize: 14, fontWeight: '700', color: Colors.accent },
 
   // Photo grid
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  thumbWrap: { width: 90, height: 90, borderRadius: 10, overflow: 'hidden', position: 'relative' },
-  thumb:     { width: '100%', height: '100%' },
-  thumbLabel:{
+  photoGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  thumbWrap:  { width: 88, height: 88, borderRadius: borderRadius.sm, overflow: 'hidden', position: 'relative' },
+  thumb:      { width: '100%', height: '100%' },
+  thumbLabel: {
     position: 'absolute', top: 4, left: 4,
     borderRadius: 6, paddingHorizontal: 5, paddingVertical: 2,
   },
-  thumbBefore:     { backgroundColor: 'rgba(0,0,0,0.6)' },
-  thumbAfter:      { backgroundColor: 'rgba(106,13,173,0.8)' },
-  thumbLabelText:  { color: Colors.white, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
+  thumbBefore:    { backgroundColor: 'rgba(0,0,0,0.6)' },
+  thumbAfter:     { backgroundColor: 'rgba(106,13,173,0.8)' },
+  thumbLabelText: { color: Colors.white, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
   thumbOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: 'rgba(0,0,0,0.55)', paddingVertical: 6, alignItems: 'center',
   },
   progressBar: { height: 3, backgroundColor: Colors.accent, position: 'absolute', top: 0, left: 0 },
   progressText:{ color: Colors.white, fontSize: 11, fontWeight: '700' },
-  thumbDone:   { position: 'absolute', bottom: 4, right: 4 },
+  thumbBadge:  { position: 'absolute', bottom: 4, right: 4 },
   thumbRemove: { position: 'absolute', top: 2, right: 2 },
-  noPhotos:    { alignItems: 'center', paddingVertical: 24 },
-  noPhotosText:{ fontSize: 13, color: Colors.textMuted, marginTop: 6 },
+
+  emptyState:     { alignItems: 'center', paddingVertical: 28 },
+  emptyStateText: { fontSize: 13, color: Colors.textMuted, marginTop: 8 },
 
   // Notes
   notesInput: {
-    backgroundColor: Colors.surfaceAlt, borderRadius: 10, padding: 12,
-    fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 12,
-    borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.background,
+    borderRadius: borderRadius.sm,
+    padding: 14,
+    fontSize: 14,
+    color: Colors.textPrimary,
+    minHeight: 104,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
   },
   saveNotesBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: Colors.accentMuted, borderRadius: 10, paddingVertical: 10,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.sm,
+    paddingVertical: 11,
+    overflow: 'hidden',
   },
   saveNotesBtnText: { color: Colors.accent, fontWeight: '700', fontSize: 14 },
 });
@@ -773,14 +869,14 @@ const cam = StyleSheet.create({
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   iconBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 
-  labelBadge: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
-  labelBefore:{ backgroundColor: 'rgba(0,0,0,0.6)' },
-  labelAfter: { backgroundColor: 'rgba(106,13,173,0.75)' },
-  labelText:  { color: Colors.white, fontWeight: '800', fontSize: 14, letterSpacing: 1.5 },
+  labelBadge:  { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 6 },
+  labelBefore: { backgroundColor: 'rgba(0,0,0,0.6)' },
+  labelAfter:  { backgroundColor: 'rgba(106,13,173,0.75)' },
+  labelText:   { color: Colors.white, fontWeight: '800', fontSize: 14, letterSpacing: 1.5 },
 
   shutterRow: {
     position: 'absolute', bottom: 48, left: 0, right: 0,
@@ -798,9 +894,12 @@ const cam = StyleSheet.create({
     borderWidth: 2, borderColor: Colors.border,
   },
 
-  permBox:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
-  permTitle:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  permSub:    { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
-  permBtn:    { backgroundColor: Colors.accent, borderRadius: 12, paddingHorizontal: 28, paddingVertical: 12 },
-  permBtnText:{ color: Colors.white, fontWeight: '700', fontSize: 15 },
+  permBox:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 },
+  permIconWrap:  { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
+  permTitle:     { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  permSub:       { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
+  permBtn:       { backgroundColor: Colors.accent, borderRadius: borderRadius.md, paddingHorizontal: 32, paddingVertical: 13, overflow: 'hidden' },
+  permBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  permCancel:    { paddingVertical: 10, overflow: 'hidden' },
+  permCancelText:{ color: Colors.textMuted, fontSize: 14 },
 });

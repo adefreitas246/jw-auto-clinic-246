@@ -1,4 +1,4 @@
-﻿// app/(customer)/track/[id].tsx — Live Job Tracking
+// app/(customer)/track/[id].tsx — Live Job Tracking
 // Polls GET /api/jobs/:id every 30 s in the foreground;
 // expo-background-fetch handles polling when the app is backgrounded.
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,8 @@ import {
 } from '@/types/job';
 import { useSpeechStatus } from '@/hooks/useSpeechStatus';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
 // jobTrackingTask imports expo-notifications (for background status pushes) and
 // expo-background-fetch. Both crash in Expo Go at module-load time.
@@ -27,7 +29,7 @@ function getJobTrackingTask() {
   return require('@/tasks/jobTrackingTask') as typeof import('@/tasks/jobTrackingTask');
 }
 
-// Human-readable speech phrases per status (more natural than the label text)
+// Human-readable speech phrases per status
 const SPEECH_PHRASES: Record<string, string> = {
   assigned:      'Your booking is confirmed. A technician will be with you soon.',
   in_progress:   'Your vehicle is now being washed.',
@@ -64,7 +66,7 @@ function StepDot({ active, done }: { active: boolean; done: boolean }) {
   );
 }
 
-// ─── Vertical step stepper ────────────────────────────────────────────────────
+// ─── Vertical stepper ────────────────────────────────────────────────────────
 function JobStepper({ status }: { status: JobStatus }) {
   const currentIdx = JOB_STEPS.findIndex(s => s.status === status);
 
@@ -136,7 +138,6 @@ export default function TrackJobScreen() {
 
   const { speak, stop, voiceEnabled, setVoiceEnabled } = useSpeechStatus();
 
-  // Stop any in-progress speech when the screen unmounts
   useEffect(() => { return () => { stop(); }; }, [stop]);
 
   // ── Banner animation ───────────────────────────────────────────────────────
@@ -157,7 +158,6 @@ export default function TrackJobScreen() {
     try {
       const { data } = await axios.get<JobTracking>(`/api/jobs/${id}`);
 
-      // Detect status change (or first load)
       if (prevStatusRef.current !== data.jobStatus) {
         const isFirstLoad = prevStatusRef.current === null;
         if (!isFirstLoad) {
@@ -169,7 +169,6 @@ export default function TrackJobScreen() {
       prevStatusRef.current = data.jobStatus;
       setJob(data);
 
-      // ETA — only when technician location is available for mobile jobs
       if (
         data.locationType === 'mobile' &&
         data.technicianLat != null && data.technicianLng != null &&
@@ -184,7 +183,6 @@ export default function TrackJobScreen() {
         setEtaMin(null);
       }
 
-      // Stop polling when done
       if (data.jobStatus === 'finished') {
         if (pollRef.current) clearInterval(pollRef.current);
         if (!isExpoGo) await getJobTrackingTask().unregisterJobTracking();
@@ -207,7 +205,6 @@ export default function TrackJobScreen() {
     };
   }, [fetchJob]);
 
-  // Register background task once we have the job's initial status
   useEffect(() => {
     if (job && !taskRegistered.current && !isExpoGo) {
       taskRegistered.current = true;
@@ -233,9 +230,15 @@ export default function TrackJobScreen() {
   if (!job) {
     return (
       <View style={st.centered}>
-        <Ionicons name="alert-circle-outline" size={48} color={Colors.error} />
+        <View style={st.errorIconWrap}>
+          <Ionicons name="alert-circle-outline" size={36} color={Colors.error} />
+        </View>
         <Text style={st.errText}>Could not load job details.</Text>
-        <Pressable style={st.retryBtn} onPress={() => fetchJob()}>
+        <Pressable
+          style={st.retryBtn}
+          onPress={() => fetchJob()}
+          android_ripple={{ color: Colors.primaryDark }}
+        >
           <Text style={st.retryText}>Retry</Text>
         </Pressable>
       </View>
@@ -248,7 +251,7 @@ export default function TrackJobScreen() {
 
   const bannerTranslate = bannerAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [-50, 0],
+    outputRange: [-56, 0],
   });
 
   return (
@@ -277,15 +280,20 @@ export default function TrackJobScreen() {
       >
         {/* ── Header ── */}
         <View style={st.header}>
-          <Pressable style={st.backBtn} onPress={() => router.back()} hitSlop={8}>
+          <Pressable
+            style={st.headerIconBtn}
+            onPress={() => router.back()}
+            hitSlop={8}
+            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
+          >
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={st.headerTitle}>Track Job</Text>
-          {/* Voice readout toggle */}
           <Pressable
             style={[st.voiceBtn, voiceEnabled && st.voiceBtnOn]}
             onPress={() => setVoiceEnabled(!voiceEnabled)}
             hitSlop={8}
+            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
           >
             <Ionicons
               name={voiceEnabled ? 'volume-high' : 'volume-mute-outline'}
@@ -298,12 +306,17 @@ export default function TrackJobScreen() {
         {/* ── Service summary card ── */}
         <View style={st.card}>
           <Text style={st.serviceName}>{job.serviceLabel}</Text>
-          <Text style={st.serviceDate}>
-            {job.appointmentDate} · {job.appointmentTime}
-          </Text>
+          <View style={st.serviceMetaRow}>
+            <Ionicons name="calendar-outline" size={13} color={Colors.textMuted} />
+            <Text style={st.serviceDate}>
+              {job.appointmentDate} · {job.appointmentTime}
+            </Text>
+          </View>
           {job.technicianName ? (
             <View style={st.techRow}>
-              <Ionicons name="person-circle-outline" size={16} color={Colors.accent} />
+              <View style={st.techAvatar}>
+                <Ionicons name="person" size={14} color={Colors.accent} />
+              </View>
               <Text style={st.techName}>{job.technicianName}</Text>
             </View>
           ) : null}
@@ -311,13 +324,16 @@ export default function TrackJobScreen() {
 
         {/* ── Animated stepper ── */}
         <View style={[st.card, { paddingVertical: 20 }]}>
+          <Text style={st.cardSectionLabel}>Wash Progress</Text>
           <JobStepper status={job.jobStatus} />
         </View>
 
-        {/* ── ETA chip (mobile jobs with tech location) ── */}
+        {/* ── ETA chip ── */}
         {isMobile && hasTechLoc && etaMin !== null && !isDone && (
-          <View style={st.etaRow}>
-            <Ionicons name="time-outline" size={15} color={Colors.accent} />
+          <View style={st.etaChip}>
+            <View style={st.etaIconWrap}>
+              <Ionicons name="time-outline" size={14} color={Colors.accent} />
+            </View>
             <Text style={st.etaText}>
               Technician ETA:{' '}
               <Text style={st.etaBold}>{etaMin} min</Text>
@@ -339,14 +355,12 @@ export default function TrackJobScreen() {
               showsUserLocation={false}
               toolbarEnabled={false}
             >
-              {/* Customer's service location */}
               <Marker
                 coordinate={{ latitude: job.mobileLat, longitude: job.mobileLng }}
                 title="Your Location"
                 pinColor={Colors.accent}
               />
 
-              {/* Technician's current position */}
               {hasTechLoc && (
                 <Marker
                   coordinate={{
@@ -356,23 +370,28 @@ export default function TrackJobScreen() {
                   title={job.technicianName || 'Technician'}
                 >
                   <View style={st.techMarker}>
-                    <Ionicons name="car" size={17} color={Colors.white} />
+                    <Ionicons name="car" size={16} color={Colors.white} />
                   </View>
                 </Marker>
               )}
             </MapView>
-            <Text style={st.mapCaption}>
-              {hasTechLoc
-                ? 'Purple = technician · Blue = your location'
-                : 'Your service location'}
-            </Text>
+            <View style={st.mapCaption}>
+              <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
+              <Text style={st.mapCaptionText}>
+                {hasTechLoc
+                  ? 'Purple = technician · Blue = your location'
+                  : 'Your service location'}
+              </Text>
+            </View>
           </View>
         )}
 
-        {/* ── Bay location card (bay jobs) ── */}
+        {/* ── Bay location card ── */}
         {!isMobile && job.bayLabel ? (
-          <View style={[st.card, st.locationRow]}>
-            <Ionicons name="location" size={18} color={Colors.accent} />
+          <View style={st.locationCard}>
+            <View style={st.locationIconWrap}>
+              <Ionicons name="location" size={16} color={Colors.accent} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={st.locationLabel}>{job.bayLabel}</Text>
               {job.bayAddress ? (
@@ -384,9 +403,20 @@ export default function TrackJobScreen() {
 
         {/* ── Done CTA ── */}
         {isDone && (
+          <View style={st.doneBanner}>
+            <Ionicons name="checkmark-circle" size={28} color={Colors.success} />
+            <View style={{ flex: 1 }}>
+              <Text style={st.doneTitle}>Your vehicle is ready!</Text>
+              <Text style={st.doneSub}>Head over to pick it up.</Text>
+            </View>
+          </View>
+        )}
+
+        {isDone && (
           <Pressable
             style={st.doneBtn}
             onPress={() => router.replace('/(customer)/home')}
+            android_ripple={{ color: Colors.primaryDark }}
           >
             <Ionicons name="home" size={18} color={Colors.white} />
             <Text style={st.doneBtnText}>Back to Home</Text>
@@ -398,18 +428,25 @@ export default function TrackJobScreen() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const st = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
+  safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
   content: { paddingBottom: 48 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  errText: { fontSize: 15, color: Colors.textSecondary, marginTop: 12, textAlign: 'center' },
-  retryBtn:{ marginTop: 16, backgroundColor: Colors.accent, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 },
+
+  errorIconWrap: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: Colors.errorBg,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 16,
+  },
+  errText:  { fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginBottom: 20 },
+  retryBtn: {
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 28, paddingVertical: 12,
+    overflow: 'hidden',
+  },
   retryText:{ color: Colors.white, fontWeight: '700' },
 
   // Banner
@@ -417,81 +454,143 @@ const st = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, zIndex: 99,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: Colors.accent,
-    paddingHorizontal: 16, paddingVertical: 12,
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderRadius: borderRadius.md,
+    margin: 12,
+    ...cardShadow,
   },
   bannerText: { color: Colors.white, fontWeight: '700', fontSize: 14, flex: 1 },
 
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
+    paddingHorizontal: 20, paddingVertical: 14,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
   },
-  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  headerIconBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
+  },
   headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
-  voiceBtn:    { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
-  voiceBtnOn:  { backgroundColor: Colors.accentMuted },
+  voiceBtn:    {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.background,
+    overflow: 'hidden',
+  },
+  voiceBtnOn: { backgroundColor: Colors.accentMuted },
 
   // Shared card
   card: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
-    ...SHADOW,
+    backgroundColor: Colors.surface,
+    marginHorizontal: 20,
+    borderRadius: borderRadius.lg,
+    padding: 20,
+    marginTop: 16,
+    ...cardShadow,
+  },
+  cardSectionLabel: {
+    fontSize: 12, fontWeight: '700', color: Colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.6,
+    marginBottom: 16,
   },
 
   // Service summary
-  serviceName: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
-  serviceDate: { fontSize: 13, color: Colors.textMuted },
-  techRow:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-  techName:    { fontSize: 13, color: Colors.accent, fontWeight: '600' },
+  serviceName:   { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 8 },
+  serviceMetaRow:{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  serviceDate:   { fontSize: 13, color: Colors.textMuted },
+  techRow:       { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  techAvatar:    {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  techName: { fontSize: 13, color: Colors.accent, fontWeight: '600' },
 
   // Stepper
-  stepRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 2 },
+  stepRow:     { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 },
   dot:         { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   dotPulse:    { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.white },
   stepLabel:   { fontSize: 14, fontWeight: '600', color: Colors.border },
   stepLabelOn: { color: Colors.textPrimary },
-  stepSub:     { fontSize: 12, color: Colors.accent, marginTop: 1 },
-  connector:   { width: 2, height: 20, backgroundColor: Colors.border, marginLeft: 13, marginVertical: 2 },
+  stepSub:     { fontSize: 12, color: Colors.accent, marginTop: 2 },
+  connector:     { width: 2, height: 20, backgroundColor: Colors.border, marginLeft: 13, marginVertical: 2 },
   connectorDone: { backgroundColor: Colors.accent },
 
-  // ETA
-  etaRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginHorizontal: 16, marginBottom: 14,
-    backgroundColor: Colors.accentMuted, borderRadius: 99,
-    paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start',
+  // ETA chip
+  etaChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 20, marginTop: 12,
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 14, paddingVertical: 9,
+    alignSelf: 'flex-start',
   },
-  etaText: { fontSize: 13, color: Colors.textSecondary },
-  etaBold: { fontWeight: '700', color: Colors.accent },
+  etaIconWrap:{ width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.white, alignItems: 'center', justifyContent: 'center' },
+  etaText:    { fontSize: 13, color: Colors.textSecondary },
+  etaBold:    { fontWeight: '700', color: Colors.accent },
 
   // Map
   mapCard: {
-    marginHorizontal: 16, marginBottom: 14,
-    borderRadius: 16, overflow: 'hidden',
-    ...SHADOW,
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...cardShadow,
   },
-  map:        { height: 230 },
-  mapCaption: { backgroundColor: Colors.white, paddingHorizontal: 14, paddingVertical: 8, fontSize: 12, color: Colors.textMuted },
+  map: { height: 240 },
+  mapCaption: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 14, paddingVertical: 10,
+  },
+  mapCaptionText: { fontSize: 12, color: Colors.textMuted },
   techMarker: {
-    backgroundColor: Colors.accent, borderRadius: 20,
+    backgroundColor: Colors.accent,
+    borderRadius: 20,
     width: 36, height: 36,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: Colors.white,
   },
 
-  // Location card (bay jobs)
-  locationRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  locationLabel:{ fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  locationAddr: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  // Location card
+  locationCard: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    backgroundColor: Colors.surface,
+    marginHorizontal: 20, marginTop: 16,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    ...cardShadow,
+  },
+  locationIconWrap: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  locationLabel: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  locationAddr:  { fontSize: 13, color: Colors.textMuted, marginTop: 3 },
 
-  // Done button
+  // Done
+  doneBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    backgroundColor: Colors.successBg,
+    marginHorizontal: 20, marginTop: 16,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+  },
+  doneTitle: { fontSize: 15, fontWeight: '800', color: Colors.success },
+  doneSub:   { fontSize: 13, color: Colors.success, marginTop: 2, opacity: 0.8 },
   doneBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accent, borderRadius: 14, paddingVertical: 15,
-    marginHorizontal: 16,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+    marginHorizontal: 20, marginTop: 12,
+    overflow: 'hidden',
+    ...cardShadow,
   },
   doneBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
 });

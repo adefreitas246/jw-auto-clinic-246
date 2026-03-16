@@ -1,4 +1,4 @@
-﻿// app/(customer)/rate/[bookingId].tsx
+// app/(customer)/rate/[bookingId].tsx
 // Deep-linkable rating screen. Sent via push notification after a job is finished.
 // Deep link: /(customer)/rate/<bookingId>
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,8 +16,11 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
@@ -37,7 +39,6 @@ export default function RateScreen() {
 
   const headers = { Authorization: `Bearer ${token}` };
 
-  // Check if already reviewed
   useEffect(() => {
     if (!bookingId) return;
     axios.get(`/api/reviews/booking/${bookingId}`, { headers })
@@ -85,19 +86,25 @@ export default function RateScreen() {
   if (alreadyRated) {
     return (
       <SafeAreaView style={st.center}>
-        <Text style={st.alreadyEmoji}>⭐</Text>
-        <Text style={st.alreadyTitle}>Already Reviewed</Text>
-        {existingRating && (
-          <View style={st.existingStars}>
-            {[1, 2, 3, 4, 5].map(s => (
-              <Ionicons key={s} name={s <= existingRating ? 'star' : 'star-outline'} size={28} color={Colors.warning} />
-            ))}
-          </View>
-        )}
-        <Text style={st.alreadySub}>You've already submitted a review for this booking.</Text>
-        <Pressable style={st.doneBtn} onPress={() => router.back()}>
-          <Text style={st.doneBtnText}>Go Back</Text>
-        </Pressable>
+        <Animated.View entering={FadeIn.duration(300)} style={{ alignItems: 'center' }}>
+          <Text style={st.alreadyEmoji}>⭐</Text>
+          <Text style={st.alreadyTitle}>Already Reviewed</Text>
+          {existingRating && (
+            <View style={st.existingStars}>
+              {[1, 2, 3, 4, 5].map(s => (
+                <Ionicons key={s} name={s <= existingRating ? 'star' : 'star-outline'} size={28} color={Colors.warning} />
+              ))}
+            </View>
+          )}
+          <Text style={st.alreadySub}>You've already submitted a review for this booking.</Text>
+          <Pressable
+            style={st.doneBtn}
+            onPress={() => router.back()}
+            android_ripple={{ color: Colors.white + '30' }}
+          >
+            <Text style={st.doneBtnText}>Go Back</Text>
+          </Pressable>
+        </Animated.View>
       </SafeAreaView>
     );
   }
@@ -106,17 +113,27 @@ export default function RateScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
         {/* Header */}
         <View style={st.header}>
-          <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
+          <Pressable
+            onPress={() => router.back()}
+            style={st.backBtn}
+            hitSlop={8}
+            android_ripple={{ color: Colors.accent + '20', borderless: true }}
+          >
             <Ionicons name="close" size={22} color={Colors.textPrimary} />
           </Pressable>
           <Text style={st.headerTitle}>Rate Your Experience</Text>
           <View style={{ width: 36 }} />
         </View>
 
-        <View style={st.content}>
+        <Animated.ScrollView
+          entering={FadeIn.duration(300)}
+          contentContainerStyle={st.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Wash icon */}
           <View style={st.iconWrap}>
             <Ionicons name="car-sport" size={48} color={Colors.accent} />
@@ -165,6 +182,7 @@ export default function RateScreen() {
             style={[st.submitBtn, (submitting || stars === 0) && { opacity: 0.6 }]}
             onPress={handleSubmit}
             disabled={submitting || stars === 0}
+            android_ripple={{ color: Colors.white + '30' }}
           >
             {submitting
               ? <ActivityIndicator color={Colors.white} size="small" />
@@ -172,43 +190,47 @@ export default function RateScreen() {
             }
           </Pressable>
 
-          <Pressable onPress={() => router.back()} style={st.skipBtn}>
+          <Pressable
+            onPress={() => router.back()}
+            style={st.skipBtn}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
             <Text style={st.skipBtnText}>Skip for now</Text>
           </Pressable>
-        </View>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.white },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.white, padding: 24 },
+  safe:   { flex: 1, backgroundColor: Colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background, padding: 24 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
+  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  content:   { flex: 1, alignItems: 'center', paddingHorizontal: 24, paddingTop: 32 },
+  content:   { alignItems: 'center', paddingHorizontal: SCREEN_PADDING, paddingTop: 32, paddingBottom: 100 },
   iconWrap:  { width: 90, height: 90, borderRadius: 45, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  title:     { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
+  title:     { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 8 },
   subtitle:  { fontSize: 14, color: Colors.textSecondary, marginBottom: 28 },
 
   starsRow:  { flexDirection: 'row', gap: 10, marginBottom: 12 },
   starLabel: { fontSize: 16, fontWeight: '600', color: Colors.warning, marginBottom: 24 },
 
-  commentInput: { width: '100%', borderWidth: 1, borderColor: Colors.border, borderRadius: 12, padding: 14, fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 4 },
+  commentInput: { width: '100%', borderWidth: 1, borderColor: Colors.border, borderRadius: 12, padding: 14, fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 4, backgroundColor: Colors.surface },
   charCount:    { width: '100%', textAlign: 'right', fontSize: 11, color: Colors.textMuted, marginBottom: 20 },
 
-  submitBtn:     { width: '100%', backgroundColor: Colors.accent, borderRadius: 12, padding: 15, alignItems: 'center', marginBottom: 12 },
+  submitBtn:     { width: '100%', backgroundColor: Colors.accent, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
   submitBtnText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
-  skipBtn:       { padding: 10 },
+  skipBtn:       { padding: 12 },
   skipBtnText:   { color: Colors.textMuted, fontSize: 13 },
 
-  alreadyEmoji: { fontSize: 56, marginBottom: 12 },
-  alreadyTitle: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
-  alreadySub:   { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 10, marginBottom: 24 },
+  alreadyEmoji:  { fontSize: 56, marginBottom: 12 },
+  alreadyTitle:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
+  alreadySub:    { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 10, marginBottom: 24 },
   existingStars: { flexDirection: 'row', gap: 6, marginBottom: 4 },
-  doneBtn:       { backgroundColor: Colors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 10 },
+  doneBtn:       { backgroundColor: Colors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 10, overflow: 'hidden' },
   doneBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
 });

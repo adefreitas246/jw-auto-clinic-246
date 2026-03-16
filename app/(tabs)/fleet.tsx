@@ -1,9 +1,10 @@
-﻿// app/(tabs)/fleet.tsx — Admin Fleet Map
+// app/(tabs)/fleet.tsx — Admin Fleet Map
 // Shows all currently-tracking staff members on a live map.
 // Polls GET /api/staff/fleet every 30 s. Admin only.
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import React, {
   useCallback, useEffect, useRef, useState,
 } from 'react';
@@ -13,9 +14,12 @@ import {
 } from 'react-native';
 import MapView, { Marker, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated2, { FadeIn } from 'react-native-reanimated';
 
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +104,7 @@ function TechMarker({
       <Text style={[fl.markerName, selected && fl.markerNameSel]} numberOfLines={1}>
         {member.name.split(' ')[0]}
       </Text>
-      <View style={fl.markerNib} />
+      <View style={[fl.markerNib, selected && fl.markerNibSel]} />
     </View>
   );
 }
@@ -138,28 +142,41 @@ function DetailCard({
           <View style={fl.detailBadgeRow}>
             <View style={fl.onlineDot} />
             <Text style={fl.onlineText}>Online</Text>
-            <Text style={fl.rolePill}>{member.role}</Text>
+            <View style={fl.rolePill}>
+              <Text style={fl.rolePillText}>{member.role}</Text>
+            </View>
           </View>
         </View>
-        <Pressable style={fl.closeBtn} onPress={onClose} hitSlop={10}>
-          <Ionicons name="close" size={20} color={Colors.textMuted} />
+        <Pressable
+          style={fl.closeBtn}
+          onPress={onClose}
+          android_ripple={{ color: Colors.border, borderless: true, radius: 18 }}
+          hitSlop={10}
+        >
+          <Ionicons name="close" size={18} color={Colors.textMuted} />
         </Pressable>
       </View>
 
       {/* Coordinates row */}
       <View style={fl.detailInfoRow}>
-        <Ionicons name="location-outline" size={15} color={Colors.accent} />
+        <View style={fl.detailInfoIcon}>
+          <Ionicons name="location-outline" size={15} color={Colors.accent} />
+        </View>
         <Text style={fl.detailInfoText}>
           {member.currentLat.toFixed(5)}°, {member.currentLng.toFixed(5)}°
         </Text>
         {member.locationAccuracy != null && (
-          <Text style={fl.accuracyChip}>±{Math.round(member.locationAccuracy)} m</Text>
+          <View style={fl.accuracyChip}>
+            <Text style={fl.accuracyChipText}>±{Math.round(member.locationAccuracy)} m</Text>
+          </View>
         )}
       </View>
 
       {/* Last seen row */}
       <View style={fl.detailInfoRow}>
-        <Ionicons name="time-outline" size={15} color={Colors.textMuted} />
+        <View style={fl.detailInfoIcon}>
+          <Ionicons name="time-outline" size={15} color={Colors.textMuted} />
+        </View>
         <Text style={fl.detailInfoSub}>
           Last seen {formatAgo(member.locationUpdatedAt)}
         </Text>
@@ -233,6 +250,7 @@ export default function FleetScreen() {
 
   // ── Marker press ──────────────────────────────────────────────────────────
   const handleMarkerPress = useCallback((member: FleetMember) => {
+    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelected(prev => (prev?._id === member._id ? null : member));
     mapRef.current?.animateToRegion(
       {
@@ -258,8 +276,11 @@ export default function FleetScreen() {
     return (
       <SafeAreaView style={fl.safe} edges={['top']}>
         <View style={fl.centered}>
-          <Ionicons name="lock-closed-outline" size={40} color={Colors.border} />
-          <Text style={fl.emptyText}>Admin access required</Text>
+          <View style={fl.emptyIconWrap}>
+            <Ionicons name="lock-closed-outline" size={32} color={Colors.textMuted} />
+          </View>
+          <Text style={fl.emptyTitle}>Admin access required</Text>
+          <Text style={fl.emptyText}>This screen is only accessible to administrators.</Text>
         </View>
       </SafeAreaView>
     );
@@ -269,9 +290,11 @@ export default function FleetScreen() {
     return (
       <SafeAreaView style={fl.safe} edges={['top']}>
         <View style={fl.centered}>
-          <Ionicons name="map-outline" size={48} color={Colors.accent} />
-          <Text style={[fl.emptyText, { marginTop: 12 }]}>Fleet Map</Text>
-          <Text style={[fl.emptyText, { fontSize: 14, color: Colors.textSecondary, marginTop: 4 }]}>
+          <View style={fl.emptyIconWrap}>
+            <Ionicons name="map-outline" size={32} color={Colors.accent} />
+          </View>
+          <Text style={fl.emptyTitle}>Fleet Map</Text>
+          <Text style={fl.emptyText}>
             Live map view is available on the mobile app.
           </Text>
         </View>
@@ -312,7 +335,12 @@ export default function FleetScreen() {
       <SafeAreaView style={fl.headerOverlay} edges={['top']} pointerEvents="box-none">
         <View style={fl.header}>
           {/* Back */}
-          <Pressable style={fl.headerBtn} onPress={() => router.back()} hitSlop={8}>
+          <Pressable
+            style={fl.headerBtn}
+            onPress={() => router.back()}
+            android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
+            hitSlop={8}
+          >
             <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
           </Pressable>
 
@@ -329,7 +357,11 @@ export default function FleetScreen() {
           <View style={fl.headerActions}>
             <Pressable
               style={fl.headerBtn}
-              onPress={() => fetchFleet(true)}
+              onPress={() => {
+                if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                fetchFleet(true);
+              }}
+              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
               hitSlop={8}
               disabled={refreshing}
             >
@@ -338,7 +370,12 @@ export default function FleetScreen() {
                 : <Ionicons name="refresh" size={20} color={Colors.accent} />
               }
             </Pressable>
-            <Pressable style={fl.headerBtn} onPress={fitAll} hitSlop={8}>
+            <Pressable
+              style={fl.headerBtn}
+              onPress={fitAll}
+              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
+              hitSlop={8}
+            >
               <Ionicons name="expand-outline" size={20} color={Colors.accent} />
             </Pressable>
           </View>
@@ -347,6 +384,7 @@ export default function FleetScreen() {
         {/* Last refreshed */}
         {lastRefresh && (
           <View style={fl.refreshedBadge}>
+            <View style={fl.refreshedDot} />
             <Text style={fl.refreshedText}>
               Updated {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </Text>
@@ -367,8 +405,8 @@ export default function FleetScreen() {
         <View style={fl.emptyOverlay} pointerEvents="none">
           <View style={fl.emptyCard}>
             <Ionicons name="navigate-circle-outline" size={36} color={Colors.border} />
-            <Text style={fl.emptyTitle}>No active technicians</Text>
-            <Text style={fl.emptySub}>Staff members will appear here once they start their shift.</Text>
+            <Text style={fl.emptyCardTitle}>No active technicians</Text>
+            <Text style={fl.emptyCardSub}>Staff members will appear here once they start their shift.</Text>
           </View>
         </View>
       )}
@@ -385,15 +423,19 @@ export default function FleetScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-  android: { elevation: 6 },
-}) ?? {};
-
 const fl = StyleSheet.create({
   safe:           { flex: 1, backgroundColor: Colors.surfaceAlt },
-  centered:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+  centered:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: SCREEN_PADDING },
   mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
+
+  // ── Centered empty states ──
+  emptyIconWrap: {
+    width: 72, height: 72, borderRadius: borderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+  },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
+  emptyText:  { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
 
   // ── Floating header ──
   headerOverlay: {
@@ -406,15 +448,15 @@ const fl = StyleSheet.create({
     marginHorizontal: 12,
     marginTop:        8,
     backgroundColor: Colors.white,
-    borderRadius:    16,
-    paddingVertical: 10,
+    borderRadius:    borderRadius.lg,
+    paddingVertical: 8,
     paddingHorizontal: 8,
-    ...SHADOW,
+    ...cardShadow,
   },
   headerBtn: {
     width: 40, height: 40,
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: 20,
+    borderRadius: borderRadius.full,
   },
   headerCenter: { flex: 1, alignItems: 'center', gap: 4 },
   headerTitle:  { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
@@ -422,18 +464,20 @@ const fl = StyleSheet.create({
 
   countChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.surfaceAlt, borderRadius: 999,
+    backgroundColor: Colors.successBg, borderRadius: borderRadius.full,
     paddingHorizontal: 10, paddingVertical: 3,
   },
-  chipDot:    { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.success },
-  countText:  { fontSize: 12, fontWeight: '700', color: Colors.accent },
+  chipDot:    { width: 7, height: 7, borderRadius: borderRadius.full, backgroundColor: Colors.success },
+  countText:  { fontSize: 12, fontWeight: '700', color: Colors.success },
 
   refreshedBadge: {
     alignSelf: 'center', marginTop: 8,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    borderRadius: 999, paddingHorizontal: 12, paddingVertical: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: borderRadius.full, paddingHorizontal: 12, paddingVertical: 4,
   },
-  refreshedText: { fontSize: 11, color: Colors.textMuted },
+  refreshedDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
+  refreshedText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
 
   // ── Markers ──
   markerWrap: {
@@ -441,14 +485,14 @@ const fl = StyleSheet.create({
   },
   markerWrapSel: {},
   markerAvatar: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 38, height: 38, borderRadius: borderRadius.full,
     backgroundColor: Colors.accent,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: Colors.white,
-    ...SHADOW,
+    ...cardShadow,
   },
   markerAvatarSel: {
-    width: 46, height: 46, borderRadius: 23,
+    width: 48, height: 48, borderRadius: borderRadius.full,
     backgroundColor: Colors.primary,
     borderWidth: 3, borderColor: Colors.white,
   },
@@ -456,77 +500,84 @@ const fl = StyleSheet.create({
   markerInitialsSel: { fontSize: 16 },
   markerName: {
     fontSize: 11, fontWeight: '700', color: Colors.textPrimary,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1,
-    marginTop: 2, maxWidth: 70,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: borderRadius.sm, paddingHorizontal: 5, paddingVertical: 1,
+    marginTop: 2, maxWidth: 72,
     textAlign: 'center',
   },
   markerNameSel: { color: Colors.accent },
   markerNib: {
     width: 0, height: 0,
     borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 7,
-    borderLeftColor: 'transparent', borderRightColor: 'transparent',
+    borderLeftColor: Colors.transparent, borderRightColor: Colors.transparent,
     borderTopColor: Colors.accent,
   },
+  markerNibSel: { borderTopColor: Colors.primary },
 
   // ── Detail card ──
   detailCard: {
     position:       'absolute',
     bottom:         0, left: 0, right: 0,
     backgroundColor: Colors.white,
-    borderTopLeftRadius:  24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop:   10,
-    paddingBottom: 36,
-    ...SHADOW,
+    borderTopLeftRadius:  borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop:   12,
+    paddingBottom: 40,
+    ...cardShadow,
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: Colors.border,
-    alignSelf: 'center', marginBottom: 16,
+    alignSelf: 'center', marginBottom: 20,
   },
-  detailRow:    { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
+  detailRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
   detailAvatar: {
-    width: 50, height: 50, borderRadius: 25,
-    backgroundColor: Colors.accent,
+    width: 52, height: 52, borderRadius: borderRadius.full,
+    backgroundColor: Colors.accentMuted,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: Colors.accent,
   },
-  detailInitials: { fontSize: 18, fontWeight: '800', color: Colors.white },
-  detailName:     { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  detailBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  detailInitials: { fontSize: 18, fontWeight: '800', color: Colors.accent },
+  detailName:     { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
+  detailBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   onlineDot:      { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
-  onlineText:     { fontSize: 12, color: Colors.success, fontWeight: '600' },
+  onlineText:     { fontSize: 12, color: Colors.success, fontWeight: '700' },
   rolePill: {
-    fontSize: 11, color: Colors.accent, fontWeight: '700',
-    backgroundColor: Colors.surfaceAlt, borderRadius: 999,
+    backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
     paddingHorizontal: 8, paddingVertical: 2,
   },
+  rolePillText: { fontSize: 11, color: Colors.accent, fontWeight: '700' },
   closeBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Colors.background,
+    width: 36, height: 36, borderRadius: borderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
   },
   detailInfoRow: {
     flexDirection: 'row', alignItems: 'center',
-    gap: 8, marginBottom: 8,
+    gap: 8, marginBottom: 10,
+  },
+  detailInfoIcon: {
+    width: 28, height: 28, borderRadius: borderRadius.sm,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
   },
   detailInfoText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
   detailInfoSub:  { fontSize: 13, color: Colors.textMuted, flex: 1 },
   accuracyChip: {
-    fontSize: 11, color: Colors.textMuted,
-    backgroundColor: Colors.background, borderRadius: 999,
+    backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full,
     paddingHorizontal: 8, paddingVertical: 2,
   },
+  accuracyChipText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
 
   // ── Error toast ──
   errorToast: {
     position: 'absolute', bottom: 100, left: 16, right: 16,
     backgroundColor: Colors.errorBg,
-    borderRadius: 12, padding: 12,
+    borderRadius: borderRadius.md, padding: 12,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     borderLeftWidth: 3, borderLeftColor: Colors.error,
-    ...SHADOW,
+    ...cardShadow,
   },
   errorText: { flex: 1, fontSize: 13, color: Colors.error, fontWeight: '600' },
 
@@ -538,13 +589,12 @@ const fl = StyleSheet.create({
     paddingBottom: 80,
   },
   emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 20, padding: 24,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: borderRadius.xl, padding: 24,
     alignItems: 'center', gap: 8,
     marginHorizontal: 32,
-    ...SHADOW,
+    ...cardShadow,
   },
-  emptyTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
-  emptySub:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
-  emptyText:  { fontSize: 14, color: Colors.textMuted, fontWeight: '600' },
+  emptyCardTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
+  emptyCardSub:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
 });

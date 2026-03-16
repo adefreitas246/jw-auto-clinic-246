@@ -1,4 +1,4 @@
-﻿// app/(tabs)/jobs/index.tsx — Staff Job Dashboard
+// app/(tabs)/jobs/index.tsx — Staff Job Dashboard
 // Shows today's confirmed bookings for this business, sorted by appointment time.
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
@@ -7,7 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -15,6 +14,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import axios from 'axios';
 
 import {
@@ -24,6 +25,8 @@ import {
   STAFF_STATUS_COLORS,
 } from '@/types/job';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function todayISO(): string {
@@ -51,10 +54,15 @@ function StatusBadge({ status }: { status: JobStatus }) {
 
 // ── Job card ─────────────────────────────────────────────────────────────────
 function JobCard({ job }: { job: JobSummary }) {
+  const { bg } = STAFF_STATUS_COLORS[job.jobStatus];
   return (
     <Pressable
-      style={({ pressed }) => [jd.card, pressed && { opacity: 0.88 }]}
-      onPress={() => router.push({ pathname: '/(tabs)/jobs/[id]', params: { id: job._id } })}
+      style={({ pressed }) => [jd.card, { borderLeftColor: bg }, pressed && { opacity: 0.88 }]}
+      onPress={() => {
+        if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        router.push({ pathname: '/(tabs)/jobs/[id]', params: { id: job._id } });
+      }}
+      android_ripple={{ color: Colors.accentMuted }}
     >
       {/* Time + location type */}
       <View style={jd.cardTop}>
@@ -67,7 +75,7 @@ function JobCard({ job }: { job: JobSummary }) {
             color={Colors.textMuted}
             style={{ marginLeft: 8 }}
           />
-          <Text style={jd.locLabel}>
+          <Text style={jd.locLabel} numberOfLines={1}>
             {job.locationType === 'mobile'
               ? (job.mobileAddress || 'Mobile')
               : (job.bayLabel || 'Bay')}
@@ -86,7 +94,10 @@ function JobCard({ job }: { job: JobSummary }) {
       {/* Footer: price + duration + chevron */}
       <View style={jd.cardFooter}>
         <Text style={jd.price}>${job.totalPrice.toFixed(2)}</Text>
-        <Text style={jd.dur}>{job.durationMinutes} min</Text>
+        <View style={jd.durChip}>
+          <Ionicons name="hourglass-outline" size={11} color={Colors.textMuted} />
+          <Text style={jd.dur}>{job.durationMinutes} min</Text>
+        </View>
         <Ionicons name="chevron-forward" size={16} color={Colors.border} style={{ marginLeft: 'auto' }} />
       </View>
     </Pressable>
@@ -123,19 +134,13 @@ export default function JobDashboard() {
 
   // Navigate date ± 1 day
   const shiftDate = (delta: number) => {
+    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const d = new Date(date + 'T00:00:00');
     d.setDate(d.getDate() + delta);
     setDate(d.toISOString().slice(0, 10));
   };
 
   const isToday = date === todayISO();
-
-  const byStatus: Record<string, JobSummary[]> = {};
-  for (const j of jobs) {
-    const s = STAFF_STATUS_LABELS[j.jobStatus] ?? j.jobStatus;
-    if (!byStatus[s]) byStatus[s] = [];
-    byStatus[s].push(j);
-  }
 
   return (
     <SafeAreaView style={jd.safe} edges={['top']}>
@@ -148,23 +153,30 @@ export default function JobDashboard() {
           <Text style={jd.sub}>Staff Dashboard</Text>
         </View>
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          {/* QR scanner — all staff can use this */}
           <Pressable
-            style={jd.adminBtn}
-            onPress={() => router.push('/(tabs)/scanner')}
+            style={jd.headerBtn}
+            onPress={() => {
+              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push('/(tabs)/scanner');
+            }}
+            android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 20 }}
             hitSlop={8}
           >
             <Ionicons name="qr-code-outline" size={15} color={Colors.accent} />
-            <Text style={jd.adminBtnText}>Scan QR</Text>
+            <Text style={jd.headerBtnText}>Scan QR</Text>
           </Pressable>
           {user?.role === 'admin' && (
             <Pressable
-              style={jd.adminBtn}
-              onPress={() => router.push('/(tabs)/jobs/manage')}
+              style={jd.headerBtn}
+              onPress={() => {
+                if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/(tabs)/jobs/manage');
+              }}
+              android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 20 }}
               hitSlop={8}
             >
               <Ionicons name="settings-outline" size={15} color={Colors.accent} />
-              <Text style={jd.adminBtnText}>Manage</Text>
+              <Text style={jd.headerBtnText}>Manage</Text>
             </Pressable>
           )}
         </View>
@@ -172,15 +184,29 @@ export default function JobDashboard() {
 
       {/* ── Date navigation ── */}
       <View style={jd.datePicker}>
-        <Pressable style={jd.dateBtn} onPress={() => shiftDate(-1)} hitSlop={8}>
-          <Ionicons name="chevron-back" size={20} color={Colors.accent} />
+        <Pressable
+          style={jd.dateArrow}
+          onPress={() => shiftDate(-1)}
+          android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 20 }}
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-back" size={22} color={Colors.accent} />
         </Pressable>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={jd.dateText}>{formatDate(date)}</Text>
-          {isToday && <Text style={jd.todayPill}>Today</Text>}
+          {isToday && (
+            <View style={jd.todayBadge}>
+              <Text style={jd.todayBadgeText}>Today</Text>
+            </View>
+          )}
         </View>
-        <Pressable style={jd.dateBtn} onPress={() => shiftDate(1)} hitSlop={8}>
-          <Ionicons name="chevron-forward" size={20} color={Colors.accent} />
+        <Pressable
+          style={jd.dateArrow}
+          onPress={() => shiftDate(1)}
+          android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 20 }}
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-forward" size={22} color={Colors.accent} />
         </Pressable>
       </View>
 
@@ -194,41 +220,44 @@ export default function JobDashboard() {
           keyExtractor={j => j._id}
           contentContainerStyle={jd.listContent}
           showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={jd.separator} />}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
           }
           ListHeaderComponent={
             jobs.length > 0 ? (
-              <View style={jd.statsRow}>
+              <Animated.View entering={FadeIn.duration(300)} style={jd.statsRow}>
                 <View style={jd.statPill}>
                   <Text style={jd.statNum}>{jobs.length}</Text>
-                  <Text style={jd.statLabel}>Jobs</Text>
+                  <Text style={jd.statLabel}>Total</Text>
                 </View>
-                <View style={jd.statPill}>
-                  <Text style={jd.statNum}>
-                    {jobs.filter(j => j.jobStatus === 'finished').length}
-                  </Text>
-                  <Text style={jd.statLabel}>Done</Text>
-                </View>
-                <View style={jd.statPill}>
-                  <Text style={jd.statNum}>
+                <View style={[jd.statPill, jd.statPillAccent]}>
+                  <Text style={[jd.statNum, { color: Colors.accent }]}>
                     {jobs.filter(j =>
                       j.jobStatus === 'assigned' || j.jobStatus === 'in_progress'
                     ).length}
                   </Text>
                   <Text style={jd.statLabel}>Active</Text>
                 </View>
-              </View>
+                <View style={[jd.statPill, jd.statPillSuccess]}>
+                  <Text style={[jd.statNum, { color: Colors.success }]}>
+                    {jobs.filter(j => j.jobStatus === 'finished').length}
+                  </Text>
+                  <Text style={jd.statLabel}>Done</Text>
+                </View>
+              </Animated.View>
             ) : null
           }
           ListEmptyComponent={
-            <View style={jd.empty}>
-              <Ionicons name="calendar-outline" size={52} color={Colors.border} />
+            <Animated.View entering={FadeIn.duration(300)} style={jd.empty}>
+              <View style={jd.emptyIconWrap}>
+                <Ionicons name="calendar-outline" size={40} color={Colors.textMuted} />
+              </View>
               <Text style={jd.emptyTitle}>No jobs scheduled</Text>
               <Text style={jd.emptyText}>
                 There are no confirmed bookings for{'\n'}{formatDate(date)}.
               </Text>
-            </View>
+            </Animated.View>
           }
           renderItem={({ item }) => <JobCard job={item} />}
         />
@@ -238,11 +267,6 @@ export default function JobDashboard() {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
-
 const jd = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
@@ -250,62 +274,83 @@ const jd = StyleSheet.create({
   // Header
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingTop: 6, paddingBottom: 14,
+    paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 12,
   },
   greeting: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
   sub:      { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
-  adminBtn: {
+  headerBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: Colors.accentMuted, borderRadius: 99,
+    backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
     paddingHorizontal: 12, paddingVertical: 7,
   },
-  adminBtnText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
+  headerBtnText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
 
   // Date picker strip
   datePicker: {
     flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 16, marginBottom: 16,
-    backgroundColor: Colors.white, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 8,
-    ...SHADOW,
+    marginHorizontal: SCREEN_PADDING, marginBottom: 16,
+    backgroundColor: Colors.white, borderRadius: borderRadius.lg,
+    paddingVertical: 10, paddingHorizontal: 4,
+    ...cardShadow,
   },
-  dateBtn:  { padding: 6 },
+  dateArrow:  { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: borderRadius.full },
   dateText: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  todayPill:{ fontSize: 11, color: Colors.accent, fontWeight: '700', marginTop: 2 },
+  todayBadge: {
+    marginTop: 4, backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 2,
+  },
+  todayBadgeText: { fontSize: 11, color: Colors.accent, fontWeight: '700' },
 
   // Stats
-  statsRow:  { flexDirection: 'row', gap: 10, marginBottom: 14 },
-  statPill:  { flex: 1, backgroundColor: Colors.white, borderRadius: 12, padding: 12, alignItems: 'center', ...SHADOW },
-  statNum:   { fontSize: 22, fontWeight: '800', color: Colors.accent },
-  statLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  statsRow:       { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  statPill:       { flex: 1, backgroundColor: Colors.white, borderRadius: borderRadius.md, padding: 12, alignItems: 'center', ...cardShadow },
+  statPillAccent: { borderTopWidth: 3, borderTopColor: Colors.accent },
+  statPillSuccess:{ borderTopWidth: 3, borderTopColor: Colors.success },
+  statNum:        { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  statLabel:      { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 
   // List
-  listContent: { paddingHorizontal: 16, paddingBottom: 110 },
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100 },
+  separator:   { height: 10 },
 
   // Job card
   card: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     padding: 16,
-    marginBottom: 12,
-    ...SHADOW,
+    borderLeftWidth: 4,
+    ...cardShadow,
   },
   cardTop:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   timeRow:    { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, flexWrap: 'wrap' },
   time:       { fontSize: 13, color: Colors.textMuted, fontWeight: '600' },
   locLabel:   { fontSize: 12, color: Colors.textMuted, flex: 1 },
   service:    { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
-  vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 10 },
+  vehicleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 12 },
   vehicle:    { fontSize: 13, color: Colors.textMuted, flex: 1 },
-  cardFooter: { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, borderTopColor: Colors.background, paddingTop: 10 },
-  price:      { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  dur:        { fontSize: 12, color: Colors.textMuted },
+  cardFooter: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    borderTopWidth: 1, borderTopColor: Colors.surfaceAlt, paddingTop: 10,
+  },
+  price:   { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
+  durChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full,
+    paddingHorizontal: 8, paddingVertical: 3,
+  },
+  dur:     { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
 
   // Status badge
-  badge:     { borderRadius: 99, paddingHorizontal: 10, paddingVertical: 4 },
+  badge:     { borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
   // Empty
-  empty:      { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginTop: 16, marginBottom: 6 },
-  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  empty:       { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
+  emptyIconWrap: {
+    width: 80, height: 80, borderRadius: borderRadius.full,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  },
+  emptyTitle:  { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
+  emptyText:   { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 22 },
 });

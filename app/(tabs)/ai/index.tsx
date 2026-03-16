@@ -4,11 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { router }   from 'expo-router';
 import React from 'react';
 import {
-  Platform, Pressable, ScrollView,
+  Pressable, ScrollView,
   StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Feature card data ────────────────────────────────────────────────────────
 
@@ -113,15 +115,14 @@ export default function AIHubScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const SHADOW = Platform.select({
-  ios:     { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } },
-  android: { elevation: 2 },
-}) ?? {};
+const SHADOW = IS_IOS
+  ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 2 } }
+  : IS_ANDROID ? { elevation: 2 } : {};
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
-  content: { padding: 20, paddingBottom: 48, gap: 14 },
+  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 14 },
 
   header: {
     flexDirection: 'row', alignItems: 'center', gap: 12,

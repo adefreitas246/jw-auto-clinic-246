@@ -19,9 +19,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EmptyState, ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 type Plan = {
   _id:         string;
@@ -176,16 +178,15 @@ export default function SubscriptionPlansScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
-      {/* Header */}
-      <View style={st.header}>
-        <Pressable onPress={() => router.back()} style={st.backBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={st.headerTitle}>Subscription Plans</Text>
-        <Pressable onPress={openCreate} style={st.addBtn} hitSlop={8}>
-          <Ionicons name="add" size={20} color={Colors.white} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="Subscription Plans"
+        backButton
+        rightAction={
+          <Pressable onPress={openCreate} style={st.addBtn} hitSlop={8} android_ripple={{ color: Colors.accentDark, radius: 20, borderless: true }}>
+            <Ionicons name="add" size={20} color={Colors.white} />
+          </Pressable>
+        }
+      />
 
       <ScrollView
         contentContainerStyle={st.scroll}
@@ -193,14 +194,15 @@ export default function SubscriptionPlansScreen() {
         showsVerticalScrollIndicator={false}
       >
         {plans.length === 0 ? (
-          <View style={st.emptyWrap}>
-            <Ionicons name="card-outline" size={48} color={Colors.border} />
-            <Text style={st.emptyTitle}>No plans yet</Text>
-            <Text style={st.empty}>Tap + to create your first subscription plan.</Text>
-          </View>
+          <EmptyState
+            icon="card-outline"
+            title="No plans yet"
+            subtitle="Tap + to create your first subscription plan."
+          />
         ) : (
-          plans.map(plan => (
-            <View key={plan._id} style={[st.planCard, !plan.active && { opacity: 0.5 }]}>
+          plans.map((plan, index) => (
+            <ReAnimated.View key={plan._id} entering={FadeInDown.delay(index * 70).duration(300)}>
+            <View style={[st.planCard, !plan.active && { opacity: 0.5 }]}>
               <View style={st.planTop}>
                 <View style={{ flex: 1 }}>
                   <View style={st.planNameRow}>
@@ -250,6 +252,7 @@ export default function SubscriptionPlansScreen() {
                 />
               </View>
             </View>
+            </ReAnimated.View>
           ))
         )}
         <View style={{ height: 40 }} />
@@ -331,10 +334,7 @@ const st = StyleSheet.create({
   emptyWrap:  { alignItems: 'center', paddingTop: 60, gap: 8 },
   emptyTitle: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
-  addBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center' },
+  addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center' },
 
   planCard:    { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border, shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
   planTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },

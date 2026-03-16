@@ -16,10 +16,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
 
+import { EmptyState, ScreenHeader } from '@/components/ui';
 import { Service } from '@/types/catalog';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 // ─── Category badge colors ────────────────────────────────────────────────────
 
@@ -191,26 +193,27 @@ export default function ManageServicesScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
+      <ScreenHeader title="Services" />
       <View style={s.container}>
         {services.length === 0 ? (
-          <View style={s.center}>
-            <View style={s.emptyIcon}>
-              <Ionicons name="construct-outline" size={32} color={Colors.textMuted} />
-            </View>
-            <Text style={s.emptyTitle}>No services yet</Text>
-            <Text style={s.emptyText}>Tap the + button to add your first service.</Text>
-          </View>
+          <EmptyState
+            icon="construct-outline"
+            title="No services yet"
+            subtitle="Tap the + button to add your first service."
+          />
         ) : (
           <Animated.FlatList
             data={services}
             keyExtractor={sv => sv._id}
-            renderItem={({ item }) => (
-              <ServiceRow
-                service={item}
-                onToggle={active => toggleActive(item, active)}
-                onEdit={() => router.push(`/(tabs)/services/${item._id}`)}
-                onDelete={() => deleteService(item._id)}
-              />
+            renderItem={({ item, index }) => (
+              <ReAnimated.View entering={FadeInDown.delay(index * 60).duration(300)}>
+                <ServiceRow
+                  service={item}
+                  onToggle={active => toggleActive(item, active)}
+                  onEdit={() => router.push(`/(tabs)/services/${item._id}`)}
+                  onDelete={() => deleteService(item._id)}
+                />
+              </ReAnimated.View>
             )}
             ItemSeparatorComponent={() => <View style={s.sep} />}
             contentContainerStyle={s.list}

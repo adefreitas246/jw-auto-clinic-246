@@ -21,9 +21,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 type CouponType = 'percent' | 'fixed';
 
@@ -172,25 +174,19 @@ export default function CouponsScreen() {
 
   return (
     <SafeAreaView style={cp.safe}>
-      {/* Header */}
-      <View style={cp.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={cp.backBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.border, radius: 20, borderless: true }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={cp.headerTitle}>Coupon Codes</Text>
-        <Pressable
-          onPress={openCreate}
-          style={cp.addBtn}
-          android_ripple={{ color: Colors.accentDark, radius: 20, borderless: true }}
-        >
-          <Ionicons name="add" size={20} color={Colors.white} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="Coupon Codes"
+        backButton
+        rightAction={
+          <Pressable
+            onPress={openCreate}
+            style={cp.addBtn}
+            android_ripple={{ color: Colors.accentDark, radius: 20, borderless: true }}
+          >
+            <Ionicons name="add" size={20} color={Colors.white} />
+          </Pressable>
+        }
+      />
 
       <FlatList
         data={coupons}
@@ -213,12 +209,13 @@ export default function CouponsScreen() {
             <Text style={cp.empty}>Tap + to create your first discount code.</Text>
           </View>
         }
-        renderItem={({ item: c }) => {
+        renderItem={({ item: c, index }) => {
           const expired  = isExpired(c);
           const full     = isFull(c);
           const usagePct = c.maxUses ? Math.min(1, c.usedCount / c.maxUses) : null;
 
           return (
+            <ReAnimated.View entering={FadeInDown.delay(index * 60).duration(300)}>
             <View style={[cp.card, !c.active && { opacity: 0.55 }]}>
               <View style={cp.cardTop}>
                 <View style={{ flex: 1 }}>
@@ -296,6 +293,7 @@ export default function CouponsScreen() {
                 />
               </View>
             </View>
+            </ReAnimated.View>
           );
         }}
       />
@@ -428,26 +426,6 @@ const cp = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    ...cardShadow,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: Colors.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   addBtn: {
     width: 40,
     height: 40,

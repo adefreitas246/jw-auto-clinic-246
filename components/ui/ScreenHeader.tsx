@@ -1,5 +1,5 @@
 // components/ui/ScreenHeader.tsx
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,8 @@ import { SCREEN_PADDING } from '@/utils/platformStyles';
 interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
-  rightAction?: { label: string; onPress: () => void; icon?: keyof typeof Ionicons.glyphMap };
+  /** Pass a ReactNode (e.g. a Pressable) OR the legacy object form */
+  rightAction?: ReactNode | { label: string; onPress: () => void; icon?: keyof typeof Ionicons.glyphMap };
   backButton?: boolean;
   style?: ViewStyle;
 }
@@ -39,18 +40,25 @@ export function ScreenHeader({
           {subtitle ? <Text style={s.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
         </View>
         {rightAction && (
-          <Pressable
-            onPress={rightAction.onPress}
-            hitSlop={8}
-            style={s.rightBtn}
-            android_ripple={{ color: Colors.accent + '20', borderless: true }}
-          >
-            {rightAction.icon ? (
-              <Ionicons name={rightAction.icon} size={22} color={Colors.accent} />
-            ) : (
-              <Text style={s.rightLabel}>{rightAction.label}</Text>
-            )}
-          </Pressable>
+          React.isValidElement(rightAction)
+            ? rightAction
+            : (() => {
+                const ra = rightAction as { label: string; onPress: () => void; icon?: keyof typeof Ionicons.glyphMap };
+                return (
+                  <Pressable
+                    onPress={ra.onPress}
+                    hitSlop={8}
+                    style={s.rightBtn}
+                    android_ripple={{ color: Colors.accent + '20', borderless: true }}
+                  >
+                    {ra.icon ? (
+                      <Ionicons name={ra.icon} size={22} color={Colors.accent} />
+                    ) : (
+                      <Text style={s.rightLabel}>{ra.label}</Text>
+                    )}
+                  </Pressable>
+                );
+              })()
         )}
       </View>
       <View style={s.divider} />

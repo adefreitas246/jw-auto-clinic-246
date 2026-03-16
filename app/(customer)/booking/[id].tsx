@@ -15,9 +15,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookingQR } from '@/components/BookingQR';
+import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import ReAnimated, { FadeIn } from 'react-native-reanimated';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,19 +180,7 @@ export default function BookingDetailScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* ── Header ── */}
-      <View style={s.header}>
-        <Pressable
-          style={s.headerIconBtn}
-          onPress={() => router.back()}
-          hitSlop={8}
-          android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={s.headerTitle}>Booking Details</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="Booking Details" backButton />
 
       <ScrollView
         contentContainerStyle={s.content}
@@ -203,6 +193,7 @@ export default function BookingDetailScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
+        <ReAnimated.View entering={FadeIn.duration(300)}>
         {/* ── Status banner ── */}
         <View style={[s.statusCard, { backgroundColor: statusCfg.bg }]}>
           <View style={[s.statusIconWrap, { backgroundColor: statusCfg.color + '22' }]}>
@@ -314,6 +305,7 @@ export default function BookingDetailScreen() {
             </Pressable>
           )}
         </View>
+        </ReAnimated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -324,20 +316,6 @@ export default function BookingDetailScreen() {
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-  },
-  headerIconBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
 
   content: { paddingBottom: 44, paddingTop: 4 },
 

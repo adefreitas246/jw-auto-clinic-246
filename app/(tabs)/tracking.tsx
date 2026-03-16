@@ -18,9 +18,11 @@ import {
   startLocationTracking,
   stopLocationTracking,
 } from '@/tasks/locationTask';
+import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import ReAnimated, { FadeIn } from 'react-native-reanimated';
 
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL || 'https://jw-auto-clinic-246.onrender.com';
@@ -245,20 +247,14 @@ export default function TrackingScreen() {
 
   return (
     <SafeAreaView style={tr.safe} edges={['top']}>
-      {/* Header */}
-      <View style={tr.header}>
-        <Pressable style={tr.backBtn} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={tr.headerTitle}>Location Tracking</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <ScreenHeader title="Location Tracking" backButton />
 
       <ScrollView
         style={tr.scroll}
         contentContainerStyle={tr.content}
         showsVerticalScrollIndicator={false}
       >
+        <ReAnimated.View entering={FadeIn.duration(300)}>
         {/* Status hero card */}
         <View style={[tr.heroCard, tracking ? tr.heroActive : tr.heroIdle]}>
           <View style={tr.heroRow}>
@@ -414,6 +410,7 @@ export default function TrackingScreen() {
             assigned to mobile jobs will see your live position on their map.
           </Text>
         </View>
+        </ReAnimated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -431,14 +428,6 @@ const tr = StyleSheet.create({
   webIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   webTitle:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
   webSub:      { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: 32, lineHeight: 20 },
-
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 14,
-  },
-  backBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
 
   // Hero card
   heroCard: {

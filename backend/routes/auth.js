@@ -129,7 +129,7 @@ router.post('/forgot-password', async (req, res) => {
 
         <p>
           <a href="${webLink}"
-            style="display:inline-block;padding:10px 18px;background:#6a0dad;color:#ffffff;
+            style="display:inline-block;padding:10px 18px;background:#0EA5E9;color:#ffffff;
                     text-decoration:none;border-radius:6px;font-weight:bold;">
             Reset Password
           </a>
@@ -200,5 +200,28 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+
+// GET /api/auth/me — validate token + return current user profile
+const authMiddleware = require('../middleware/authMiddleware');
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const { id, type } = req.user;
+    const Model = type === 'Worker' ? Worker : User;
+    const doc = await Model.findById(id).select('name email phone avatar role notificationsEnabled businessId');
+    if (!doc) return res.status(404).json({ error: 'User not found' });
+    return res.json({
+      _id:   doc._id,
+      name:  doc.name  || '',
+      email: doc.email || '',
+      phone: doc.phone || '',
+      avatar: doc.avatar || '',
+      role:  doc.role,
+      businessId: doc.businessId || req.user.businessId || null,
+      notificationsEnabled: typeof doc.notificationsEnabled === 'boolean' ? doc.notificationsEnabled : true,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 module.exports = router;

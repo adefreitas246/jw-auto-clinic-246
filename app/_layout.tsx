@@ -11,7 +11,11 @@ if (!isExpoGo) {
   require('@/tasks/locationTask');
 }
 
+import { initDatabase } from '@/utils/db';
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+
+// Initialise SQLite tables on app start (fire-and-forget — non-blocking)
+initDatabase().catch(err => console.warn('[db] init error:', err));
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";

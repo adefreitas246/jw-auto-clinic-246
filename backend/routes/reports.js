@@ -180,6 +180,40 @@ router.get('/dashboard', protect, async (req, res) => {
   }
 });
 
+// ── GET /api/reports/today — lightweight KPI for home dashboard ───────────────
+// Returns: bookingsToday, revenueToday, activeJobs, staffOnline, completedToday
+router.get('/today', protect, async (req, res) => {
+  try {
+    const bid = req.businessId;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const [bookingsToday, todayRevAgg, activeJobs, staffOnline, completedToday] = await Promise.all([
+      Booking.countDocuments({ businessId: bid, createdAt: { $gte: today, $lt: tomorrow } }),
+      Transaction.aggregate([
+        { $match: { businessId: bid, serviceDate: { $gte: today, $lt: tomorrow } } },
+        { $group: { _id: null, total: { $sum: { $toDouble: '$finalPrice' } } } },
+      ]),
+      Booking.countDocuments({ businessId: bid, status: { $in: ['assigned', 'in_progress'] } }),
+      Worker.countDocuments({ businessId: bid, clockedIn: true }),
+      Booking.countDocuments({ businessId: bid, status: 'finished', updatedAt: { $gte: today, $lt: tomorrow } }),
+    ]);
+
+    res.json({
+      bookingsToday,
+      revenueToday:   round2(todayRevAgg[0]?.total ?? 0),
+      activeJobs,
+      staffOnline,
+      completedToday,
+    });
+  } catch (err) {
+    console.error('[Reports] today:', err);
+    res.status(500).json({ error: 'Failed to fetch today stats' });
+  }
+});
+
 // ── GET /api/reports/revenue ──────────────────────────────────────────────────
 router.get('/revenue', protect, async (req, res) => {
   try {

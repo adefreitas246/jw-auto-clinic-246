@@ -26,6 +26,7 @@ const loyaltyRoutes       = require('./routes/loyalty');
 const subscriptionRoutes  = require('./routes/subscriptions');
 const reviewRoutes        = require('./routes/reviews');
 const marketingRoutes     = require('./routes/marketing');
+const receiptRoutes       = require('./routes/receipts');
 const aiRoutes            = require('./routes/ai');
 
 const app = express();
@@ -82,7 +83,7 @@ app.get("/auth/reset-password", (req, res) => {
           color: #1f1f1f;
         }
         button {
-          background-color: #6a0dad;
+          background-color: #0EA5E9;
           color: #ffffff;
           border: none;
           padding: 10px 16px;
@@ -281,6 +282,7 @@ app.use('/api/loyalty',       loyaltyRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/reviews',       reviewRoutes);
 app.use('/api/marketing',    marketingRoutes);
+app.use('/api/receipts',     receiptRoutes);
 app.use('/ai',               aiRoutes);          // Claude AI proxy
 
 mongoose.connect(process.env.MONGO_URI)

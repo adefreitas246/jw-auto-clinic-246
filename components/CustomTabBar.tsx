@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 8,
   },
-  webMenuItemActive: { backgroundColor: 'rgba(106,13,173,0.08)' },
+  webMenuItemActive: { backgroundColor: Colors.accentMuted },
   webMenuItemDanger: {},
   webMenuItemLabel: { fontSize: 14, fontWeight: '500' },
   webDivider: {

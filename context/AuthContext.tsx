@@ -26,6 +26,8 @@ export type User = {
 
 interface AuthContextProps {
   user: User | null;
+  /** Shortcut for user?.token — many screens destructure this directly. */
+  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (accessToken: string) => Promise<void>;
@@ -229,6 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
+        token: user?.token ?? null,
         loading,
         login,
         loginWithGoogle,

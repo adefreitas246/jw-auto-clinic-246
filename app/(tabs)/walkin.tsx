@@ -987,7 +987,7 @@ const k = StyleSheet.create({
   continueBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 
   // ── Step 2: Form ──
-  formContent: { padding: SCREEN_PADDING, paddingBottom: 40 },
+  formContent: { padding: SCREEN_PADDING, paddingBottom: 100 },
   serviceRecap: {
     flexDirection: "row",
     alignItems: "center",

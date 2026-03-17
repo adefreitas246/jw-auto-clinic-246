@@ -387,6 +387,7 @@ export default function LoyaltyScreen() {
                 data={[...account.history].reverse()}
                 keyExtractor={h => h._id}
                 scrollEnabled={false}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 ItemSeparatorComponent={() => <View style={st.histSeparator} />}
                 renderItem={({ item: h, index }) => {
                   const isEarn = h.type === 'earn' || h.type === 'bonus';

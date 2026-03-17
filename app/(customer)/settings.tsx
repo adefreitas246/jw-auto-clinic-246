@@ -133,7 +133,7 @@ export default function CustomerSettingsScreen() {
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
-  content: { paddingBottom: 60 },
+  content: { paddingBottom: 100 },
 
   hero: {
     alignItems: 'center',

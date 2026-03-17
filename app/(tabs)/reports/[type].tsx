@@ -584,7 +584,7 @@ const rv = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
 
-  scroll: { paddingBottom: 40 },
+  scroll: { paddingBottom: 100 },
 
   // Filter card
   filterCard: {

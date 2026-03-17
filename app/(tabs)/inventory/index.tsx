@@ -586,7 +586,7 @@ const s = StyleSheet.create({
   },
 
   // Category chips
-  catList: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 8 },
+  catList: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 100 },
   catChip: {
     borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 14, paddingVertical: 7, backgroundColor: Colors.surface,

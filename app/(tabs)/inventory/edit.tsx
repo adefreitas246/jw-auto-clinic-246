@@ -63,7 +63,7 @@ function PickerModal({
       <View style={pm.sheet}>
         <View style={pm.handle} />
         <Text style={pm.title}>{title}</Text>
-        <ScrollView>
+        <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
           {options.map(opt => (
             <Pressable
               key={opt}

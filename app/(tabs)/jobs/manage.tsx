@@ -652,7 +652,7 @@ const ad = StyleSheet.create({
 
   // Stats
   statsRow:    { maxHeight: 84, marginBottom: 8 },
-  statsScroll: { paddingHorizontal: 20, gap: 10 },
+  statsScroll: { paddingHorizontal: 20, gap: 10, paddingBottom: 100 },
   statCard:    {
     backgroundColor: Colors.surface,
     borderRadius: borderRadius.md,
@@ -665,7 +665,7 @@ const ad = StyleSheet.create({
 
   // Filter
   filterSection: { marginBottom: 8 },
-  filterScroll:  { paddingHorizontal: 20, gap: 8 },
+  filterScroll:  { paddingHorizontal: 20, gap: 8, paddingBottom: 100 },
   filterPill:    {
     borderRadius: borderRadius.full,
     paddingHorizontal: 14, paddingVertical: 7,

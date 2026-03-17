@@ -2125,7 +2125,7 @@ export default function TransactionsScreen() {
                     />
                   )}
                   ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-                  contentContainerStyle={{ paddingBottom: 12 }}
+                  contentContainerStyle={{ paddingBottom: 100 }}
                   showsVerticalScrollIndicator
                 />
               )}
@@ -2187,7 +2187,7 @@ export default function TransactionsScreen() {
           {/* Form */}
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ padding: 12, paddingBottom: 40 }}
+            contentContainerStyle={{ padding: 12, paddingBottom: 100 }}
             keyboardShouldPersistTaps="handled"
           >
             {/* Service */}
@@ -2653,7 +2653,7 @@ export default function TransactionsScreen() {
                   <Text>Loading…</Text>
                 </View>
               ) : (
-                <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingBottom: 32 }}>
+                <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingBottom: 100 }}>
                 {/* Meta */}
                 <View style={{ marginBottom: 12 }}>
                   {!!detail?.createdAt && <Text style={{ color: Colors.textSecondary }}>Date: {new Date(detail.createdAt).toLocaleString()}</Text>}

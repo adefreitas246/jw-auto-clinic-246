@@ -701,7 +701,7 @@ export default function JobWorkflowScreen() {
 const wf = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8 },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 100 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
   errorIconWrap: {

@@ -362,7 +362,7 @@ export default function CampaignsScreen() {
           <Pressable style={bd.backdrop} onPress={() => setModal(false)} />
           <ScrollView
             style={bd.sheet}
-            contentContainerStyle={{ paddingBottom: 40 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             keyboardShouldPersistTaps="handled"
           >
             <View style={bd.sheetHandle} />

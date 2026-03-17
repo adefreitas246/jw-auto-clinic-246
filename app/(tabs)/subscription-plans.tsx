@@ -262,7 +262,7 @@ export default function SubscriptionPlansScreen() {
       <Modal visible={modal} transparent animationType="slide" onRequestClose={() => setModal(false)}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
           <Pressable style={st.backdrop} onPress={() => setModal(false)} />
-          <ScrollView style={st.sheet} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+          <ScrollView style={st.sheet} contentContainerStyle={{ paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
             <Text style={st.sheetTitle}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
 
             {/* Name */}
@@ -328,7 +328,7 @@ export default function SubscriptionPlansScreen() {
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING },
+  scroll: { padding: SCREEN_PADDING, paddingBottom: 100 },
   muted:  { color: Colors.textMuted, fontSize: 14 },
   empty:  { color: Colors.textMuted, textAlign: 'center', fontSize: 13, marginTop: 6 },
   emptyWrap:  { alignItems: 'center', paddingTop: 60, gap: 8 },

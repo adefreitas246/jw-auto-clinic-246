@@ -304,7 +304,7 @@ export default function CouponsScreen() {
           <Pressable style={cp.backdrop} onPress={() => setModal(false)} />
           <ScrollView
             style={cp.sheet}
-            contentContainerStyle={{ paddingBottom: 40 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             keyboardShouldPersistTaps="handled"
           >
             <View style={cp.sheetHandle} />

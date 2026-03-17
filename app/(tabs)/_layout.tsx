@@ -1,5 +1,5 @@
-import { CustomTabBar } from "@/components/CustomTabBar";
 import { useAuth } from "@/context/AuthContext";
+import TabBar from "@/components/ui/TabBar";
 import { Tabs } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Platform, View } from "react-native";
@@ -24,7 +24,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         // Show header only on mobile platforms
         headerShown: Platform.OS !== "web",

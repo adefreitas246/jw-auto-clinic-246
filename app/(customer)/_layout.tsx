@@ -1,6 +1,6 @@
 ﻿// app/(customer)/_layout.tsx
-import { CustomerTabBar } from '@/components/CustomerTabBar';
 import { useAuth } from '@/context/AuthContext';
+import TabBar from '@/components/ui/TabBar';
 import { Tabs, Redirect } from 'expo-router';
 import { ActivityIndicator, Platform, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -33,7 +33,7 @@ export default function CustomerLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <CustomerTabBar {...props} />}
+      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
         headerShown: Platform.OS !== 'web',
         headerTransparent: true,

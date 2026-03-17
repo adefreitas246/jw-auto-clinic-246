@@ -270,7 +270,7 @@ export default function BookConfirmedStep() {
 
 const s = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { flexGrow: 1 },
+  scroll: { flexGrow: 1, paddingBottom: 100 },
 
   // Success header section
   successSection: {

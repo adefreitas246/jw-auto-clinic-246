@@ -319,7 +319,7 @@ const jd = StyleSheet.create({
   todayBadgeText: { fontSize: 11, color: Colors.accent, fontWeight: '700' },
 
   // Summary chips
-  chipsRow: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 12 },
+  chipsRow: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 100 },
   chip: {
     alignItems: 'center', minWidth: 90,
     backgroundColor: Colors.surface,

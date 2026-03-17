@@ -470,7 +470,7 @@ export default function TrackJobScreen() {
 const st = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { paddingBottom: 48 },
+  content: { paddingBottom: 100 },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
   errorIconWrap: {

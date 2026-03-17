@@ -308,7 +308,7 @@ const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
 
-  content: { paddingBottom: 44, paddingTop: 4 },
+  content: { paddingBottom: 100, paddingTop: 4 },
 
   errorIconWrap: {
     width: 72, height: 72, borderRadius: 36,

@@ -1012,7 +1012,7 @@ function EmployeesScreen() {
               ListHeaderComponent={WebToolbarHeader}
               stickyHeaderIndices={[0]}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 32 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 100 }}
               initialNumToRender={30}
               windowSize={9}
               onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}
@@ -1092,7 +1092,7 @@ function EmployeesScreen() {
           {isIOS ? (
             <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
               <View style={[styles.sheet, { paddingBottom: Math.max(16, insets.bottom + 8), maxWidth: 720, alignSelf: "center", width: "100%", maxHeight: "88%" }]}>
-                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
+                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
                   <Text style={styles.sectionTitle}>Add Worker</Text>
                   <View style={[styles.formRow, !isWeb && isWide && styles.formRowWide]}>
                     <View style={[styles.formCol, !isWeb && isWide && styles.formHalf]}>
@@ -1146,7 +1146,7 @@ function EmployeesScreen() {
           ) : (
             <View style={{ flex: 1, justifyContent: "flex-end", paddingBottom: keyboardHeight }}>
               <View style={[styles.sheet, { paddingBottom: Math.max(16, insets.bottom + 8), maxWidth: 720, alignSelf: "center", width: "100%", maxHeight: "88%" }]}>
-                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
+                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
                   <Text style={styles.sectionTitle}>Add Worker</Text>
                   <View style={[styles.formRow, !isWeb && isWide && styles.formRowWide]}>
                     <View style={[styles.formCol, !isWeb && isWide && styles.formHalf]}>
@@ -1206,7 +1206,7 @@ function EmployeesScreen() {
           {Platform.OS === "ios" ? (
             <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
               <View style={[styles.sheet, { paddingBottom: Math.max(16, insets.bottom + 8), maxWidth: 720, alignSelf: "center", width: "100%", maxHeight: "88%" }]}>
-                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
+                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
                   <Text style={styles.sectionTitle}>Edit Worker</Text>
                   {editing && (
                     <>
@@ -1242,7 +1242,7 @@ function EmployeesScreen() {
           ) : (
             <View style={{ flex: 1, justifyContent: "flex-end", paddingBottom: keyboardHeight }}>
               <View style={[styles.sheet, { paddingBottom: Math.max(16, insets.bottom + 8), maxWidth: 720, alignSelf: "center", width: "100%", maxHeight: "88%" }]}>
-                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 24 }}>
+                <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 100 }}>
                   <Text style={styles.sectionTitle}>Edit Worker</Text>
                   {editing && (
                     <>
@@ -1335,7 +1335,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, color: Colors.textPrimary },
 
   // Filter chips
-  chipsRow: { flexDirection: "row", gap: 8, paddingBottom: 4 },
+  chipsRow: { flexDirection: "row", gap: 8, paddingBottom: 100 },
   filterChip: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: Colors.surfaceAlt },
   filterChipActive: { backgroundColor: Colors.accent },
   filterChipText: { fontSize: 13, fontWeight: "600", color: Colors.textSecondary },

@@ -2317,7 +2317,7 @@ const earningsChartConfig = {
                     <ScrollView
                       horizontal={isNative && (barChartData.labels?.length || 0) > 5}
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ paddingRight: 24 }}
+                      contentContainerStyle={{ paddingRight: 24, paddingBottom: 100 }}
                     >
                       <BarChart
                         data={barChartData}
@@ -2394,7 +2394,7 @@ const earningsChartConfig = {
                     <ScrollView
                       horizontal={isNative && (lineChartData.labels?.length || 0) > 5}
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{ paddingRight: 24 }}
+                      contentContainerStyle={{ paddingRight: 24, paddingBottom: 100 }}
                     >
                       <LineChart
                         data={lineChartData}
@@ -3079,6 +3079,7 @@ const earningsChartConfig = {
                 contentContainerStyle={{
                   paddingVertical: 8,
                   paddingHorizontal: 4,
+                  paddingBottom: 100,
                 }}
               >
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -4721,7 +4722,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   filtersScrollContent: {
-    paddingBottom: 2,
+    paddingBottom: 100,
   },
   filters: {
     flexDirection: "row",
@@ -5351,7 +5352,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sheetContent: {
-    paddingBottom: 16,
+    paddingBottom: 100,
     rowGap: 4,
   },
 

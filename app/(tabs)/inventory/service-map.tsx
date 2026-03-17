@@ -109,6 +109,7 @@ function AddMappingModal({
             data={inventoryItems}
             keyExtractor={it => it._id}
             style={{ maxHeight: 300 }}
+            contentContainerStyle={{ paddingBottom: 100 }}
             renderItem={({ item }) => (
               <Pressable
                 style={am.optionRow}
@@ -373,7 +374,7 @@ const sm = StyleSheet.create({
   },
   infoText: { fontSize: 12, color: Colors.accent, flex: 1, lineHeight: 17 },
 
-  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  list: { paddingHorizontal: 16, paddingBottom: 100 },
 
   card: {
     backgroundColor: Colors.white, borderRadius: 14, padding: 14,

@@ -16,7 +16,8 @@
       "Read(//c/Users/AddeS/AppData/Local/Temp/claude/C--Users-AddeS-Documents-ASD-Inova-Technologia-jw-auto-clinic/af5ef311-fb1c-4a3d-9f60-1432822aabf0/tasks/**)",
       "Bash(done)",
       "Bash(head:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -354,7 +354,7 @@ export default function FleetScreen() {
         <SectionHeader
           title={`Active Technicians (${fleet.length})`}
         />
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
           {fleet.map((member, index) => (
             <ReAnimated.View key={member._id} entering={FadeInDown.delay(index * 50).springify()}>
               <TechRow

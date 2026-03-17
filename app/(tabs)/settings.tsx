@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 80,
   },
-  container: { flexGrow: 1, paddingBottom: 40 },
+  container: { flexGrow: 1, paddingBottom: 100 },
 
   // Sticky header
   stickyHeader: {

@@ -321,7 +321,7 @@ export default function SubscriptionsScreen() {
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING, paddingTop: 20 },
+  scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: 100 },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
   currentCardWrap: { marginBottom: 24 },

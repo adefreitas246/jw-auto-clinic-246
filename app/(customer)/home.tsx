@@ -7,8 +7,11 @@ import { IS_IOS } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,9 +20,9 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Avatar } from '@/components/ui';
-import { SectionHeader } from '@/components/ui';
-import { Card } from '@/components/ui';
+import { Avatar, SectionHeader, Card } from '@/components/ui';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type QuickAction = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -29,6 +32,18 @@ type QuickAction = {
   bg: string;
   route: string;
 };
+
+type RecentBooking = {
+  _id:             string;
+  status:          'pending_payment' | 'confirmed' | 'cancelled' | 'completed';
+  serviceLabel:    string;
+  vehicleLabel:    string;
+  appointmentDate: string;
+  appointmentTime: string;
+  totalPrice:      number;
+};
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const QUICK_ACTIONS: QuickAction[] = [
   {
@@ -73,9 +88,21 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
 ];
 
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  pending_payment: { label: 'Awaiting Payment', color: Colors.warning,  bg: Colors.warningBg   },
+  confirmed:       { label: 'Confirmed',         color: Colors.accent,   bg: Colors.accentMuted },
+  cancelled:       { label: 'Cancelled',          color: Colors.error,    bg: Colors.errorBg     },
+  completed:       { label: 'Completed',          color: Colors.success,  bg: Colors.successBg   },
+};
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+
 export default function CustomerHome() {
   const { user } = useAuth();
   const router = useRouter();
+
+  const [recentBookings,  setRecentBookings]  = useState<RecentBooking[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(true);
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
 
@@ -83,6 +110,16 @@ export default function CustomerHome() {
   const greeting =
     hour < 12 ? 'Good morning' :
     hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoadingBookings(true);
+    axios.get<RecentBooking[]>('/api/bookings')
+      .then(res => { if (active) setRecentBookings(res.data.slice(0, 3)); })
+      .catch(() => {})
+      .finally(() => { if (active) setLoadingBookings(false); });
+    return () => { active = false; };
+  }, []));
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -171,15 +208,65 @@ export default function CustomerHome() {
             ))}
           </View>
 
-          {/* ── Section header placeholder ── */}
+          {/* ── Recent Activity ── */}
           <Animated.View entering={FadeInDown.delay(560).duration(300)}>
-            <SectionHeader title="Recent Activity" actionLabel="See All" onAction={() => router.push('/(customer)/home')} />
+            <SectionHeader
+              title="Recent Activity"
+              actionLabel="See All"
+              onAction={() => router.push('/(customer)/booking')}
+            />
           </Animated.View>
+
+          {loadingBookings ? (
+            <View style={s.activityLoading}>
+              <ActivityIndicator color={Colors.accent} />
+            </View>
+          ) : recentBookings.length === 0 ? (
+            <Animated.View entering={FadeInDown.delay(600).duration(300)} style={s.activityEmpty}>
+              <Ionicons name="calendar-outline" size={28} color={Colors.textMuted} />
+              <Text style={s.activityEmptyText}>No bookings yet — tap Book a Wash above.</Text>
+            </Animated.View>
+          ) : (
+            <View style={s.activityList}>
+              {recentBookings.map((b, i) => {
+                const cfg = STATUS_CONFIG[b.status] ?? STATUS_CONFIG.confirmed;
+                return (
+                  <Animated.View key={b._id} entering={FadeInDown.delay(600 + i * 60).duration(300)}>
+                    <Pressable
+                      style={({ pressed }) => [s.activityCard, pressed && { opacity: 0.9 }]}
+                      onPress={() => router.push({ pathname: '/(customer)/booking/[id]', params: { id: b._id } })}
+                      android_ripple={{ color: Colors.accent + '15', borderless: false }}
+                    >
+                      <View style={s.activityLeft}>
+                        <Text style={s.activityService} numberOfLines={1}>{b.serviceLabel}</Text>
+                        <Text style={s.activityMeta}>
+                          {b.appointmentDate}{b.appointmentTime ? ` · ${b.appointmentTime}` : ''}
+                        </Text>
+                        {!!b.vehicleLabel && (
+                          <Text style={s.activityVehicle} numberOfLines={1}>{b.vehicleLabel}</Text>
+                        )}
+                      </View>
+                      <View>
+                        <View style={[s.activityBadge, { backgroundColor: cfg.bg }]}>
+                          <Text style={[s.activityBadgeText, { color: cfg.color }]}>{cfg.label}</Text>
+                        </View>
+                        {b.totalPrice != null && (
+                          <Text style={s.activityPrice}>${b.totalPrice.toFixed(2)}</Text>
+                        )}
+                      </View>
+                    </Pressable>
+                  </Animated.View>
+                );
+              })}
+            </View>
+          )}
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.background },
@@ -196,14 +283,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 24,
-    paddingHorizontal: 0,
   },
   headerText: { flex: 1 },
-  greeting: { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
-  userName: { fontSize: 28, fontWeight: '800', color: Colors.textPrimary, marginTop: 2 },
-  avatarBtn: {
-    borderRadius: 24,
-  },
+  greeting:   { fontSize: 14, color: Colors.textSecondary, fontWeight: '500' },
+  userName:   { fontSize: 28, fontWeight: '800', color: Colors.textPrimary, marginTop: 2 },
+  avatarBtn:  { borderRadius: 24 },
 
   // Hero card
   hero: {
@@ -216,33 +300,11 @@ const s = StyleSheet.create({
     alignItems: 'center',
     ...cardShadow,
   },
-  heroContent: { flex: 1 },
-  heroEyebrowRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-  },
-  heroEyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.accent,
-  },
-  heroEyebrow: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.6)',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: Colors.white,
-    lineHeight: 30,
-    marginBottom: 18,
-  },
+  heroContent:    { flex: 1 },
+  heroEyebrowRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  heroEyebrowDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.accent },
+  heroEyebrow:    { fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2 },
+  heroTitle:      { fontSize: 24, fontWeight: '800', color: Colors.white, lineHeight: 30, marginBottom: 18 },
   heroCta: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,45 +316,39 @@ const s = StyleSheet.create({
     borderRadius: borderRadius.full ?? 999,
   },
   heroCtaText: { color: Colors.white, fontSize: 13, fontWeight: '700' },
-  heroIcon: { position: 'absolute', right: -12, bottom: -14 },
+  heroIcon:    { position: 'absolute', right: -12, bottom: -14 },
 
   // Grid
-  sectionRow: {
+  sectionRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
+  sectionTitle:{ fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  grid:        { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 28 },
+  cardWrapper: { width: '47%' },
+  cardInner:   { width: '100%' },
+  cardIcon:    { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  cardLabel:   { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, marginBottom: 2 },
+  cardSub:     { fontSize: 12, color: Colors.textSecondary },
+
+  // Recent Activity
+  activityLoading: { paddingVertical: 24, alignItems: 'center' },
+  activityEmpty:   { alignItems: 'center', gap: 10, paddingVertical: 24 },
+  activityEmptyText: { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
+  activityList:    { gap: 10, marginBottom: 8 },
+  activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 28,
-  },
-  cardWrapper: {
-    width: '47%',
-  },
-  cardInner: {
-    width: '100%',
-  },
-  cardIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  cardLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  cardSub: { fontSize: 12, color: Colors.textSecondary },
+  activityLeft:     { flex: 1, marginRight: 10 },
+  activityService:  { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
+  activityMeta:     { fontSize: 12, color: Colors.textMuted, marginBottom: 2 },
+  activityVehicle:  { fontSize: 11, color: Colors.textMuted },
+  activityBadge:    { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-end' },
+  activityBadgeText:{ fontSize: 10, fontWeight: '700' },
+  activityPrice:    { fontSize: 13, fontWeight: '800', color: Colors.textPrimary, textAlign: 'right', marginTop: 4 },
 });

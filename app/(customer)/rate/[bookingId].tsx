@@ -19,6 +19,7 @@ import {
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 
@@ -211,7 +212,7 @@ const st = StyleSheet.create({
   backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
-  content:   { alignItems: 'center', paddingHorizontal: SCREEN_PADDING, paddingTop: 32, paddingBottom: 100 },
+  content:   { alignItems: 'center', paddingHorizontal: SCREEN_PADDING, paddingTop: 32, paddingBottom: SCROLL_PADDING_BOTTOM },
   iconWrap:  { width: 90, height: 90, borderRadius: 45, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
   title:     { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 8 },
   subtitle:  { fontSize: 14, color: Colors.textSecondary, marginBottom: 28 },

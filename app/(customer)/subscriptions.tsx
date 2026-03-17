@@ -275,7 +275,6 @@ export default function SubscriptionsScreen() {
             );
           })
         )}
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Confirm modal */}

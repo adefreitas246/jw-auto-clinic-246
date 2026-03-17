@@ -73,6 +73,19 @@ export default function BookServicesStep() {
     );
   }
 
+  if (!loading && packages.length === 0 && services.length === 0) {
+    return (
+      <SafeAreaView style={s.safe} edges={['bottom']}>
+        <BookingProgressBar step={2} />
+        <View style={s.emptyContainer}>
+          <Ionicons name="layers-outline" size={48} color={Colors.textMuted} />
+          <Text style={s.emptyTitle}>No Services Available</Text>
+          <Text style={s.emptyText}>No packages or add-ons have been configured yet. Please contact the business.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={s.safe} edges={['bottom']}>
       <BookingProgressBar step={2} />
@@ -249,6 +262,9 @@ export default function BookServicesStep() {
 const s = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: Colors.background },
   loadingContainer: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: 16, gap: 12 },
+  emptyContainer:   { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, gap: 12 },
+  emptyTitle:       { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  emptyText:        { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
   separator:        { height: 10 },
 
   sectionHeaderWrap: {

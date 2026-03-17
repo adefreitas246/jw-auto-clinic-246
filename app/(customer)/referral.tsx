@@ -246,7 +246,6 @@ export default function ReferralScreen() {
           </>
         )}
 
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Copied toast */}

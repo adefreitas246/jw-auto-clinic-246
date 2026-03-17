@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated2, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
+import { SCROLL_PADDING_BOTTOM, TAB_BAR_HEIGHT } from '@/constants/Layout';
 import { useVehicles } from '@/hooks/useVehicles';
 import { Vehicle } from '@/types/vehicle';
 import { IS_IOS } from '@/utils/platform';
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: SCREEN_PADDING,
-    bottom: 32,
+    bottom: IS_IOS ? TAB_BAR_HEIGHT + 8 : 32,
     width: 56,
     height: 56,
     borderRadius: 28,

@@ -34,6 +34,7 @@ const ONBOARDING_ROUTE = "/onboarding-screen";
 /** Returns the correct home route for the current user's role. */
 function homeForRole(role?: string): string {
   if (role === "customer") return "/(customer)/home";
+  if (role === "staff")    return "/(staff)/jobs";
   return "/(tabs)/home";
 }
 

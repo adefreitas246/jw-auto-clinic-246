@@ -142,16 +142,7 @@ export default function BookingDetailScreen() {
   if (error || !booking) {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
-        <View style={s.header}>
-          <Pressable
-            style={s.headerIconBtn}
-            onPress={() => router.back()}
-            hitSlop={8}
-            android_ripple={{ color: Colors.border, borderless: true, radius: 20 }}
-          >
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </Pressable>
-        </View>
+        <ScreenHeader title="Booking Details" backButton />
         <View style={s.centered}>
           <View style={s.errorIconWrap}>
             <Ionicons name="alert-circle-outline" size={36} color={Colors.error} />

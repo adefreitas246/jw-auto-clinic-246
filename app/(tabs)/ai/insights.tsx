@@ -7,19 +7,19 @@
 import { Ionicons }  from '@expo/vector-icons';
 import axios         from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router }    from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator, Pressable,
   ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -161,24 +161,16 @@ export default function DemandInsightsScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      {/* ── ScreenHeader ── */}
-      <Animated.View entering={FadeIn.duration(300)} style={s.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={s.backBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.accent + '20', borderless: false }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle}>AI Insights</Text>
-          <Text style={s.headerSub}>Data-driven recommendations</Text>
-        </View>
-        <View style={s.claudeBadge}>
-          <Text style={s.claudeInitial}>C</Text>
-        </View>
-      </Animated.View>
+      <ScreenHeader
+        title="AI Insights"
+        subtitle="Data-driven recommendations"
+        backButton
+        rightAction={
+          <View style={s.claudeBadge}>
+            <Text style={s.claudeInitial}>C</Text>
+          </View>
+        }
+      />
 
       <ScrollView
         style={s.scroll}
@@ -352,17 +344,6 @@ const s = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { paddingBottom: 100, gap: 14 },
 
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: SCREEN_PADDING, paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
-    gap: 12,
-  },
-  backBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  headerTitle:  { fontSize: 18, fontWeight: '900', color: Colors.textPrimary },
-  headerSub:    { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
   claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
   claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 

@@ -433,7 +433,7 @@ export default function CatalogScreen() {
               <Text style={s.emptySubtitle}>
                 {searchText
                   ? `No services match "${searchText}". Try a different search.`
-                  : 'Services and packages will appear here once they're configured.'}
+                  : 'Services and packages will appear here once configured.'}
               </Text>
               {!!searchText && (
                 <Pressable style={s.clearSearchBtn} onPress={() => setSearchText('')}>

@@ -1,8 +1,8 @@
 // app/(tabs)/_layout.tsx
 // Admin + Staff native tab bar with "More" overflow sheet.
 //
-// Admin  → Home | Bookings | Staff | Revenue | More
-// Staff  → Home | Jobs | Scanner | Tracking | More
+// Admin → Dashboard | Bookings | Staff | Revenue | More
+// Staff → Jobs | Scanner | Schedule | Performance | More
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -42,11 +42,12 @@ function getMoreItems(
 
   // staff
   return [
-    { label: 'Fleet Map', icon: 'map-outline',       route: '/(tabs)/fleet'      },
-    { label: 'Inventory', icon: 'cube-outline',      route: '/(tabs)/inventory'  },
-    { label: 'Reports',   icon: 'bar-chart-outline', route: '/(tabs)/reports'    },
-    { label: 'Walk-in',   icon: 'walk-outline',      route: '/(tabs)/walkin'     },
-    { label: 'Kiosk',     icon: 'tablet-portrait-outline', route: '/(tabs)/kiosk' },
+    { label: 'Location Tracking', icon: 'navigate-outline',        route: '/(tabs)/tracking'   },
+    { label: 'Fleet Map',         icon: 'map-outline',             route: '/(tabs)/fleet'      },
+    { label: 'Inventory',         icon: 'cube-outline',            route: '/(tabs)/inventory'  },
+    { label: 'Reports',           icon: 'bar-chart-outline',       route: '/(tabs)/reports'    },
+    { label: 'Walk-in',           icon: 'walk-outline',            route: '/(tabs)/walkin'     },
+    { label: 'Kiosk',             icon: 'tablet-portrait-outline', route: '/(tabs)/kiosk'      },
     ...shared,
   ];
 }
@@ -94,14 +95,15 @@ export default function TabLayout() {
             : undefined,
         }}
       >
-        {/* ── Home / Dashboard ─────────────────────────────────────────── */}
+        {/* ── Home / Dashboard — admin only ─────────────────────────────── */}
         <Tabs.Screen
           name="home"
           options={{
-            title: isAdmin ? 'Dashboard' : 'Home',
+            title: 'Dashboard',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
             ),
+            tabBarButton: isAdmin ? undefined : () => null,
           }}
         />
 
@@ -129,11 +131,11 @@ export default function TabLayout() {
           />
         </Tabs.Protected>
 
-        {/* ── Transactions / Revenue — admin only in tab bar ────────────── */}
+        {/* ── Revenue — admin only ──────────────────────────────────────── */}
         <Tabs.Screen
           name="transactions"
           options={{
-            title: isAdmin ? 'Revenue' : 'Sales',
+            title: 'Revenue',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'bar-chart' : 'bar-chart-outline'} size={24} color={color} />
             ),
@@ -154,13 +156,25 @@ export default function TabLayout() {
           }}
         />
 
-        {/* ── Tracking — staff only ─────────────────────────────────────── */}
+        {/* ── Schedule — staff only ─────────────────────────────────────── */}
         <Tabs.Screen
-          name="tracking"
+          name="schedule"
           options={{
-            title: 'Tracking',
+            title: 'Schedule',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'navigate' : 'navigate-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+            ),
+            tabBarButton: isStaff ? undefined : () => null,
+          }}
+        />
+
+        {/* ── Performance — staff only ──────────────────────────────────── */}
+        <Tabs.Screen
+          name="performance"
+          options={{
+            title: 'Performance',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'trending-up' : 'trending-up-outline'} size={24} color={color} />
             ),
             tabBarButton: isStaff ? undefined : () => null,
           }}
@@ -196,6 +210,7 @@ export default function TabLayout() {
         />
 
         {/* ── Hidden routes — routable, not in tab bar ──────────────────── */}
+        <Tabs.Screen name="tracking"           options={{ href: null }} />
         <Tabs.Screen name="settings"           options={{ href: null }} />
         <Tabs.Screen name="services"           options={{ href: null }} />
         <Tabs.Screen name="packages"           options={{ href: null }} />

@@ -3,7 +3,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -22,9 +21,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReAnimated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
+import { ScreenHeader, EmptyState } from '@/components/ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Audience = 'all_customers' | 'loyalty_members' | 'subscribers' | 'inactive_30d';
@@ -94,7 +95,6 @@ function DeliveryBar({ sent, failed }: { sent: number; failed: number }) {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 export default function CampaignsScreen() {
   const { token } = useAuth();
-  const router    = useRouter();
 
   const [campaigns,  setCampaigns]  = useState<Campaign[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -237,25 +237,19 @@ export default function CampaignsScreen() {
 
   return (
     <SafeAreaView style={bd.safe}>
-      {/* Header */}
-      <View style={bd.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={bd.backBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.border, radius: 20, borderless: true }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={bd.headerTitle}>Push Campaigns</Text>
-        <Pressable
-          onPress={openCreate}
-          style={bd.addBtn}
-          android_ripple={{ color: Colors.accentDark, radius: 20, borderless: true }}
-        >
-          <Ionicons name="add" size={20} color={Colors.white} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="Push Campaigns"
+        backButton
+        rightAction={
+          <Pressable
+            onPress={openCreate}
+            style={bd.addBtn}
+            android_ripple={{ color: Colors.accentDark, radius: 20, borderless: true }}
+          >
+            <Ionicons name="add" size={20} color={Colors.white} />
+          </Pressable>
+        }
+      />
 
       <FlatList
         data={campaigns}
@@ -270,15 +264,14 @@ export default function CampaignsScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={bd.emptyWrap}>
-            <View style={bd.emptyIcon}>
-              <Ionicons name="megaphone-outline" size={36} color={Colors.textMuted} />
-            </View>
-            <Text style={bd.emptyTitle}>No campaigns yet</Text>
-            <Text style={bd.empty}>Tap + to create your first broadcast.</Text>
-          </View>
+          <EmptyState
+            icon={<Ionicons name="megaphone-outline" size={36} color={Colors.textMuted} />}
+            title="No campaigns yet"
+            subtitle="Tap + to create your first broadcast."
+          />
         }
-        renderItem={({ item: c }) => (
+        renderItem={({ item: c, index }) => (
+          <ReAnimated.View entering={FadeInDown.delay(index * 70).duration(300)}>
           <View style={bd.card}>
             <View style={bd.cardTop}>
               <View style={{ flex: 1 }}>
@@ -359,6 +352,7 @@ export default function CampaignsScreen() {
               )}
             </View>
           </View>
+          </ReAnimated.View>
         )}
       />
 
@@ -546,26 +540,6 @@ const bd = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
   scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    ...cardShadow,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: Colors.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
   addBtn: {
     width: 40,
     height: 40,
@@ -575,18 +549,6 @@ const bd = StyleSheet.create({
     alignItems: 'center',
     ...cardShadow,
   },
-
-  emptyWrap:  { alignItems: 'center', paddingTop: 64, gap: 12 },
-  emptyIcon:  {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.surfaceAlt,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyTitle: { fontSize: 16, fontWeight: '600', color: Colors.textSecondary },
-  empty:      { color: Colors.textMuted, textAlign: 'center', fontSize: 13 },
 
   card: {
     backgroundColor: Colors.surface,

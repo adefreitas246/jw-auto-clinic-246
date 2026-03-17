@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
@@ -22,8 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
-import { Badge } from '@/components/ui';
-import { SectionHeader } from '@/components/ui';
+import { Badge, SectionHeader, ScreenHeader } from '@/components/ui';
 
 type Plan = {
   _id:         string;
@@ -48,7 +46,6 @@ type Subscription = {
 
 export default function SubscriptionsScreen() {
   const { token } = useAuth();
-  const router    = useRouter();
 
   const [plans,        setPlans]        = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -130,19 +127,7 @@ export default function SubscriptionsScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
-      {/* Header */}
-      <View style={st.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={st.backBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.accent + '20', borderless: true }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={st.headerTitle}>Subscription Plans</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <ScreenHeader title="Subscription Plans" backButton />
 
       <ScrollView
         contentContainerStyle={st.scroll}
@@ -338,10 +323,6 @@ const st = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: SCREEN_PADDING, paddingTop: 20 },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
-
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
   currentCardWrap: { marginBottom: 24 },
   currentCard:     { borderRadius: 20, padding: 24 },

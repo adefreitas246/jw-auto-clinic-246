@@ -7,7 +7,6 @@ import axios from 'axios';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
@@ -25,7 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
-import { SectionHeader } from '@/components/ui';
+import { SectionHeader, ScreenHeader } from '@/components/ui';
 
 type ReferralData = {
   _id:               string;
@@ -45,7 +44,6 @@ type ReferralData = {
 
 export default function ReferralScreen() {
   const { token, user } = useAuth();
-  const router          = useRouter();
 
   const [data,       setData]       = useState<ReferralData | null>(null);
   const [loading,    setLoading]    = useState(true);
@@ -127,19 +125,7 @@ export default function ReferralScreen() {
 
   return (
     <SafeAreaView style={rf.safe}>
-      {/* Header */}
-      <View style={rf.header}>
-        <Pressable
-          onPress={() => router.back()}
-          style={rf.backBtn}
-          hitSlop={8}
-          android_ripple={{ color: Colors.accent + '20', borderless: true }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <Text style={rf.headerTitle}>Refer a Friend</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <ScreenHeader title="Refer a Friend" backButton />
 
       <ScrollView
         contentContainerStyle={rf.scroll}
@@ -281,10 +267,6 @@ const rf = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { padding: SCREEN_PADDING, paddingTop: 20 },
-
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
 
   heroCard:      { borderRadius: 20, padding: 28, alignItems: 'center', marginBottom: 20 },
   heroIconWrap:  { marginBottom: 16 },

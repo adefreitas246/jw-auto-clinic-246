@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING, borderRadius, cardShadow } from '@/utils/platformStyles';
 import { ScreenHeader, SectionHeader } from '@/components/ui';
@@ -176,7 +177,7 @@ const SHADOW = IS_IOS
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 16 },
+  content: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM, gap: 16 },
 
   // Hero card
   heroCard: {

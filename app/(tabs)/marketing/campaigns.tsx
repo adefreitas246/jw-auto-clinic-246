@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReAnimated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 import { ScreenHeader, EmptyState } from '@/components/ui';
@@ -538,7 +539,7 @@ export default function CampaignsScreen() {
 const bd = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   addBtn: {
     width: 40,

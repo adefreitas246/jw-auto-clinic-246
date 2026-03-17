@@ -18,6 +18,7 @@ import {
 
 import { Package, Service } from '@/types/catalog';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
@@ -254,7 +255,7 @@ export default function PackageFormScreen({ mode }: Props) {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.surfaceAlt },
-  content:   { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 100 },
+  content:   { paddingHorizontal: 20, paddingTop: 20, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   sectionLabel: { fontSize: 11, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginTop: 16 },
   required:     { color: Colors.error },

@@ -25,6 +25,7 @@ import { Swipeable, gestureHandlerRootHOC } from "react-native-gesture-handler";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import ReAnimated, { FadeInDown } from "react-native-reanimated";
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 import { Avatar } from '@/components/ui/Avatar';
@@ -1012,7 +1013,7 @@ function EmployeesScreen() {
               ListHeaderComponent={WebToolbarHeader}
               stickyHeaderIndices={[0]}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 100 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: SCROLL_PADDING_BOTTOM }}
               initialNumToRender={30}
               windowSize={9}
               onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}

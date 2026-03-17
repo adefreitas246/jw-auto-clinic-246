@@ -24,6 +24,7 @@ import {
   STAFF_STATUS_LABELS,
 } from '@/types/job';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
@@ -678,7 +679,7 @@ const ad = StyleSheet.create({
   filterPillWorkerActiveText: { color: Colors.accent, fontWeight: '700' },
 
   // List
-  listContent: { paddingHorizontal: 20, paddingBottom: 110, paddingTop: 4 },
+  listContent: { paddingHorizontal: 20, paddingBottom: SCROLL_PADDING_BOTTOM, paddingTop: 4 },
   listCount:   { fontSize: 12, color: Colors.textMuted, fontWeight: '600', marginBottom: 8 },
 
   // Admin job card

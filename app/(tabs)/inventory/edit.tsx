@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -407,7 +408,7 @@ const es = StyleSheet.create({
   },
   saveBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
 
-  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 100 },
+  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   input: {
     borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,

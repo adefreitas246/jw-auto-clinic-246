@@ -23,6 +23,7 @@ import * as Animatable from 'react-native-animatable';
 import DropDownPicker from 'react-native-dropdown-picker';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 
@@ -1845,7 +1846,7 @@ export default function TransactionsScreen() {
               ItemSeparatorComponent={() => (
                 <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: Colors.border, marginLeft: 72 }} />
               )}
-              contentContainerStyle={{ paddingBottom: 100 }}
+              contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }}
               onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}
               scrollEventThrottle={16}
             />

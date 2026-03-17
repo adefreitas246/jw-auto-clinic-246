@@ -20,6 +20,7 @@ import {
 } from '@/tasks/locationTask';
 import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 import ReAnimated, { FadeIn } from 'react-native-reanimated';
@@ -421,7 +422,7 @@ export default function TrackingScreen() {
 const tr = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: 100 },
+  content: { paddingHorizontal: 20, paddingBottom: SCROLL_PADDING_BOTTOM },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
 
   // Web fallback

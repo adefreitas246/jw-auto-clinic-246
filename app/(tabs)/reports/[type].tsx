@@ -22,6 +22,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -584,7 +585,7 @@ const rv = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
 
-  scroll: { paddingBottom: 100 },
+  scroll: { paddingBottom: SCROLL_PADDING_BOTTOM },
 
   // Filter card
   filterCard: {

@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -374,7 +375,7 @@ const sm = StyleSheet.create({
   },
   infoText: { fontSize: 12, color: Colors.accent, flex: 1, lineHeight: 17 },
 
-  list: { paddingHorizontal: 16, paddingBottom: 100 },
+  list: { paddingHorizontal: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   card: {
     backgroundColor: Colors.white, borderRadius: 14, padding: 14,

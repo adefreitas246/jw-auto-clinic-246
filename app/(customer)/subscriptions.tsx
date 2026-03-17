@@ -19,6 +19,7 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
 import { Badge, SectionHeader, ScreenHeader } from '@/components/ui';
@@ -321,7 +322,7 @@ export default function SubscriptionsScreen() {
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: 100 },
+  scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: SCROLL_PADDING_BOTTOM },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
   currentCardWrap: { marginBottom: 24 },

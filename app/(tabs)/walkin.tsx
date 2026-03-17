@@ -33,6 +33,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useAuth } from "@/context/AuthContext";
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
@@ -880,7 +881,7 @@ const k = StyleSheet.create({
   dotIdle: { backgroundColor: Colors.border },
 
   // ── Step 1: Grid ──
-  gridContent: { padding: SCREEN_PADDING, paddingBottom: 120 },
+  gridContent: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
   gridSection: {
     fontSize: 13,
     fontWeight: "700",
@@ -987,7 +988,7 @@ const k = StyleSheet.create({
   continueBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
 
   // ── Step 2: Form ──
-  formContent: { padding: SCREEN_PADDING, paddingBottom: 100 },
+  formContent: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
   serviceRecap: {
     flexDirection: "row",
     alignItems: "center",

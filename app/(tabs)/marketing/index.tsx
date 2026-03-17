@@ -7,6 +7,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader, StatCard } from '@/components/ui';
@@ -147,7 +148,7 @@ export default function MarketingIndex() {
 
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 12, paddingBottom: 100 },
+  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 12, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   // Stats
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },

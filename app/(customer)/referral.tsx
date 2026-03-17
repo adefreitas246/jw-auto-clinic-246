@@ -22,6 +22,7 @@ import {
 import Reanimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
 import { SectionHeader, ScreenHeader } from '@/components/ui';
@@ -266,7 +267,7 @@ export default function ReferralScreen() {
 const rf = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: 120 },
+  scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   heroCard:      { borderRadius: 20, padding: 28, alignItems: 'center', marginBottom: 20 },
   heroIconWrap:  { marginBottom: 16 },

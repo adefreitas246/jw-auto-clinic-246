@@ -1,5 +1,6 @@
 // app/(customer)/home.tsx
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { useAuth } from '@/context/AuthContext';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { IS_IOS } from '@/utils/platform';
@@ -186,7 +187,7 @@ const s = StyleSheet.create({
   content: {
     paddingHorizontal: SCREEN_PADDING,
     paddingTop: 20,
-    paddingBottom: 100,
+    paddingBottom: SCROLL_PADDING_BOTTOM,
   },
 
   // Header

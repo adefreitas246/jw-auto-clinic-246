@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated2, { FadeInDown } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { useVehicles } from '@/hooks/useVehicles';
 import { Vehicle } from '@/types/vehicle';
 import { IS_IOS } from '@/utils/platform';
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
   safeArea:       { flex: 1, backgroundColor: Colors.background },
   center:         { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SCREEN_PADDING },
   emptyContainer: { flex: 1, justifyContent: 'center', paddingHorizontal: SCREEN_PADDING },
-  list:           { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
+  list:           { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
   separator:      { height: 10 },
 
   // Card

@@ -18,6 +18,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 
 import { Package, packagePrice } from '@/types/catalog';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 
@@ -237,7 +238,7 @@ const s = StyleSheet.create({
   safe:      { flex: 1, backgroundColor: Colors.surfaceAlt },
   container: { flex: 1 },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  list:      { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
+  list:      { paddingHorizontal: 20, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
   sep:       { height: 8 },
 
   // Empty state

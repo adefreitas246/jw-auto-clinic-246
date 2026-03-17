@@ -27,6 +27,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
@@ -547,7 +548,7 @@ const qd = StyleSheet.create({
   statLabel: { fontSize: 10, color: Colors.textMuted, marginTop: 1 },
 
   // List
-  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100 },
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
   separator:   { height: 10 },
 
   // Card

@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BookingQR } from '@/components/BookingQR';
 import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 import ReAnimated, { FadeIn } from 'react-native-reanimated';
@@ -308,7 +309,7 @@ const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
 
-  content: { paddingBottom: 100, paddingTop: 4 },
+  content: { paddingBottom: SCROLL_PADDING_BOTTOM, paddingTop: 4 },
 
   errorIconWrap: {
     width: 72, height: 72, borderRadius: 36,

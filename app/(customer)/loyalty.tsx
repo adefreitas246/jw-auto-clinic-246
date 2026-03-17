@@ -2,6 +2,7 @@
 // Customer loyalty dashboard — points balance, tier, milestone progress,
 // history list, and redeem button.
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { IS_IOS } from '@/utils/platform';
 import { Ionicons } from '@expo/vector-icons';
@@ -387,7 +388,7 @@ export default function LoyaltyScreen() {
                 data={[...account.history].reverse()}
                 keyExtractor={h => h._id}
                 scrollEnabled={false}
-                contentContainerStyle={{ paddingBottom: 100 }}
+                contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }}
                 ItemSeparatorComponent={() => <View style={st.histSeparator} />}
                 renderItem={({ item: h, index }) => {
                   const isEarn = h.type === 'earn' || h.type === 'bonus';
@@ -495,7 +496,7 @@ export default function LoyaltyScreen() {
 const st = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: Colors.background },
   loadingContainer: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: 16 },
-  scroll:           { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
+  scroll:           { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   // Hero gradient card
   heroGradient: {

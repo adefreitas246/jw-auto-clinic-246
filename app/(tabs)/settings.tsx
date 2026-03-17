@@ -29,6 +29,7 @@ import {
 import * as Animatable from "react-native-animatable";
 import ReAnimated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
 import { Avatar } from '@/components/ui/Avatar';
@@ -1126,7 +1127,7 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     paddingBottom: 80,
   },
-  container: { flexGrow: 1, paddingBottom: 100 },
+  container: { flexGrow: 1, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   // Sticky header
   stickyHeader: {

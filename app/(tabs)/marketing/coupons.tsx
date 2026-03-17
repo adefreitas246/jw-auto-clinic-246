@@ -23,6 +23,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -424,7 +425,7 @@ export default function CouponsScreen() {
 
 const cp = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   addBtn: {
     width: 40,

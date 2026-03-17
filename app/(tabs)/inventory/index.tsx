@@ -34,6 +34,7 @@ import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -597,7 +598,7 @@ const s = StyleSheet.create({
   catTextActive: { color: Colors.accent },
 
   // List
-  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100 },
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
   separator:   { height: 8 },
 
   // FAB

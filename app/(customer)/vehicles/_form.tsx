@@ -19,6 +19,7 @@ import {
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
 import { Colors } from "@/constants/Colors";
+import { SCROLL_PADDING_BOTTOM } from "@/constants/Layout";
 import { IS_IOS } from "@/utils/platform";
 import { borderRadius, cardShadow, SCREEN_PADDING } from "@/utils/platformStyles";
 import { useVehicles } from "@/hooks/useVehicles";
@@ -390,7 +391,7 @@ export default function AddEditVehicleScreen({ mode }: Props) {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   scroll:  { flex: 1, backgroundColor: Colors.background },
-  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: 100 },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   formCard: {
     backgroundColor: Colors.surface,

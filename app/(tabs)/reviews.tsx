@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { SCREEN_PADDING, borderRadius, cardShadow } from '@/utils/platformStyles';
 import { ScreenHeader, Avatar, Badge } from '@/components/ui';
 
@@ -390,7 +391,7 @@ export default function ReviewsScreen() {
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING, paddingBottom: 100 },
+  scroll: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
   muted:  { color: Colors.textMuted, fontSize: 14 },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 

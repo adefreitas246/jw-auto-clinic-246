@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState, ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -328,7 +329,7 @@ export default function SubscriptionPlansScreen() {
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.surfaceAlt },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING, paddingBottom: 100 },
+  scroll: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
   muted:  { color: Colors.textMuted, fontSize: 14 },
   empty:  { color: Colors.textMuted, textAlign: 'center', fontSize: 13, marginTop: 6 },
   emptyWrap:  { alignItems: 'center', paddingTop: 60, gap: 8 },

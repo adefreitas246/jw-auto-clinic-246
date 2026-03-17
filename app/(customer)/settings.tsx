@@ -17,6 +17,7 @@ import { ScreenHeader } from '@/components/ui';
 import { Avatar } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 type SettingRow = {
@@ -133,7 +134,7 @@ export default function CustomerSettingsScreen() {
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
-  content: { paddingBottom: 100 },
+  content: { paddingBottom: SCROLL_PADDING_BOTTOM },
 
   hero: {
     alignItems: 'center',

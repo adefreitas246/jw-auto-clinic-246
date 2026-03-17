@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useClaudeAI } from '@/hooks/useClaudeAI';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -336,7 +337,7 @@ const SHADOW = IS_IOS
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   scroll:  { flex: 1 },
-  content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 14 },
+  content: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM, gap: 14 },
 
   claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
   claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },

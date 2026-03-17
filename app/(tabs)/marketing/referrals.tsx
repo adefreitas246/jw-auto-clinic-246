@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ReAnimated, { FadeInDown } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { cardShadow } from '@/utils/platformStyles';
 import { ScreenHeader, EmptyState } from '@/components/ui';
 
@@ -132,7 +133,7 @@ export default function ReferralStatsScreen() {
 
 const rf = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
+  scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   statsRow: {
     flexDirection: 'row',

@@ -27,6 +27,7 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
@@ -390,7 +391,7 @@ const rd = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  scroll: { paddingBottom: 100 },
+  scroll: { paddingBottom: SCROLL_PADDING_BOTTOM },
 
   // Gradient header
   gradientHeader: {

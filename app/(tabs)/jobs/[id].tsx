@@ -26,6 +26,7 @@ import { useAuth }          from '@/context/AuthContext';
 import VoiceNoteRecorder    from '@/components/VoiceNoteRecorder';
 import VoiceNotePlayer, { VoiceNoteMeta } from '@/components/VoiceNotePlayer';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader, SectionHeader, Button, Input } from '@/components/ui';
@@ -701,7 +702,7 @@ export default function JobWorkflowScreen() {
 const wf = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 100 },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: SCROLL_PADDING_BOTTOM },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
   errorIconWrap: {

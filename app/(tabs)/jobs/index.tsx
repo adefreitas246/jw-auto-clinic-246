@@ -26,6 +26,7 @@ import {
   STAFF_STATUS_COLORS,
 } from '@/types/job';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { Badge } from '@/components/ui';
@@ -331,7 +332,7 @@ const jd = StyleSheet.create({
   chipLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2, fontWeight: '600' },
 
   // Timeline
-  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100, gap: 8 },
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM, gap: 8 },
   timelineRow: {
     flexDirection: 'row', alignItems: 'stretch', gap: 12,
   },

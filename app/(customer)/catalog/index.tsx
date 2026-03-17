@@ -3,6 +3,7 @@
 // Packages are shown first; remaining à-la-carte services as add-ons.
 // A sticky footer shows the running price total.
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { useBooking } from '@/context/BookingContext';
 import { useServiceCatalog } from '@/hooks/useServiceCatalog';
 import { Package, packageDuration, packagePrice, Service } from '@/types/catalog';
@@ -311,7 +312,7 @@ export default function CatalogScreen() {
               )}
               ItemSeparatorComponent={() => <View style={s.separator} />}
               renderSectionHeader={() => null}
-              contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : 32 }]}
+              contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : SCROLL_PADDING_BOTTOM }]}
               onRefresh={refresh}
               refreshing={loading}
               showsVerticalScrollIndicator={false}
@@ -344,7 +345,7 @@ export default function CatalogScreen() {
                 />
               )}
               ItemSeparatorComponent={() => <View style={s.separator} />}
-              contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : 32 }]}
+              contentContainerStyle={[s.list, { paddingBottom: hasSelection ? 120 : SCROLL_PADDING_BOTTOM }]}
               onRefresh={refresh}
               refreshing={loading}
               showsVerticalScrollIndicator={false}

@@ -58,6 +58,8 @@ export default function CustomerLayout() {
       <Tabs.Screen name="rate"          options={{ href: null }} />
       {/* Referral code + share */}
       <Tabs.Screen name="referral"      options={{ href: null }} />
+      {/* Customer profile / settings */}
+      <Tabs.Screen name="settings"      options={{ href: null }} />
     </Tabs>
   );
 }

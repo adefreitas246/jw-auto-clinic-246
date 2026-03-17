@@ -73,7 +73,7 @@ const QUICK_ACTIONS: QuickAction[] = [
 ];
 
 export default function CustomerHome() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
@@ -99,10 +99,9 @@ export default function CustomerHome() {
             </View>
             <Pressable
               style={({ pressed }) => [s.avatarBtn, pressed && { opacity: 0.8 }]}
-              onPress={async () => {
+              onPress={() => {
                 if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                await logout();
-                router.replace('/auth/login');
+                router.push('/(customer)/settings');
               }}
               hitSlop={8}
               android_ripple={{ color: Colors.accent + '20', borderless: true }}

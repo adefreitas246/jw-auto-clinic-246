@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ import axios from 'axios';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -374,30 +375,12 @@ export default function ReportViewer() {
 
   return (
     <SafeAreaView style={rv.safe} edges={['top']}>
-      {/* ── Header ── */}
-      <Animated.View entering={FadeIn.duration(300)} style={rv.header}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={8}
-          style={rv.backBtn}
-          android_ripple={{ color: Colors.accent + '20', borderless: false }}
-        >
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={rv.title} numberOfLines={1}>{cfg.title}</Text>
-          <Text style={rv.sub}>{startDate} → {endDate}</Text>
-        </View>
-        <Pressable
-          onPress={load}
-          hitSlop={8}
-          style={rv.refreshBtn}
-          disabled={loading}
-          android_ripple={{ color: Colors.accent + '20', borderless: false }}
-        >
-          <Ionicons name="refresh" size={20} color={Colors.accent} />
-        </Pressable>
-      </Animated.View>
+      <ScreenHeader
+        title={cfg.title}
+        subtitle={`${startDate} → ${endDate}`}
+        backButton
+        rightAction={{ icon: 'refresh', onPress: load, label: '' }}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -600,20 +583,6 @@ const SHADOW = IS_IOS
 const rv = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
-
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    ...SHADOW,
-  },
-  backBtn:    { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  refreshBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  title:      { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  sub:        { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 
   scroll: { paddingBottom: 40 },
 

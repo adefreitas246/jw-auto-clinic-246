@@ -20,6 +20,7 @@ import { useSpeechStatus } from '@/hooks/useSpeechStatus';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // jobTrackingTask imports expo-notifications (for background status pushes) and
 // expo-background-fetch. Both crash in Expo Go at module-load time.
@@ -289,6 +290,24 @@ export default function TrackJobScreen() {
 
   return (
     <SafeAreaView style={st.safe} edges={['top']}>
+      <ScreenHeader
+        title="Track Wash"
+        backButton
+        rightAction={
+          <Pressable
+            style={[st.voiceBtn, voiceEnabled && st.voiceBtnOn]}
+            onPress={() => setVoiceEnabled(!voiceEnabled)}
+            hitSlop={8}
+            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 20 }}
+          >
+            <Ionicons
+              name={voiceEnabled ? 'volume-high' : 'volume-mute-outline'}
+              size={18}
+              color={voiceEnabled ? Colors.accent : Colors.textMuted}
+            />
+          </Pressable>
+        }
+      />
 
       {/* ── Status-change banner ── */}
       {banner && (
@@ -311,31 +330,6 @@ export default function TrackJobScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
         }
       >
-        {/* ── Header ── */}
-        <View style={st.header}>
-          <Pressable
-            style={st.headerIconBtn}
-            onPress={() => router.back()}
-            hitSlop={8}
-            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 20 }}
-          >
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </Pressable>
-          <Text style={st.headerTitle}>Track Wash</Text>
-          <Pressable
-            style={[st.voiceBtn, voiceEnabled && st.voiceBtnOn]}
-            onPress={() => setVoiceEnabled(!voiceEnabled)}
-            hitSlop={8}
-            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 20 }}
-          >
-            <Ionicons
-              name={voiceEnabled ? 'volume-high' : 'volume-mute-outline'}
-              size={18}
-              color={voiceEnabled ? Colors.accent : Colors.textMuted}
-            />
-          </Pressable>
-        </View>
-
         {/* ── Service summary card ── */}
         <View style={st.card}>
           <Text style={st.serviceName}>{job.serviceLabel}</Text>
@@ -506,20 +500,6 @@ const st = StyleSheet.create({
   },
   bannerText: { color: Colors.white, fontWeight: '700', fontSize: 14, flex: 1 },
 
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 14,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-  },
-  headerIconBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  headerTitle: { fontSize: 17, fontWeight: '800', color: Colors.textPrimary },
   voiceBtn:    {
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',

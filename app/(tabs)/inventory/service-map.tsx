@@ -4,7 +4,6 @@
 // When a job is marked finished, call POST /api/inventory/deduct-for-booking/:id
 // to automatically deduct these amounts from stock.
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +23,7 @@ import axios from 'axios';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -263,19 +263,12 @@ export default function ServiceMapScreen() {
 
   return (
     <SafeAreaView style={sm.safe} edges={['top']}>
-      {/* Header */}
-      <View style={sm.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-        </Pressable>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={sm.title}>Service Mappings</Text>
-          <Text style={sm.sub}>Define inventory consumed per service</Text>
-        </View>
-        <Pressable onPress={load} hitSlop={8}>
-          <Ionicons name="refresh" size={20} color={Colors.accent} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="Service Mappings"
+        subtitle="Define inventory consumed per service"
+        backButton
+        rightAction={{ icon: 'refresh', onPress: load, label: '' }}
+      />
 
       {/* Info box */}
       <View style={sm.infoBox}>
@@ -372,13 +365,6 @@ const SHADOW = IS_IOS
 const sm = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
-  },
-  title: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
-  sub:   { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
 
   infoBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,

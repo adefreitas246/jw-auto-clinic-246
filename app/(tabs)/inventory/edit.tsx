@@ -24,6 +24,7 @@ import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -236,23 +237,22 @@ export default function EditInventoryScreen() {
         style={{ flex: 1 }}
         behavior={IS_IOS ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={es.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={es.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </Pressable>
-          <Text style={es.title}>{isEdit ? 'Edit Item' : 'Add Item'}</Text>
-          <Pressable
-            style={({ pressed }) => [es.saveBtn, pressed && { opacity: 0.8 }]}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            {saving
-              ? <ActivityIndicator size="small" color={Colors.white} />
-              : <Text style={es.saveBtnText}>Save</Text>
-            }
-          </Pressable>
-        </View>
+        <ScreenHeader
+          title={isEdit ? 'Edit Item' : 'Add Item'}
+          backButton
+          rightAction={
+            <Pressable
+              style={({ pressed }) => [es.saveBtn, pressed && { opacity: 0.8 }]}
+              onPress={handleSave}
+              disabled={saving}
+            >
+              {saving
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Text style={es.saveBtnText}>Save</Text>
+              }
+            </Pressable>
+          }
+        />
 
         <ScrollView
           contentContainerStyle={es.scroll}
@@ -400,12 +400,6 @@ const es = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 14,
-  },
-  backBtn: { padding: 4 },
-  title:   { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, flex: 1, marginLeft: 12 },
   saveBtn: {
     backgroundColor: Colors.accent, borderRadius: 10,
     paddingHorizontal: 18, paddingVertical: 9,

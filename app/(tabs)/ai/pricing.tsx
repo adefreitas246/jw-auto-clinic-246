@@ -7,7 +7,6 @@
 // Display: suggestion chip + percentage + reason + Apply / Ignore buttons
 import { Ionicons }  from '@expo/vector-icons';
 import axios         from 'axios';
-import { router }    from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Pressable,
@@ -19,6 +18,7 @@ import { useClaudeAI } from '@/hooks/useClaudeAI';
 import { Colors } from '@/constants/Colors';
 import { IS_IOS, IS_ANDROID } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
+import { ScreenHeader } from '@/components/ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -253,21 +253,20 @@ export default function DynamicPricingScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
+      <ScreenHeader
+        title="Dynamic Pricing"
+        backButton
+        rightAction={
+          <View style={s.claudeBadge}>
+            <Text style={s.claudeInitial}>C</Text>
+          </View>
+        }
+      />
       <ScrollView
         style={s.scroll}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Header ── */}
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()} style={s.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-          </Pressable>
-          <Text style={s.headerTitle}>Dynamic Pricing</Text>
-          <View style={s.claudeBadge}>
-            <Text style={s.claudeInitial}>C</Text>
-          </View>
-        </View>
 
         {/* ── Description ── */}
         <View style={s.descCard}>
@@ -339,12 +338,6 @@ const s = StyleSheet.create({
   scroll:  { flex: 1 },
   content: { padding: SCREEN_PADDING, paddingBottom: 100, gap: 14 },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 2,
-  },
-  backBtn:      { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
-  headerTitle:  { fontSize: 18, fontWeight: '900', color: Colors.textPrimary },
   claudeBadge:  { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.warning, alignItems: 'center', justifyContent: 'center' },
   claudeInitial:{ color: Colors.white, fontWeight: '900', fontSize: 16 },
 

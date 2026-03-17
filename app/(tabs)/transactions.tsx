@@ -93,7 +93,7 @@ export default function TransactionsScreen() {
   // Sticky header elevation on scroll (matches Settings)
   const [headerElevated, setHeaderElevated] = useState(false);
 
-  const totalRevenue = useMemo(() => tx.reduce((s, t) => s + Number(t.finalPrice ?? t.originalPrice ?? 0), 0), [tx]);
+  const totalRevenue = useMemo(() => (tx ?? []).reduce((s, t) => s + Number(t.finalPrice ?? t.originalPrice ?? 0), 0), [tx]);
 
   const StickyTxHeader = useMemo(
     () => (
@@ -124,7 +124,7 @@ export default function TransactionsScreen() {
         <Text style={styles.stickyHeaderSubtitle}>Recent activity</Text>
       </LinearGradient>
     ),
-    [headerElevated, totalRevenue, tx.length]
+    [headerElevated, totalRevenue, tx?.length]
   );
 
   // Transactions list state + pagination

@@ -263,7 +263,7 @@ export default function SubscriptionPlansScreen() {
       <Modal visible={modal} transparent animationType="slide" onRequestClose={() => setModal(false)}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
           <Pressable style={st.backdrop} onPress={() => setModal(false)} />
-          <ScrollView style={st.sheet} contentContainerStyle={{ paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
+          <ScrollView style={st.sheet} contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }} keyboardShouldPersistTaps="handled">
             <Text style={st.sheetTitle}>{editing ? 'Edit Plan' : 'New Plan'}</Text>
 
             {/* Name */}
@@ -337,7 +337,7 @@ const st = StyleSheet.create({
 
   addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accent, justifyContent: 'center', alignItems: 'center' },
 
-  planCard:    { backgroundColor: Colors.white, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border, shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
+  planCard:    { backgroundColor: Colors.surface, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: Colors.border, shadowColor: Colors.black, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 },
   planTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 },
   planNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   planName:    { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
@@ -353,11 +353,11 @@ const st = StyleSheet.create({
   toggleLabel: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
 
   backdrop:   { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  sheet:      { backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
+  sheet:      { backgroundColor: Colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
   sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 16 },
 
   label:       { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 4, marginTop: 10 },
-  input:       { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 11, fontSize: 14, color: Colors.textPrimary, backgroundColor: Colors.white },
+  input:       { borderWidth: 1, borderColor: Colors.border, borderRadius: 10, padding: 11, fontSize: 14, color: Colors.textPrimary, backgroundColor: Colors.surface },
   inputError:  { borderColor: Colors.error },
   err:         { fontSize: 11, color: Colors.error, marginTop: 3 },
   priceRow:    { flexDirection: 'row', gap: 8 },

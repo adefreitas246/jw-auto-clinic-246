@@ -19,7 +19,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { EmptyState, ScreenHeader } from '@/components/ui';
 import { Service } from '@/types/catalog';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
+import { SCROLL_PADDING_BOTTOM, TAB_BAR_HEIGHT } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
 import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -280,7 +280,7 @@ const s = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 28,
+    bottom: IS_IOS ? TAB_BAR_HEIGHT + 8 : 28,
     width: 56,
     height: 56,
     borderRadius: 28,

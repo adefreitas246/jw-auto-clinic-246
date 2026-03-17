@@ -1,7 +1,6 @@
 ﻿// components/CustomerTabBar.tsx
 // Glass pill tab bar for the customer app.
 // Shows 4 tabs (home, catalog, vehicles, loyalty) + a "More" button opening MoreMenu.
-import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
@@ -18,6 +17,8 @@ import {
 import * as Animatable from 'react-native-animatable';
 import { MoreMenu, MoreMenuItem } from './MoreMenu';
 import { Colors } from '@/constants/Colors';
+import { StaticM3Colors } from '@/constants/MaterialTheme';
+import { IS_IOS } from '@/utils/platform';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -94,46 +95,53 @@ function TabItem({ route, isFocused, navigation }: TabItemProps) {
 
 export function CustomerTabBar({ state, navigation }: BottomTabBarProps) {
   const { width } = useWindowDimensions();
-  const { logout } = useAuth();
   const [moreVisible, setMoreVisible] = useState(false);
 
   const visibleRoutes = state.routes.filter((r) => VISIBLE_TABS.includes(r.name));
 
   const moreItems: MoreMenuItem[] = [
     ...MORE_ITEMS,
-    { label: 'Log Out', icon: 'log-out-outline', onPress: logout, danger: true },
+    { label: 'Profile & Settings', icon: 'person-circle-outline', route: '/(customer)/settings' },
   ];
+
+  const tabContent = (
+    <View style={s.tabBar}>
+      {visibleRoutes.map((route) => (
+        <TabItem
+          key={route.key}
+          route={route}
+          isFocused={state.index === state.routes.indexOf(route)}
+          navigation={navigation}
+        />
+      ))}
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="More options"
+        onPress={() => setMoreVisible(true)}
+        activeOpacity={0.85}
+        style={s.tabButton}
+      >
+        <View style={s.iconContainer}>
+          <Ionicons name="ellipsis-horizontal" size={22} color={INACTIVE} />
+          <Text style={[s.label, { color: INACTIVE, opacity: 0.8 }]}>More</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <>
       <View style={s.wrapper} pointerEvents="box-none">
         <View style={[s.floatingContainer, { width: Math.min(width - 32, 440) }]}>
-          <BlurView tint="light" intensity={90} style={s.blurShell}>
-            <View style={s.tabBar}>
-              {visibleRoutes.map((route) => (
-                <TabItem
-                  key={route.key}
-                  route={route}
-                  isFocused={state.index === state.routes.indexOf(route)}
-                  navigation={navigation}
-                />
-              ))}
-
-              {/* More button */}
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="More options"
-                onPress={() => setMoreVisible(true)}
-                activeOpacity={0.85}
-                style={s.tabButton}
-              >
-                <View style={s.iconContainer}>
-                  <Ionicons name="ellipsis-horizontal" size={22} color={INACTIVE} />
-                  <Text style={[s.label, { color: INACTIVE, opacity: 0.8 }]}>More</Text>
-                </View>
-              </TouchableOpacity>
+          {IS_IOS ? (
+            <BlurView tint="light" intensity={90} style={s.blurShell}>
+              {tabContent}
+            </BlurView>
+          ) : (
+            <View style={s.androidShell}>
+              {tabContent}
             </View>
-          </BlurView>
+          )}
         </View>
       </View>
 
@@ -174,6 +182,13 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.55)',
+  },
+  androidShell: {
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: StaticM3Colors.surface,
+    borderWidth: 1,
+    borderColor: StaticM3Colors.surfaceContainerHighest,
   },
   tabBar: {
     flexDirection: 'row',

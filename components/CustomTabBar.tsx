@@ -19,6 +19,8 @@ import {
 import * as Animatable from 'react-native-animatable';
 import { MoreMenu, MoreMenuItem } from './MoreMenu';
 import { Colors } from '@/constants/Colors';
+import { StaticM3Colors } from '@/constants/MaterialTheme';
+import { IS_IOS } from '@/utils/platform';
 
 Animatable.initializeRegistryWithDefinitions({
   wiggle: {
@@ -179,6 +181,23 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
   }
 
   // ── MOBILE: glass pill bottom tab bar ──────────────────────────────────────
+  const tabContent = (
+    <View style={styles.tabBar}>
+      {visibleRoutes.map((route) => {
+        const isFocused = state.index === state.routes.indexOf(route);
+        return (
+          <TabItem
+            key={route.key}
+            route={route}
+            isFocused={isFocused}
+            navigation={navigation}
+          />
+        );
+      })}
+      <MoreButton onPress={() => setMoreVisible(true)} />
+    </View>
+  );
+
   return (
     <>
       <View style={styles.wrapper} pointerEvents="box-none">
@@ -189,25 +208,15 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
             { width: Math.min(width - 32, 480) },
           ]}
         >
-          <ExpoBlurView tint="light" intensity={90} style={styles.blurShell}>
-            <View style={styles.tabBar}>
-              {/* Role-based real tabs */}
-              {visibleRoutes.map((route) => {
-                const isFocused = state.index === state.routes.indexOf(route);
-                return (
-                  <TabItem
-                    key={route.key}
-                    route={route}
-                    isFocused={isFocused}
-                    navigation={navigation}
-                  />
-                );
-              })}
-
-              {/* More button — 5th item */}
-              <MoreButton onPress={() => setMoreVisible(true)} />
+          {IS_IOS ? (
+            <ExpoBlurView tint="light" intensity={90} style={styles.blurShell}>
+              {tabContent}
+            </ExpoBlurView>
+          ) : (
+            <View style={styles.androidShell}>
+              {tabContent}
             </View>
-          </ExpoBlurView>
+          )}
         </View>
       </View>
 
@@ -317,6 +326,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.55)',
+  },
+  androidShell: {
+    borderRadius: 999,
+    overflow: 'hidden',
+    backgroundColor: StaticM3Colors.surface,
+    borderWidth: 1,
+    borderColor: StaticM3Colors.surfaceContainerHighest,
   },
   tabBar: {
     flexDirection: 'row',

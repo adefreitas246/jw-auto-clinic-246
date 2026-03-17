@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useSegments } from 'expo-router';
 import React, {
   useCallback, useEffect, useRef, useState,
 } from 'react';
@@ -197,6 +197,8 @@ function ScanLine() {
 
 export default function ScannerScreen() {
   const { user } = useAuth();
+  const segments   = useSegments();
+  const routeGroup = `/${segments[0]}`; // '/(tabs)' or '/(staff)'
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState,  setScanState]      = useState<ScanState>('scanning');
@@ -261,8 +263,8 @@ export default function ScannerScreen() {
   }, [scanState]);
 
   const handleViewJob = useCallback((bookingId: string) => {
-    router.push({ pathname: '/(tabs)/jobs/[id]', params: { id: bookingId } });
-  }, []);
+    router.push({ pathname: `${routeGroup}/jobs/[id]` as any, params: { id: bookingId } });
+  }, [routeGroup]);
 
   // Permission loading
   if (!permission) {

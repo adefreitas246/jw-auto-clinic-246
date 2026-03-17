@@ -18,6 +18,7 @@ import {
 } from '@/types/job';
 import { useSpeechStatus } from '@/hooks/useSpeechStatus';
 import { Colors } from '@/constants/Colors';
+import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -470,7 +471,7 @@ export default function TrackJobScreen() {
 const st = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   scroll:  { flex: 1 },
-  content: { paddingBottom: 100 },
+  content: { paddingBottom: SCROLL_PADDING_BOTTOM },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
   errorIconWrap: {

@@ -285,7 +285,17 @@ export default function FleetScreen() {
           pointerEvents="none"
         />
         <View style={fl.header} pointerEvents="box-none">
-          <View style={fl.headerContent}>
+          {/* Back button */}
+          <Pressable
+            style={fl.headerIconBtn}
+            onPress={() => router.back()}
+            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 22 }}
+            hitSlop={8}
+          >
+            <Ionicons name="arrow-back" size={20} color={Colors.white} />
+          </Pressable>
+
+          <View style={[fl.headerContent, { flex: 1, marginHorizontal: 8 }]}>
             <Text style={fl.headerTitle}>Fleet Tracking</Text>
             <Badge status="active" label={`${fleet.length} active`} size="sm" />
           </View>

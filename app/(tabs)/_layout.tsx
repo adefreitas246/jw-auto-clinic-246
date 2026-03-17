@@ -149,17 +149,17 @@ export default function TabLayout() {
         {/* ── Fleet — full-screen map ───────────────────────────────────── */}
         <Tabs.Screen
           name="fleet"
-          options={{ href: null, tabBarStyle: { display: 'none' } }}
+          options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
         />
 
         {/* ── Kiosk — full-screen tablet UI ─────────────────────────────── */}
         <Tabs.Screen
           name="kiosk"
-          options={{ href: null, tabBarStyle: { display: 'none' } }}
+          options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
         />
 
         {/* ── Staff-only screens — declared so router doesn't warn ──────── */}
-        <Tabs.Screen name="scanner"     options={{ href: null, tabBarStyle: { display: 'none' } }} />
+        <Tabs.Screen name="scanner"     options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }} />
         <Tabs.Screen name="schedule"    options={{ href: null }} />
         <Tabs.Screen name="performance" options={{ href: null }} />
         <Tabs.Screen name="tracking"    options={{ href: null }} />

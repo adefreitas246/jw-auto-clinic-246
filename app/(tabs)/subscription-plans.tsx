@@ -195,7 +195,7 @@ export default function SubscriptionPlansScreen() {
       >
         {plans.length === 0 ? (
           <EmptyState
-            icon="card-outline"
+            icon={<Ionicons name="card-outline" size={36} color={Colors.textMuted} />}
             title="No plans yet"
             subtitle="Tap + to create your first subscription plan."
           />

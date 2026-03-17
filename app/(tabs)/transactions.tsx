@@ -113,7 +113,7 @@ export default function TransactionsScreen() {
           <View>
             <Text style={styles.revLabel}>Total Revenue</Text>
             <Text style={styles.revAmount}>${totalRevenue.toFixed(2)}</Text>
-            <Text style={styles.revSub}>{tx.length} records</Text>
+            <Text style={styles.revSub}>{tx?.length ?? 0} records</Text>
           </View>
           <View style={styles.revIconCircle}>
             <Ionicons name="trending-up-outline" size={22} color={Colors.accent} />

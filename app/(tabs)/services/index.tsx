@@ -197,7 +197,7 @@ export default function ManageServicesScreen() {
       <View style={s.container}>
         {services.length === 0 ? (
           <EmptyState
-            icon="construct-outline"
+            icon={<Ionicons name="construct-outline" size={36} color={Colors.textMuted} />}
             title="No services yet"
             subtitle="Tap the + button to add your first service."
           />

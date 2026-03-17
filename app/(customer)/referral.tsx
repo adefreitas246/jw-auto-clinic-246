@@ -266,7 +266,7 @@ export default function ReferralScreen() {
 const rf = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  scroll: { padding: SCREEN_PADDING, paddingTop: 20 },
+  scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: 120 },
 
   heroCard:      { borderRadius: 20, padding: 28, alignItems: 'center', marginBottom: 20 },
   heroIconWrap:  { marginBottom: 16 },

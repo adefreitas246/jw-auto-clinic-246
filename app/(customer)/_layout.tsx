@@ -66,6 +66,7 @@ export default function CustomerLayout() {
               position: 'absolute',
               borderTopWidth: 0,
               elevation: 0,
+              backgroundColor: 'transparent',
             },
             android: {
               backgroundColor: Colors.surface,

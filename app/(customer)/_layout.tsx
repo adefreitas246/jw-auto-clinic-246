@@ -1,20 +1,13 @@
-﻿// app/(customer)/_layout.tsx
+// app/(customer)/_layout.tsx
+// Customer native tab bar.
+// Tabs: Home | Browse | Vehicles | Rewards
+// Booking / track / rate screens hide the tab bar (immersive flows).
 import { useAuth } from '@/context/AuthContext';
-import TabBar from '@/components/ui/TabBar';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Tabs, Redirect } from 'expo-router';
-import { ActivityIndicator, Platform, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { Colors } from '@/constants/Colors';
-
-function TransparentHeader() {
-  const insets = useSafeAreaInsets();
-  return (
-    <View style={{ height: insets.top, backgroundColor: 'transparent' }}>
-      <StatusBar style="dark" translucent />
-    </View>
-  );
-}
 
 export default function CustomerLayout() {
   const { user, loading } = useAuth();
@@ -33,32 +26,125 @@ export default function CustomerLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <TabBar {...props} />}
       screenOptions={{
-        headerShown: Platform.OS !== 'web',
-        headerTransparent: true,
-        headerStyle: { backgroundColor: 'transparent' },
-        headerShadowVisible: false,
-        headerTitle: '',
-        header: () => <TransparentHeader />,
+        headerShown: false,
+
+        // ── Colors ─────────────────────────────────────────────────────
+        tabBarActiveTintColor:   Colors.accent,
+        tabBarInactiveTintColor: Colors.textMuted,
+
+        // ── Label ──────────────────────────────────────────────────────
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+        },
+
+        // ── Platform bar style ─────────────────────────────────────────
+        tabBarStyle: Platform.select({
+          ios: {
+            position: 'absolute',
+            borderTopWidth: 0,
+            elevation: 0,
+          },
+          android: {
+            backgroundColor: Colors.surface,
+            borderTopWidth: 1,
+            borderTopColor: Colors.border,
+            elevation: 8,
+            height: 60,
+          },
+        }),
+
+        // ── iOS native blur ────────────────────────────────────────────
+        tabBarBackground: Platform.OS === 'ios'
+          ? () => (
+              <BlurView
+                tint="systemUltraThinMaterial"
+                intensity={100}
+                style={StyleSheet.absoluteFill}
+              />
+            )
+          : undefined,
       }}
     >
-      {/* Primary tabs — visible in CustomerTabBar */}
-      <Tabs.Screen name="home"     />
-      <Tabs.Screen name="catalog"  />
-      <Tabs.Screen name="vehicles" />
-      <Tabs.Screen name="loyalty"  />
-      {/* Overflow (More menu) + all other routable screens */}
-      <Tabs.Screen name="book"    options={{ href: null }} />
-      <Tabs.Screen name="track"   options={{ href: null }} />
-      <Tabs.Screen name="booking" options={{ href: null }} />
-      {/* Subscription plans */}
+      {/* ── Home ─────────────────────────────────────────────────────── */}
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* ── Catalog / Browse ──────────────────────────────────────────── */}
+      <Tabs.Screen
+        name="catalog"
+        options={{
+          title: 'Browse',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'layers' : 'layers-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* ── Vehicles ──────────────────────────────────────────────────── */}
+      <Tabs.Screen
+        name="vehicles"
+        options={{
+          title: 'Vehicles',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'car' : 'car-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* ── Loyalty / Rewards ─────────────────────────────────────────── */}
+      <Tabs.Screen
+        name="loyalty"
+        options={{
+          title: 'Rewards',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'star' : 'star-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+
+      {/* ── Booking flow — immersive, tab bar hidden ──────────────────── */}
+      <Tabs.Screen
+        name="book"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+          headerShown: false,
+        }}
+      />
+
+      {/* ── Job tracking — immersive, tab bar hidden ───────────────────── */}
+      <Tabs.Screen
+        name="track"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+          headerShown: false,
+        }}
+      />
+
+      {/* ── Rate / review — deep-linked, tab bar hidden ───────────────── */}
+      <Tabs.Screen
+        name="rate"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+          headerShown: false,
+        }}
+      />
+
+      {/* ── Hidden routes — routable, not in tab bar ──────────────────── */}
+      <Tabs.Screen name="booking"       options={{ href: null }} />
       <Tabs.Screen name="subscriptions" options={{ href: null }} />
-      {/* Rate / review screen (deep-linked from push) */}
-      <Tabs.Screen name="rate"          options={{ href: null }} />
-      {/* Referral code + share */}
       <Tabs.Screen name="referral"      options={{ href: null }} />
-      {/* Customer profile / settings */}
       <Tabs.Screen name="settings"      options={{ href: null }} />
     </Tabs>
   );

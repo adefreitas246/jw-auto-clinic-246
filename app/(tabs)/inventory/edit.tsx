@@ -64,7 +64,7 @@ function PickerModal({
       <View style={pm.sheet}>
         <View style={pm.handle} />
         <Text style={pm.title}>{title}</Text>
-        <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }}>
           {options.map(opt => (
             <Pressable
               key={opt}
@@ -354,7 +354,7 @@ export default function EditInventoryScreen() {
                   if (s <= 0)      level = 'out';
                   else if (s < t)  level = 'low';
                   else if (s < t * 1.75) level = 'warn';
-                  const colors = { ok: Colors.success, warn: Colors.warning, low: Colors.error, out: Colors.accent };
+                  const colors = { ok: Colors.success, warn: Colors.warning, low: Colors.error, out: Colors.error };
                   return (
                     <View key={label} style={es.previewPill}>
                       <View style={[es.dot, { backgroundColor: colors[level] }]} />

@@ -110,7 +110,7 @@ function AddMappingModal({
             data={inventoryItems}
             keyExtractor={it => it._id}
             style={{ maxHeight: 300 }}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }}
             renderItem={({ item }) => (
               <Pressable
                 style={am.optionRow}
@@ -370,12 +370,12 @@ const sm = StyleSheet.create({
 
   infoBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: Colors.accentMuted, marginHorizontal: 16, borderRadius: 10,
+    backgroundColor: Colors.accentMuted, marginHorizontal: SCREEN_PADDING, borderRadius: 10,
     paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12,
   },
   infoText: { fontSize: 12, color: Colors.accent, flex: 1, lineHeight: 17 },
 
-  list: { paddingHorizontal: 16, paddingBottom: SCROLL_PADDING_BOTTOM },
+  list: { paddingHorizontal: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
 
   card: {
     backgroundColor: Colors.white, borderRadius: 14, padding: 14,

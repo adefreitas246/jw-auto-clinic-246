@@ -10,7 +10,7 @@
 //   • Admin: FAB + per-card Edit/Delete actions
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { router } from 'expo-router';
+import { router, useSegments } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import React, {
   useCallback, useMemo, useRef, useState,
@@ -34,7 +34,7 @@ import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
 import { useInventoryCache } from '@/hooks/useInventoryCache';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
+import { SCROLL_PADDING_BOTTOM, TAB_BAR_HEIGHT } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 import { ScreenHeader } from '@/components/ui';
@@ -301,6 +301,8 @@ export default function InventoryScreen() {
   const { user } = useAuth();
   const isAdmin  = user?.role === 'admin';
   const cache    = useInventoryCache();
+  const segments = useSegments();
+  const routeGroup = `/${segments[0]}`; // '/(tabs)' or '/(staff)'
 
   const [items,       setItems]       = useState<InventoryItem[]>([]);
   const [loading,     setLoading]     = useState(true);
@@ -391,7 +393,7 @@ export default function InventoryScreen() {
 
   const openEdit = (item?: InventoryItem) => {
     router.push({
-      pathname: '/(tabs)/inventory/edit',
+      pathname: `${routeGroup}/inventory/edit` as any,
       params:   item ? { id: item._id } : {},
     });
   };
@@ -587,7 +589,7 @@ const s = StyleSheet.create({
   },
 
   // Category chips
-  catList: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 100 },
+  catList: { paddingHorizontal: SCREEN_PADDING, gap: 8 },
   catChip: {
     borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: Colors.border,
     paddingHorizontal: 14, paddingVertical: 7, backgroundColor: Colors.surface,
@@ -603,7 +605,7 @@ const s = StyleSheet.create({
 
   // FAB
   fab: {
-    position: 'absolute', bottom: 24, right: 24,
+    position: 'absolute', bottom: IS_IOS ? TAB_BAR_HEIGHT + 8 : 24, right: 24,
     width: 56, height: 56, borderRadius: borderRadius.full,
     backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden',

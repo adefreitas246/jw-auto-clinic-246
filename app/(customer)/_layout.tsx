@@ -185,6 +185,7 @@ export default function CustomerLayout() {
         <Tabs.Screen name="subscriptions" options={{ href: null }} />
         <Tabs.Screen name="referral"      options={{ href: null }} />
         <Tabs.Screen name="settings"      options={{ href: null }} />
+        <Tabs.Screen name="notifications" options={{ href: null }} />
       </Tabs>
 
       <MoreMenu

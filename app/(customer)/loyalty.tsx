@@ -430,7 +430,6 @@ export default function LoyaltyScreen() {
             </View>
           )}
 
-          <View style={{ height: 40 }} />
         </Reanimated.View>
       </ScrollView>
 

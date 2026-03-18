@@ -207,6 +207,7 @@ export default function CustomerHome() {
               {/* Notification bell */}
               <Pressable
                 style={({ pressed }) => [s.iconBtn, pressed && { opacity: 0.7 }]}
+                onPress={() => { haptic(); router.push('/(customer)/notifications'); }}
                 hitSlop={8}
                 android_ripple={{ color: Colors.accent + '20', borderless: true }}
               >

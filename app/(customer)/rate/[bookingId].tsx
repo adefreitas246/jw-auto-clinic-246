@@ -1,237 +1,302 @@
-// app/(customer)/rate/[bookingId].tsx
-// Deep-linkable rating screen. Sent via push notification after a job is finished.
-// Deep link: /(customer)/rate/<bookingId>
+// app/(customer)/rate/[bookingId].tsx — Rate a specific wash
+// Deep-linkable. Sent via push notification after a job is finished.
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  ActivityIndicator,
 } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  ZoomIn,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
 
+import { ScreenHeader } from '@/components/ui';
+import { Colors } from '@/constants/Colors';
+import { IS_IOS } from '@/utils/platform';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const TAGS        = ['Great service', 'Very clean', 'Fast', 'Friendly staff'] as const;
 const STAR_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
-export default function RateScreen() {
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type BookingSummary = {
+  serviceLabel:    string;
+  appointmentDate: string;
+  appointmentTime: string;
+  technicianName?: string;
+  vehicleLabel?:   string;
+};
+
+// ── Animated star ─────────────────────────────────────────────────────────────
+
+function AnimatedStar({
+  value,
+  filled,
+  onPress,
+}: {
+  value:   number;
+  filled:  boolean;
+  onPress: () => void;
+}) {
+  const scale = useSharedValue(1);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  function handlePress() {
+    scale.value = withSpring(1.45, { damping: 4, stiffness: 280 }, () => {
+      scale.value = withSpring(1, { damping: 7, stiffness: 220 });
+    });
+    onPress();
+  }
+
+  return (
+    <Pressable onPress={handlePress} hitSlop={6}>
+      <Animated.View style={animStyle}>
+        <Ionicons
+          name={filled ? 'star' : 'star-outline'}
+          size={48}
+          color={filled ? Colors.warning : Colors.border}
+        />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
+
+export default function RateBookingScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
-  const { token }     = useAuth();
-  const router        = useRouter();
 
-  const [stars,        setStars]        = useState(0);
-  const [hovered,      setHovered]      = useState(0);
-  const [comment,      setComment]      = useState('');
-  const [submitting,   setSubmitting]   = useState(false);
-  const [alreadyRated, setAlreadyRated] = useState(false);
-  const [checking,     setChecking]     = useState(true);
-  const [existingRating, setExistingRating] = useState<number | null>(null);
+  const [booking,    setBooking]    = useState<BookingSummary | null>(null);
+  const [loadingBook, setLoadingBook] = useState(true);
+  const [rating,     setRating]     = useState(0);
+  const [comment,    setComment]    = useState('');
+  const [tags,       setTags]       = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted,  setSubmitted]  = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
 
-  const headers = { Authorization: `Bearer ${token}` };
-
+  // Fetch booking summary for the header card
   useEffect(() => {
     if (!bookingId) return;
-    axios.get(`/api/reviews/booking/${bookingId}`, { headers })
-      .then(res => {
-        if (res.data) {
-          setAlreadyRated(true);
-          setExistingRating(res.data.stars);
-        }
-      })
+    axios.get<BookingSummary>(`/api/bookings/${bookingId}`)
+      .then(res => setBooking(res.data))
       .catch(() => {})
-      .finally(() => setChecking(false));
+      .finally(() => setLoadingBook(false));
   }, [bookingId]);
 
-  async function handleSubmit() {
-    if (stars === 0) { Alert.alert('Select a rating', 'Please tap a star to rate.'); return; }
+  function toggleTag(tag: string) {
+    setTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  }
 
+  async function handleSubmit() {
+    if (rating === 0) return;
+    setError(null);
     try {
       setSubmitting(true);
-      await axios.post('/api/reviews', { bookingId, stars, comment }, { headers });
-      Alert.alert(
-        '⭐ Thanks for your review!',
-        'Your feedback helps us improve.',
-        [{ text: 'Done', onPress: () => router.back() }]
-      );
+      await axios.post('/api/reviews', { bookingId, rating, comment, tags });
+      setSubmitted(true);
+      setTimeout(() => router.back(), 1800);
     } catch (err: any) {
-      const msg = err.response?.data?.error ?? 'Failed to submit review.';
-      if (msg.includes('already')) {
-        setAlreadyRated(true);
-      } else {
-        Alert.alert('Error', msg);
-      }
+      setError(err.response?.data?.error ?? 'Failed to submit. Please try again.');
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (checking) {
+  // ── Success screen ──────────────────────────────────────────────────────────
+  if (submitted) {
     return (
-      <SafeAreaView style={st.center}>
-        <ActivityIndicator color={Colors.accent} size="large" />
-      </SafeAreaView>
-    );
-  }
-
-  if (alreadyRated) {
-    return (
-      <SafeAreaView style={st.center}>
-        <Animated.View entering={FadeIn.duration(300)} style={{ alignItems: 'center' }}>
-          <Text style={st.alreadyEmoji}>⭐</Text>
-          <Text style={st.alreadyTitle}>Already Reviewed</Text>
-          {existingRating && (
-            <View style={st.existingStars}>
-              {[1, 2, 3, 4, 5].map(s => (
-                <Ionicons key={s} name={s <= existingRating ? 'star' : 'star-outline'} size={28} color={Colors.warning} />
-              ))}
-            </View>
-          )}
-          <Text style={st.alreadySub}>You've already submitted a review for this booking.</Text>
-          <Pressable
-            style={st.doneBtn}
-            onPress={() => router.back()}
-            android_ripple={{ color: Colors.white + '30' }}
-          >
-            <Text style={st.doneBtnText}>Go Back</Text>
-          </Pressable>
+      <SafeAreaView style={st.safe}>
+        <Animated.View entering={FadeIn.duration(300)} style={st.successScreen}>
+          <Animated.View entering={ZoomIn.springify()} style={st.successIconWrap}>
+            <Ionicons name="checkmark-circle" size={80} color={Colors.success} />
+          </Animated.View>
+          <Text style={st.successTitle}>Thanks for your review!</Text>
+          <Text style={st.successSub}>Your feedback helps us serve you better.</Text>
         </Animated.View>
       </SafeAreaView>
     );
   }
 
-  const displayStars = hovered || stars;
-
   return (
     <SafeAreaView style={st.safe}>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
-        {/* Header */}
-        <View style={st.header}>
-          <Pressable
-            onPress={() => router.back()}
-            style={st.backBtn}
-            hitSlop={8}
-            android_ripple={{ color: Colors.accent + '20', borderless: true }}
-          >
-            <Ionicons name="close" size={22} color={Colors.textPrimary} />
-          </Pressable>
-          <Text style={st.headerTitle}>Rate Your Experience</Text>
-          <View style={{ width: 36 }} />
-        </View>
+      <ScreenHeader title="Rate Your Wash" backButton />
 
-        <Animated.ScrollView
-          entering={FadeIn.duration(300)}
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
+        <ScrollView
           contentContainerStyle={st.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Wash icon */}
-          <View style={st.iconWrap}>
-            <Ionicons name="car-sport" size={48} color={Colors.accent} />
-          </View>
-          <Text style={st.title}>How was your wash?</Text>
-          <Text style={st.subtitle}>Your feedback helps us serve you better.</Text>
 
-          {/* Star picker */}
-          <View style={st.starsRow}>
-            {[1, 2, 3, 4, 5].map(s => (
-              <Pressable
-                key={s}
-                onPress={() => setStars(s)}
-                onPressIn={() => setHovered(s)}
-                onPressOut={() => setHovered(0)}
-                hitSlop={6}
-              >
-                <Ionicons
-                  name={s <= displayStars ? 'star' : 'star-outline'}
-                  size={48}
-                  color={s <= displayStars ? Colors.warning : Colors.border}
-                />
-              </Pressable>
-            ))}
-          </View>
-
-          {displayStars > 0 && (
-            <Text style={st.starLabel}>{STAR_LABELS[displayStars]}</Text>
+          {/* ── Booking summary ── */}
+          {!loadingBook && booking && (
+            <Animated.View entering={FadeInDown.delay(60).duration(280)} style={st.summaryCard}>
+              <View style={st.summaryRow}>
+                <View style={st.summaryIconWrap}>
+                  <Ionicons name="car-sport-outline" size={18} color={Colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={st.summaryService} numberOfLines={1}>{booking.serviceLabel}</Text>
+                  <Text style={st.summaryMeta}>
+                    {booking.appointmentDate}
+                    {booking.appointmentTime ? ` · ${booking.appointmentTime}` : ''}
+                    {booking.technicianName  ? ` · ${booking.technicianName}`  : ''}
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
           )}
 
-          {/* Comment box */}
-          <TextInput
-            style={st.commentInput}
-            value={comment}
-            onChangeText={setComment}
-            placeholder="Add a comment (optional)…"
-            placeholderTextColor={Colors.textMuted}
-            multiline
-            maxLength={500}
-            textAlignVertical="top"
-          />
-          <Text style={st.charCount}>{comment.length}/500</Text>
+          {/* ── Star rating ── */}
+          <Animated.View entering={FadeInDown.delay(120).duration(280)} style={st.starsSection}>
+            <Text style={st.sectionLabel}>Your Rating</Text>
+            <View style={st.starsRow}>
+              {[1, 2, 3, 4, 5].map(s => (
+                <AnimatedStar
+                  key={s}
+                  value={s}
+                  filled={s <= rating}
+                  onPress={() => setRating(s)}
+                />
+              ))}
+            </View>
+            {rating > 0 && (
+              <Animated.Text entering={FadeIn.duration(200)} style={st.starLabel}>
+                {STAR_LABELS[rating]}
+              </Animated.Text>
+            )}
+          </Animated.View>
 
-          {/* Submit */}
-          <Pressable
-            style={[st.submitBtn, (submitting || stars === 0) && { opacity: 0.6 }]}
-            onPress={handleSubmit}
-            disabled={submitting || stars === 0}
-            android_ripple={{ color: Colors.white + '30' }}
-          >
-            {submitting
-              ? <ActivityIndicator color={Colors.white} size="small" />
-              : <Text style={st.submitBtnText}>Submit Review</Text>
-            }
-          </Pressable>
+          {/* ── Quick tags ── */}
+          <Animated.View entering={FadeInDown.delay(180).duration(280)} style={st.section}>
+            <Text style={st.sectionLabel}>Quick Highlights</Text>
+            <View style={st.tagsRow}>
+              {TAGS.map(tag => {
+                const selected = tags.includes(tag);
+                return (
+                  <Pressable
+                    key={tag}
+                    style={[st.tagChip, selected && st.tagChipSelected]}
+                    onPress={() => toggleTag(tag)}
+                    android_ripple={{ color: Colors.accent + '20', borderless: false }}
+                  >
+                    <Text style={[st.tagText, selected && st.tagTextSelected]}>{tag}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Animated.View>
 
-          <Pressable
-            onPress={() => router.back()}
-            style={st.skipBtn}
-            android_ripple={{ color: Colors.accent + '20', borderless: false }}
-          >
-            <Text style={st.skipBtnText}>Skip for now</Text>
-          </Pressable>
-        </Animated.ScrollView>
+          {/* ── Comment ── */}
+          <Animated.View entering={FadeInDown.delay(240).duration(280)} style={st.section}>
+            <Text style={st.sectionLabel}>Comments (optional)</Text>
+            <TextInput
+              style={st.commentInput}
+              value={comment}
+              onChangeText={t => setComment(t.slice(0, 500))}
+              placeholder="Tell us about your experience..."
+              placeholderTextColor={Colors.textMuted}
+              multiline
+              textAlignVertical="top"
+            />
+            <Text style={st.charCount}>{comment.length}/500</Text>
+          </Animated.View>
+
+          {/* ── Error ── */}
+          {error && (
+            <View style={st.errorRow}>
+              <Ionicons name="alert-circle-outline" size={14} color={Colors.error} />
+              <Text style={st.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* ── Submit ── */}
+          <Animated.View entering={FadeInDown.delay(300).duration(280)}>
+            <Pressable
+              style={[st.submitBtn, (submitting || rating === 0) && { opacity: 0.55 }]}
+              onPress={handleSubmit}
+              disabled={submitting || rating === 0}
+              android_ripple={{ color: Colors.white + '30', borderless: false }}
+            >
+              {submitting
+                ? <ActivityIndicator color={Colors.white} size="small" />
+                : <Text style={st.submitBtnText}>Submit Rating</Text>
+              }
+            </Pressable>
+          </Animated.View>
+
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const st = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background, padding: 24 },
+  safe:    { flex: 1, backgroundColor: Colors.background },
+  content: { paddingHorizontal: SCREEN_PADDING, paddingTop: 20, paddingBottom: 100 },
 
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: SCREEN_PADDING, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
-  backBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.surfaceAlt, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
+  // Booking summary
+  summaryCard:     { backgroundColor: Colors.surface, borderRadius: borderRadius.lg, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
+  summaryRow:      { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  summaryIconWrap: { width: 40, height: 40, borderRadius: 10, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
+  summaryService:  { fontSize: 15, fontWeight: '700', color: Colors.textPrimary, marginBottom: 3 },
+  summaryMeta:     { fontSize: 12, color: Colors.textMuted },
 
-  content:   { alignItems: 'center', paddingHorizontal: SCREEN_PADDING, paddingTop: 32, paddingBottom: SCROLL_PADDING_BOTTOM },
-  iconWrap:  { width: 90, height: 90, borderRadius: 45, backgroundColor: Colors.accentMuted, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  title:     { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 8 },
-  subtitle:  { fontSize: 14, color: Colors.textSecondary, marginBottom: 28 },
+  sectionLabel: { fontSize: 12, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 14 },
+  section:      { marginBottom: 24 },
 
-  starsRow:  { flexDirection: 'row', gap: 10, marginBottom: 12 },
-  starLabel: { fontSize: 16, fontWeight: '600', color: Colors.warning, marginBottom: 24 },
+  // Stars
+  starsSection: { alignItems: 'center', marginBottom: 28 },
+  starsRow:     { flexDirection: 'row', gap: 6, marginBottom: 10 },
+  starLabel:    { fontSize: 16, fontWeight: '600', color: Colors.warning },
 
-  commentInput: { width: '100%', borderWidth: 1, borderColor: Colors.border, borderRadius: 12, padding: 14, fontSize: 14, color: Colors.textPrimary, minHeight: 100, marginBottom: 4, backgroundColor: Colors.surface },
-  charCount:    { width: '100%', textAlign: 'right', fontSize: 11, color: Colors.textMuted, marginBottom: 20 },
+  // Tags
+  tagsRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  tagChip:         { borderRadius: borderRadius.full, paddingHorizontal: 16, paddingVertical: 9, backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden' },
+  tagChipSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  tagText:         { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  tagTextSelected: { color: Colors.white },
 
-  submitBtn:     { width: '100%', backgroundColor: Colors.accent, borderRadius: 12, padding: 16, alignItems: 'center', marginBottom: 12 },
+  // Comment
+  commentInput: { borderWidth: 1, borderColor: Colors.border, borderRadius: borderRadius.lg, padding: 14, fontSize: 14, color: Colors.textPrimary, minHeight: 110, backgroundColor: Colors.surface },
+  charCount:    { textAlign: 'right', fontSize: 11, color: Colors.textMuted, marginTop: 4 },
+
+  // Error
+  errorRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
+  errorText: { fontSize: 13, color: Colors.error, flex: 1 },
+
+  // Submit
+  submitBtn:     { backgroundColor: Colors.accent, borderRadius: borderRadius.lg, paddingVertical: 16, alignItems: 'center', overflow: 'hidden', ...cardShadow },
   submitBtnText: { color: Colors.white, fontWeight: '700', fontSize: 16 },
-  skipBtn:       { padding: 12 },
-  skipBtnText:   { color: Colors.textMuted, fontSize: 13 },
 
-  alreadyEmoji:  { fontSize: 56, marginBottom: 12 },
-  alreadyTitle:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary, marginBottom: 10 },
-  alreadySub:    { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginTop: 10, marginBottom: 24 },
-  existingStars: { flexDirection: 'row', gap: 6, marginBottom: 4 },
-  doneBtn:       { backgroundColor: Colors.accent, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 10, overflow: 'hidden' },
-  doneBtnText:   { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  // Success
+  successScreen:   { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  successIconWrap: { marginBottom: 20 },
+  successTitle:    { fontSize: 22, fontWeight: '800', color: Colors.textPrimary, marginBottom: 8, textAlign: 'center' },
+  successSub:      { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
 });

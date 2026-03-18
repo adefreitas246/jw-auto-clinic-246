@@ -1,9 +1,10 @@
 // app/(customer)/booking/[id].tsx — Customer Booking Detail + QR Code
 // Fetches the booking and displays:
-//  • Booking status badge
-//  • BookingQR component (customer shows this to staff at check-in)
-//  • Summary card: service, date/time, vehicle, location, price
-//  • Track / Cancel actions where applicable
+//  • Large centered status badge
+//  • QR code (shown for all upcoming bookings)
+//  • Service info card: service, date, time, location, duration, price
+//  • Vehicle card: make/model, plate, color, size
+//  • Context-aware action buttons (Track + Cancel | Rate + Book Again | Book Again)
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -13,14 +14,13 @@ import {
   RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
 import { BookingQR } from '@/components/BookingQR';
 import { ScreenHeader } from '@/components/ui';
 import { Colors } from '@/constants/Colors';
 import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS } from '@/utils/platform';
-import { borderRadius, cardShadow } from '@/utils/platformStyles';
-import ReAnimated, { FadeIn } from 'react-native-reanimated';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,11 @@ interface BookingDetail {
   jobStatus:       string;
   serviceLabel:    string;
   vehicleLabel:    string;
+  vehicleMake?:    string;
+  vehicleModel?:   string;
+  vehiclePlate?:   string;
+  vehicleColor?:   string;
+  vehicleSize?:    string;
   appointmentDate: string;
   appointmentTime: string;
   totalPrice:      number;
@@ -41,16 +46,18 @@ interface BookingDetail {
   technicianName:  string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Config ───────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string; bg: string; icon: string }
-> = {
-  pending_payment: { label: 'Awaiting Payment', color: Colors.warning,  bg: Colors.warningBg,   icon: 'time-outline'          },
-  confirmed:       { label: 'Confirmed',         color: Colors.accent,   bg: Colors.accentMuted, icon: 'checkmark-circle'      },
-  cancelled:       { label: 'Cancelled',          color: Colors.error,    bg: Colors.errorBg,     icon: 'close-circle'          },
-  completed:       { label: 'Completed',          color: Colors.success,  bg: Colors.successBg,   icon: 'checkmark-done-circle' },
+const STATUS_CONFIG: Record<string, {
+  label: string;
+  color: string;
+  bg:    string;
+  icon:  React.ComponentProps<typeof Ionicons>['name'];
+}> = {
+  pending_payment: { label: 'Awaiting Payment', color: Colors.warning, bg: Colors.warningBg,   icon: 'time-outline'           },
+  confirmed:       { label: 'Confirmed',         color: Colors.accent,  bg: Colors.accentMuted, icon: 'checkmark-circle'       },
+  cancelled:       { label: 'Cancelled',         color: Colors.error,   bg: Colors.errorBg,     icon: 'close-circle'           },
+  completed:       { label: 'Completed',         color: Colors.success, bg: Colors.successBg,   icon: 'checkmark-done-circle'  },
 };
 
 const JOB_STATUS_LABELS: Record<string, string> = {
@@ -61,15 +68,21 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   finished:      'Ready for Pickup',
 };
 
+const UPCOMING = new Set(['pending_payment', 'confirmed']);
+
+// ─── Summary row ──────────────────────────────────────────────────────────────
+
 function SummaryRow({
   icon, label, value,
 }: {
-  icon: string; label: string; value: string;
+  icon:  React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  value: string;
 }) {
   return (
     <View style={s.summaryRow}>
       <View style={s.summaryIconWrap}>
-        <Ionicons name={icon as any} size={15} color={Colors.accent} />
+        <Ionicons name={icon} size={15} color={Colors.accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={s.summaryLabel}>{label}</Text>
@@ -79,10 +92,11 @@ function SummaryRow({
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+
   const [booking,    setBooking]    = useState<BookingDetail | null>(null);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -92,7 +106,7 @@ export default function BookingDetailScreen() {
   const fetchBooking = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
     try {
-      const { data } = await axios.get<BookingDetail>(`/api/jobs/${id}`);
+      const { data } = await axios.get<BookingDetail>(`/api/bookings/${id}`);
       setBooking(data);
       setError(null);
     } catch (err: any) {
@@ -126,20 +140,25 @@ export default function BookingDetailScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
-  // ── Loading ──
+  // ── Loading ──────────────────────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={Colors.accent} />
-      </View>
+      <SafeAreaView style={s.safe} edges={['top']}>
+        <ScreenHeader title="Booking Details" backButton />
+        <View style={s.centered}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // ── Error ──
+  // ── Error ────────────────────────────────────────────────────────────────────
+
   if (error || !booking) {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
@@ -152,7 +171,7 @@ export default function BookingDetailScreen() {
           <Pressable
             style={s.retryBtn}
             onPress={() => fetchBooking()}
-            android_ripple={{ color: Colors.primaryDark }}
+            android_ripple={{ color: Colors.accentDark, borderless: false }}
           >
             <Text style={s.retryText}>Retry</Text>
           </Pressable>
@@ -161,14 +180,15 @@ export default function BookingDetailScreen() {
     );
   }
 
-  const statusCfg     = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.confirmed;
-  const showQr        = booking.status === 'confirmed' && booking.jobStatus === 'assigned';
-  const showTrack     = booking.status === 'confirmed' && booking.jobStatus !== 'finished';
-  const canCancel     = booking.status === 'confirmed';
-  const jobLabel      = JOB_STATUS_LABELS[booking.jobStatus] ?? booking.jobStatus;
-  const locationText  = booking.locationType === 'bay'
+  // ── Derived values ───────────────────────────────────────────────────────────
+
+  const statusCfg   = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.confirmed;
+  const isUpcoming  = UPCOMING.has(booking.status);
+  const jobLabel    = JOB_STATUS_LABELS[booking.jobStatus] ?? booking.jobStatus;
+  const locationText = booking.locationType === 'bay'
     ? `${booking.bayLabel}${booking.bayAddress ? ' · ' + booking.bayAddress : ''}`
     : booking.mobileAddress || 'Mobile service';
+  const vehicleHasDetail = booking.vehicleMake || booking.vehiclePlate;
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -186,117 +206,176 @@ export default function BookingDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ReAnimated.View entering={FadeIn.duration(300)}>
-        {/* ── Status banner ── */}
-        <View style={[s.statusCard, { backgroundColor: statusCfg.bg }]}>
-          <View style={[s.statusIconWrap, { backgroundColor: statusCfg.color + '22' }]}>
-            <Ionicons name={statusCfg.icon as any} size={20} color={statusCfg.color} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[s.statusLabel, { color: statusCfg.color }]}>
-              {statusCfg.label}
-            </Text>
-            {booking.status === 'confirmed' && (
-              <Text style={s.jobStatusText}>{jobLabel}</Text>
+
+          {/* ── Status badge — large, centered ── */}
+          <ReAnimated.View entering={FadeInDown.delay(0).duration(300)}>
+            <View style={[s.statusCard, { backgroundColor: statusCfg.bg }]}>
+              <View style={[s.statusIconWrap, { backgroundColor: statusCfg.color + '22' }]}>
+                <Ionicons name={statusCfg.icon} size={28} color={statusCfg.color} />
+              </View>
+              <Text style={[s.statusLabel, { color: statusCfg.color }]}>
+                {statusCfg.label}
+              </Text>
+              {isUpcoming && booking.jobStatus ? (
+                <Text style={s.jobStatusText}>{jobLabel}</Text>
+              ) : null}
+            </View>
+          </ReAnimated.View>
+
+          {/* ── QR Code — show for all upcoming bookings ── */}
+          {isUpcoming && (
+            <ReAnimated.View entering={FadeInDown.delay(80).duration(300)}>
+              <View style={s.qrSection}>
+                <View style={s.qrHeader}>
+                  <Ionicons name="qr-code-outline" size={18} color={Colors.accent} />
+                  <Text style={s.sectionTitle}>Your Check-In Code</Text>
+                </View>
+                <Text style={s.qrSub}>Show this at arrival</Text>
+                <View style={s.qrCenter}>
+                  <BookingQR bookingId={booking._id} size={200} />
+                </View>
+              </View>
+            </ReAnimated.View>
+          )}
+
+          {/* ── Service info card ── */}
+          <ReAnimated.View entering={FadeInDown.delay(160).duration(300)}>
+            <View style={s.card}>
+              <Text style={s.cardTitle}>Service Details</Text>
+              <SummaryRow icon="layers-outline"   label="Service"  value={booking.serviceLabel} />
+              <SummaryRow icon="calendar-outline" label="Date"     value={booking.appointmentDate} />
+              <SummaryRow icon="time-outline"     label="Time"     value={booking.appointmentTime} />
+              <SummaryRow
+                icon={booking.locationType === 'bay' ? 'business-outline' : 'navigate-outline'}
+                label="Location"
+                value={locationText}
+              />
+              {booking.durationMinutes ? (
+                <SummaryRow
+                  icon="hourglass-outline"
+                  label="Duration"
+                  value={`${booking.durationMinutes} min`}
+                />
+              ) : null}
+              <SummaryRow icon="cash-outline" label="Total" value={`$${booking.totalPrice.toFixed(2)}`} />
+              {booking.technicianName ? (
+                <SummaryRow icon="person-outline" label="Technician" value={booking.technicianName} />
+              ) : null}
+            </View>
+          </ReAnimated.View>
+
+          {/* ── Vehicle card ── */}
+          <ReAnimated.View entering={FadeInDown.delay(240).duration(300)}>
+            <View style={s.card}>
+              <Text style={s.cardTitle}>Vehicle</Text>
+              {vehicleHasDetail ? (
+                <>
+                  {(booking.vehicleMake || booking.vehicleModel) ? (
+                    <SummaryRow
+                      icon="car-sport-outline"
+                      label="Make & Model"
+                      value={[booking.vehicleMake, booking.vehicleModel].filter(Boolean).join(' ')}
+                    />
+                  ) : null}
+                  {booking.vehiclePlate ? (
+                    <SummaryRow icon="barcode-outline"       label="Plate" value={booking.vehiclePlate} />
+                  ) : null}
+                  {booking.vehicleColor ? (
+                    <SummaryRow icon="color-palette-outline" label="Color" value={booking.vehicleColor} />
+                  ) : null}
+                  {booking.vehicleSize ? (
+                    <SummaryRow icon="resize-outline"        label="Size"  value={booking.vehicleSize}  />
+                  ) : null}
+                </>
+              ) : (
+                <SummaryRow icon="car-outline" label="Vehicle" value={booking.vehicleLabel || 'Not specified'} />
+              )}
+            </View>
+          </ReAnimated.View>
+
+          {/* ── Checked-in notice ── */}
+          {booking.status === 'confirmed' && booking.jobStatus && booking.jobStatus !== 'assigned' && (
+            <View style={s.checkedInBanner}>
+              <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+              <Text style={s.checkedInText}>
+                Checked in — your wash is underway. Pull to refresh for updates.
+              </Text>
+            </View>
+          )}
+
+          {/* ── Actions ── */}
+          <ReAnimated.View entering={FadeInDown.delay(320).duration(300)} style={s.actions}>
+
+            {/* Upcoming: Track + Cancel */}
+            {isUpcoming && (
+              <>
+                {booking.jobStatus !== 'finished' && (
+                  <Pressable
+                    style={s.primaryBtn}
+                    onPress={() => router.push({
+                      pathname: '/(customer)/track/[id]',
+                      params:   { id: booking._id },
+                    })}
+                    android_ripple={{ color: Colors.accentDark, borderless: false }}
+                  >
+                    <Ionicons name="navigate" size={16} color={Colors.white} />
+                    <Text style={s.primaryBtnText}>Track Wash</Text>
+                  </Pressable>
+                )}
+                <Pressable
+                  style={({ pressed }) => [
+                    s.cancelBtn,
+                    pressed    && { opacity: 0.85 },
+                    cancelling && { opacity: 0.6 },
+                  ]}
+                  onPress={handleCancel}
+                  disabled={cancelling}
+                  android_ripple={{ color: Colors.errorBg }}
+                >
+                  {cancelling
+                    ? <ActivityIndicator size="small" color={Colors.error} />
+                    : <Text style={s.cancelBtnText}>Cancel Booking</Text>
+                  }
+                </Pressable>
+              </>
             )}
-          </View>
-        </View>
 
-        {/* ── QR Code section ── */}
-        {showQr && (
-          <View style={s.qrSection}>
-            <View style={s.qrHeader}>
-              <Ionicons name="qr-code-outline" size={18} color={Colors.accent} />
-              <Text style={s.sectionTitle}>Your Check-In Code</Text>
-            </View>
-            <Text style={s.qrSub}>
-              Show this to your technician when you arrive at the wash bay.
-            </Text>
-            <View style={s.qrCenter}>
-              <BookingQR bookingId={booking._id} size={220} />
-            </View>
-          </View>
-        )}
+            {/* Completed: Rate + Book Again */}
+            {booking.status === 'completed' && (
+              <>
+                <Pressable
+                  style={s.primaryBtn}
+                  onPress={() => router.push({
+                    pathname: '/(customer)/rate/[bookingId]',
+                    params:   { bookingId: booking._id },
+                  })}
+                  android_ripple={{ color: Colors.accentDark, borderless: false }}
+                >
+                  <Ionicons name="star-outline" size={16} color={Colors.white} />
+                  <Text style={s.primaryBtnText}>Rate This Wash</Text>
+                </Pressable>
+                <Pressable
+                  style={s.secondaryBtn}
+                  onPress={() => router.push('/(customer)/book')}
+                  android_ripple={{ color: Colors.accentMuted, borderless: false }}
+                >
+                  <Text style={s.secondaryBtnText}>Book Again</Text>
+                </Pressable>
+              </>
+            )}
 
-        {/* ── Summary card ── */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Booking Summary</Text>
-          <SummaryRow
-            icon="layers-outline"
-            label="Service"
-            value={booking.serviceLabel}
-          />
-          <SummaryRow
-            icon="car-outline"
-            label="Vehicle"
-            value={booking.vehicleLabel || 'Not specified'}
-          />
-          <SummaryRow
-            icon="calendar-outline"
-            label="Date & Time"
-            value={`${booking.appointmentDate} at ${booking.appointmentTime}`}
-          />
-          <SummaryRow
-            icon={booking.locationType === 'bay' ? 'business-outline' : 'navigate-outline'}
-            label="Location"
-            value={locationText}
-          />
-          <SummaryRow
-            icon="cash-outline"
-            label="Total"
-            value={`$${booking.totalPrice.toFixed(2)}`}
-          />
-          {booking.technicianName ? (
-            <SummaryRow
-              icon="person-outline"
-              label="Technician"
-              value={booking.technicianName}
-            />
-          ) : null}
-        </View>
+            {/* Cancelled: Book Again */}
+            {booking.status === 'cancelled' && (
+              <Pressable
+                style={s.primaryBtn}
+                onPress={() => router.push('/(customer)/book')}
+                android_ripple={{ color: Colors.accentDark, borderless: false }}
+              >
+                <Text style={s.primaryBtnText}>Book Again</Text>
+              </Pressable>
+            )}
 
-        {/* ── Checked-in notice ── */}
-        {booking.status === 'confirmed' && booking.jobStatus !== 'assigned' && (
-          <View style={s.checkedInBanner}>
-            <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
-            <Text style={s.checkedInText}>
-              Checked in — your wash is underway. Pull to refresh for updates.
-            </Text>
-          </View>
-        )}
-
-        {/* ── Actions ── */}
-        <View style={s.actions}>
-          {showTrack && (
-            <Pressable
-              style={s.trackBtn}
-              onPress={() => router.push({
-                pathname: '/(customer)/track/[id]',
-                params:   { id: booking._id },
-              })}
-              android_ripple={{ color: Colors.accent }}
-            >
-              <Ionicons name="navigate" size={16} color={Colors.accent} />
-              <Text style={s.trackBtnText}>Track My Job</Text>
-            </Pressable>
-          )}
-          {canCancel && (
-            <Pressable
-              style={({ pressed }) => [
-                s.cancelBtn,
-                pressed    && { opacity: 0.85 },
-                cancelling && { opacity: 0.6  },
-              ]}
-              onPress={handleCancel}
-              disabled={cancelling}
-              android_ripple={{ color: Colors.errorBg }}
-            >
-              {cancelling
-                ? <ActivityIndicator size="small" color={Colors.error} />
-                : <Text style={s.cancelBtnText}>Cancel Booking</Text>
-              }
-            </Pressable>
-          )}
-        </View>
+          </ReAnimated.View>
         </ReAnimated.View>
       </ScrollView>
     </SafeAreaView>
@@ -306,11 +385,11 @@ export default function BookingDetailScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.background },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  safe:     { flex: 1, backgroundColor: Colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
+  content:  { paddingBottom: SCROLL_PADDING_BOTTOM, paddingTop: 4 },
 
-  content: { paddingBottom: SCROLL_PADDING_BOTTOM, paddingTop: 4 },
-
+  // Error state
   errorIconWrap: {
     width: 72, height: 72, borderRadius: 36,
     backgroundColor: Colors.errorBg,
@@ -325,50 +404,54 @@ const s = StyleSheet.create({
   },
   retryText: { color: Colors.white, fontWeight: '700' },
 
-  // Status banner
+  // Status badge — large, centered
   statusCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    marginHorizontal: 20, borderRadius: borderRadius.lg,
-    padding: 16, marginTop: 16, marginBottom: 12,
+    alignItems: 'center',
+    marginHorizontal: SCREEN_PADDING,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 28,
+    paddingHorizontal: SCREEN_PADDING,
+    marginTop: 16,
+    marginBottom: 12,
     ...cardShadow,
   },
   statusIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 60, height: 60, borderRadius: 30,
     alignItems: 'center', justifyContent: 'center',
+    marginBottom: 12,
   },
-  statusLabel:   { fontSize: 15, fontWeight: '800' },
-  jobStatusText: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  statusLabel:   { fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  jobStatusText: { fontSize: 13, color: Colors.textSecondary, marginTop: 4, textAlign: 'center' },
 
   // QR section
   qrSection: {
     backgroundColor: Colors.surface,
-    marginHorizontal: 20,
+    marginHorizontal: SCREEN_PADDING,
     borderRadius: borderRadius.xl,
     padding: 20,
     marginBottom: 12,
     alignItems: 'center',
     ...cardShadow,
   },
-  qrHeader:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  qrHeader:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   sectionTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
-  qrSub:        { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 20, lineHeight: 19 },
+  qrSub:        { fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginBottom: 16 },
   qrCenter:     { alignItems: 'center' },
 
-  // Summary card
+  // Cards
   card: {
     backgroundColor: Colors.surface,
-    marginHorizontal: 20,
+    marginHorizontal: SCREEN_PADDING,
     borderRadius: borderRadius.lg,
     padding: 20,
     marginBottom: 12,
     ...cardShadow,
   },
-  cardTitle: { fontSize: 13, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 16 },
-
-  summaryRow: {
-    flexDirection: 'row', alignItems: 'flex-start',
-    gap: 12, marginBottom: 14,
+  cardTitle: {
+    fontSize: 11, fontWeight: '700', color: Colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 16,
   },
+  summaryRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
   summaryIconWrap: {
     width: 32, height: 32, borderRadius: 8,
     backgroundColor: Colors.accentMuted,
@@ -384,28 +467,39 @@ const s = StyleSheet.create({
     backgroundColor: Colors.successBg,
     borderRadius: borderRadius.md,
     padding: 14,
-    marginHorizontal: 20,
+    marginHorizontal: SCREEN_PADDING,
     marginBottom: 12,
     borderLeftWidth: 3, borderLeftColor: Colors.success,
   },
   checkedInText: { flex: 1, fontSize: 13, color: Colors.success, fontWeight: '600', lineHeight: 18 },
 
-  // Actions
-  actions:  { marginHorizontal: 20, gap: 10, marginTop: 4 },
-  trackBtn: {
+  // Action buttons
+  actions: { marginHorizontal: SCREEN_PADDING, gap: 10, marginTop: 4, marginBottom: 8 },
+
+  primaryBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+    overflow: 'hidden',
+  },
+  primaryBtnText: { color: Colors.white, fontSize: 15, fontWeight: '700' },
+
+  secondaryBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
     backgroundColor: Colors.accentMuted,
     borderRadius: borderRadius.lg,
-    paddingVertical: 15,
+    paddingVertical: 16,
     overflow: 'hidden',
   },
-  trackBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
-  cancelBtn:    {
+  secondaryBtnText: { color: Colors.accent, fontSize: 15, fontWeight: '700' },
+
+  cancelBtn: {
     borderRadius: borderRadius.lg,
-    paddingVertical: 15,
-    alignItems: 'center',
+    paddingVertical: 16,
+    alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: Colors.error,
     overflow: 'hidden',
   },
-  cancelBtnText:{ color: Colors.error, fontSize: 15, fontWeight: '700' },
+  cancelBtnText: { color: Colors.error, fontSize: 15, fontWeight: '700' },
 });

@@ -142,14 +142,14 @@ const bc = StyleSheet.create({
     ...cardShadow,
   },
   topRow:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 10 },
-  serviceName: { flex: 1, fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
+  serviceName: { flex: 1, fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   badge:       { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3 },
   badgeText:   { fontSize: 10, fontWeight: '700' },
   metaRow:     { flexDirection: 'row', gap: 14, marginBottom: 8 },
   metaItem:    { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  metaText:    { fontSize: 12, color: Colors.textMuted, flex: 1 },
+  metaText:    { fontSize: 12, color: Colors.textSecondary, flex: 1 },
   footer:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  price:       { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
+  price:       { fontSize: 14, fontWeight: '800', color: Colors.accent },
   chevron:     { position: 'absolute', right: 16, top: '50%' },
 });
 
@@ -189,18 +189,19 @@ export default function MyBookingsScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScreenHeader title="My Bookings" backButton />
 
-      {/* Filter tabs */}
+      {/* Filter tabs — underline style */}
       <View style={s.filters}>
         {FILTERS.map(f => (
           <Pressable
             key={f.key}
-            style={[s.filterBtn, filter === f.key && s.filterBtnActive]}
+            style={s.filterTab}
             onPress={() => setFilter(f.key)}
-            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+            android_ripple={{ color: Colors.accent + '20', borderless: true }}
           >
             <Text style={[s.filterText, filter === f.key && s.filterTextActive]}>
               {f.label}
             </Text>
+            {filter === f.key && <View style={s.filterUnderline} />}
           </Pressable>
         ))}
       </View>
@@ -262,25 +263,30 @@ const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 },
 
-  // Filter tabs
+  // Filter tabs — underline style
   filters: {
     flexDirection: 'row',
-    paddingHorizontal: SCREEN_PADDING,
-    paddingVertical: 12,
-    gap: 8,
     backgroundColor: Colors.surface,
-    borderBottomWidth: 1, borderBottomColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  filterBtn: {
-    borderRadius: borderRadius.full,
-    paddingHorizontal: 14, paddingVertical: 7,
-    backgroundColor: Colors.surfaceAlt,
-    borderWidth: 1.5, borderColor: Colors.border,
+  filterTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 13,
     overflow: 'hidden',
   },
-  filterBtnActive: { backgroundColor: Colors.accentMuted, borderColor: Colors.accent },
-  filterText:      { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
-  filterTextActive:{ color: Colors.accent },
+  filterUnderline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 2.5,
+    backgroundColor: Colors.accent,
+    borderRadius: 2,
+  },
+  filterText:      { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
+  filterTextActive:{ color: Colors.accent, fontWeight: '700' },
 
   // List
   list: { paddingHorizontal: SCREEN_PADDING, paddingTop: 16, paddingBottom: SCROLL_PADDING_BOTTOM },

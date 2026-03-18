@@ -1,6 +1,4 @@
-// app/(customer)/loyalty.tsx
-// Customer loyalty dashboard — points balance, tier, milestone progress,
-// history list, and redeem button.
+// app/(customer)/loyalty.tsx — Customer loyalty dashboard
 import { Colors } from '@/constants/Colors';
 import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
@@ -10,7 +8,6 @@ import { useAuth } from '@/context/AuthContext';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -31,35 +28,49 @@ import Reanimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScreenHeader, SectionHeader, SkeletonList } from '@/components/ui';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type Milestone = { points: number; label: string; emoji: string };
+
 type HistoryEntry = {
-  _id: string;
-  type: 'earn' | 'redeem' | 'expire' | 'bonus';
-  points: number;
+  _id:         string;
+  type:        'earn' | 'redeem' | 'expire' | 'bonus';
+  points:      number;
   description: string;
-  createdAt: string;
+  createdAt:   string;
 };
+
+type Reward = {
+  _id:        string;
+  name:       string;
+  icon:       string;
+  pointsCost: number;
+};
+
 type LoyaltyData = {
   account: {
-    points: number;
-    totalEarned: number;
-    totalRedeemed: number;
-    tier: 'bronze' | 'silver' | 'gold';
-    history: HistoryEntry[];
+    points:          number;
+    totalEarned:     number;
+    totalRedeemed:   number;
+    washesThisMonth: number;
+    totalWashes:     number;
+    pointsThisMonth: number;
+    tier:            'bronze' | 'silver' | 'gold';
+    history:         HistoryEntry[];
   };
   config: {
     pointsPerDollar: number;
-    redeemValue: number;
-    minRedeem: number;
+    redeemValue:     number;
+    minRedeem:       number;
     silverThreshold: number;
-    goldThreshold: number;
-    milestones: Milestone[];
-    enabled: boolean;
+    goldThreshold:   number;
+    milestones:      Milestone[];
+    enabled:         boolean;
   };
-  nextMilestone: Milestone | null;
-  progress: number;
+  nextMilestone:    Milestone | null;
+  progress:         number;
   redeemValueCents: number;
+  rewards:          Reward[];
 };
 
 const TIER_META = {
@@ -68,7 +79,8 @@ const TIER_META = {
   gold:   { color: Colors.warning,   bg: Colors.warningBg,  label: 'Gold',   icon: '🥇' },
 };
 
-// ─── Animated points counter ──────────────────────────────────────────────────
+// ── Animated points counter ───────────────────────────────────────────────────
+
 function PointsCounter({ target }: { target: number }) {
   const animVal = useRef(new Animated.Value(0)).current;
   const [displayed, setDisplayed] = useState(0);
@@ -76,32 +88,65 @@ function PointsCounter({ target }: { target: number }) {
   useEffect(() => {
     animVal.setValue(0);
     const anim = Animated.timing(animVal, {
-      toValue:         target,
-      duration:        1200,
-      easing:          Easing.out(Easing.cubic),
-      useNativeDriver: false,
+      toValue: target, duration: 1200,
+      easing: Easing.out(Easing.cubic), useNativeDriver: false,
     });
     const id = animVal.addListener(({ value }) => setDisplayed(Math.round(value)));
     anim.start();
     return () => { anim.stop(); animVal.removeListener(id); };
   }, [target]);
 
+  return <Text style={st.pointsNum}>{displayed.toLocaleString()}</Text>;
+}
+
+// ── Reward card ───────────────────────────────────────────────────────────────
+
+function RewardCard({
+  reward, currentPoints, onRedeem,
+}: {
+  reward:        Reward;
+  currentPoints: number;
+  onRedeem:      (r: Reward) => void;
+}) {
+  const canAfford = currentPoints >= reward.pointsCost;
   return (
-    <Text style={st.pointsNum}>{displayed.toLocaleString()}</Text>
+    <View style={[st.rewardCard, !canAfford && st.rewardCardDim]}>
+      <View style={[st.rewardIconWrap, !canAfford && { backgroundColor: Colors.surfaceAlt }]}>
+        <Ionicons
+          name={(reward.icon || 'gift-outline') as any}
+          size={24}
+          color={canAfford ? Colors.accent : Colors.textMuted}
+        />
+      </View>
+      <Text style={[st.rewardName, !canAfford && { color: Colors.textMuted }]} numberOfLines={2}>
+        {reward.name}
+      </Text>
+      <Text style={[st.rewardCost, !canAfford && { color: Colors.textMuted }]}>
+        {reward.pointsCost.toLocaleString()} pts
+      </Text>
+      <Pressable
+        style={[st.redeemCardBtn, !canAfford && st.redeemCardBtnDim]}
+        onPress={() => canAfford && onRedeem(reward)}
+        disabled={!canAfford}
+        android_ripple={{ color: Colors.accent + '20', borderless: false }}
+      >
+        <Text style={[st.redeemCardBtnText, !canAfford && { color: Colors.textMuted }]}>
+          {canAfford ? 'Redeem' : 'Not enough'}
+        </Text>
+      </Pressable>
+    </View>
   );
 }
 
-// ─── Earn method row ──────────────────────────────────────────────────────────
+// ── Earn method row ───────────────────────────────────────────────────────────
+
 function EarnMethodRow({
-  icon,
-  label,
-  points,
-  delay,
+  icon, label, points, delay,
 }: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
-  label: string;
+  icon:   React.ComponentProps<typeof Ionicons>['name'];
+  label:  string;
   points: string;
-  delay: number;
+  delay:  number;
 }) {
   return (
     <Reanimated.View entering={FadeInDown.delay(delay).duration(300)}>
@@ -118,10 +163,10 @@ function EarnMethodRow({
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ── Screen ────────────────────────────────────────────────────────────────────
+
 export default function LoyaltyScreen() {
   const { token } = useAuth();
-  const router    = useRouter();
 
   const [data,        setData]        = useState<LoyaltyData | null>(null);
   const [loading,     setLoading]     = useState(true);
@@ -134,18 +179,16 @@ export default function LoyaltyScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await axios.get<LoyaltyData>('/api/loyalty/me', {
+      const res = await axios.get<LoyaltyData>('/api/loyalty', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setData(res.data);
       Animated.timing(progressAnim, {
-        toValue:         res.data.progress,
-        duration:        1000,
-        easing:          Easing.out(Easing.quad),
-        useNativeDriver: false,
+        toValue: res.data.progress, duration: 1000,
+        easing: Easing.out(Easing.quad), useNativeDriver: false,
       }).start();
     } catch {
-      // silently fail — user may not have an account yet
+      // silently fail — user may not have a loyalty account yet
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -154,23 +197,20 @@ export default function LoyaltyScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleRedeem() {
+  const handleRedeem = async () => {
     const pts = Number(redeemPts);
-    if (!pts || pts <= 0) return;
-    if (!data) return;
-
+    if (!pts || pts <= 0 || !data) return;
     const min = data.config.minRedeem ?? 50;
     if (pts < min) { Alert.alert('Too few points', `Minimum redemption is ${min} points.`); return; }
     if (pts > data.account.points) { Alert.alert('Insufficient points', `You only have ${data.account.points} pts.`); return; }
-
     try {
       setRedeeming(true);
       const res = await axios.post('/api/loyalty/redeem', { points: pts }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert(
-        '✅ Points Redeemed',
-        `$${res.data.discountAmount.toFixed(2)} discount applied.\nRemaining points: ${res.data.remainingPoints}`
+        'Points Redeemed',
+        `$${res.data.discountAmount.toFixed(2)} discount applied.\nRemaining: ${res.data.remainingPoints} pts`,
       );
       setRedeemModal(false);
       setRedeemPts('');
@@ -180,12 +220,38 @@ export default function LoyaltyScreen() {
     } finally {
       setRedeeming(false);
     }
-  }
+  };
+
+  const handleRedeemReward = (reward: Reward) => {
+    Alert.alert(
+      `Redeem: ${reward.name}`,
+      `This will use ${reward.pointsCost.toLocaleString()} of your points.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Redeem',
+          onPress: async () => {
+            try {
+              await axios.post(
+                '/api/loyalty/redeem',
+                { points: reward.pointsCost, rewardId: reward._id },
+                { headers: { Authorization: `Bearer ${token}` } },
+              );
+              Alert.alert('Redeemed!', `You unlocked "${reward.name}".`);
+              load();
+            } catch (err: any) {
+              Alert.alert('Error', err.response?.data?.error ?? 'Redemption failed.');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   if (loading || !data) {
     return (
       <SafeAreaView style={st.safe}>
-        <ScreenHeader title="Loyalty Rewards" backButton />
+        <ScreenHeader title="Rewards" backButton />
         <View style={st.loadingContainer}>
           <SkeletonList count={4} />
         </View>
@@ -194,15 +260,14 @@ export default function LoyaltyScreen() {
   }
 
   const { account, config, nextMilestone, progress } = data;
-  const tier  = TIER_META[account.tier] ?? TIER_META.bronze;
-  const barW  = progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
-  const earned = account.totalEarned;
-  const silverT = config.silverThreshold ?? 500;
-  const goldT   = config.goldThreshold   ?? 1000;
+  const rewards  = data.rewards ?? [];
+  const tier     = TIER_META[account.tier] ?? TIER_META.bronze;
+  const barW     = progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
+  const ptsToNext = nextMilestone ? Math.max(0, nextMilestone.points - account.totalEarned) : 0;
 
   return (
     <SafeAreaView style={st.safe}>
-      <ScreenHeader title="Loyalty Rewards" backButton />
+      <ScreenHeader title="Rewards" backButton />
 
       <ScrollView
         contentContainerStyle={st.scroll}
@@ -216,7 +281,8 @@ export default function LoyaltyScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Reanimated.View entering={FadeIn.duration(300)}>
-          {/* ── Hero points card (LinearGradient) ── */}
+
+          {/* ── Points balance card ── */}
           <Reanimated.View entering={FadeInDown.delay(80).duration(300)}>
             <LinearGradient
               colors={[Colors.primary, Colors.primaryLight ?? Colors.primary]}
@@ -225,76 +291,80 @@ export default function LoyaltyScreen() {
               style={st.heroGradient}
             >
               <View style={st.heroTopRow}>
+                {/* Left: points */}
                 <View>
                   <Text style={st.heroPointsLabel}>Loyalty Points</Text>
                   <PointsCounter target={account.points} />
                   <Text style={st.heroPointsUnit}>points</Text>
                 </View>
+
+                {/* Right: tier badge */}
                 <View style={st.tierBadgeWrap}>
                   <Text style={st.tierEmoji}>{tier.icon}</Text>
                   <Text style={st.tierBadgeLabel}>{tier.label}</Text>
                 </View>
               </View>
 
+              {/* Cash value */}
               <View style={st.heroValueRow}>
                 <Ionicons name="cash-outline" size={14} color="rgba(255,255,255,0.7)" />
                 <Text style={st.heroValue}>
                   ≈ ${(account.points * (config.redeemValue ?? 0.01)).toFixed(2)} value
                 </Text>
               </View>
+
+              {/* Progress bar to next reward */}
+              {nextMilestone && (
+                <View style={st.heroProgress}>
+                  <Text style={st.heroProgressText}>
+                    {ptsToNext.toLocaleString()} more points to {nextMilestone.emoji} {nextMilestone.label}
+                  </Text>
+                  <View style={st.heroBarTrack}>
+                    <Animated.View style={[st.heroBarFill, { width: barW }]} />
+                  </View>
+                </View>
+              )}
             </LinearGradient>
           </Reanimated.View>
 
-          {/* ── Progress to next tier ── */}
-          {nextMilestone && (
-            <Reanimated.View entering={FadeInDown.delay(160).duration(300)}>
-              <View style={st.progressCard}>
-                <View style={st.progressTitleRow}>
-                  <Text style={st.progressTitle}>
-                    {nextMilestone.emoji} {nextMilestone.label}
-                  </Text>
-                  <Text style={st.progressRemain}>
-                    {(nextMilestone.points - earned).toLocaleString()} more pts
-                  </Text>
-                </View>
-                <Text style={st.progressSub}>
-                  {earned.toLocaleString()} / {nextMilestone.points.toLocaleString()} pts
-                </Text>
-                <View style={st.barTrack}>
-                  <Animated.View style={[st.barFill, { width: barW }]} />
-                </View>
+          {/* ── Quick stats row ── */}
+          <Reanimated.View entering={FadeInDown.delay(160).duration(300)}>
+            <View style={st.statsRow}>
+              <View style={st.statBox}>
+                <Text style={st.statVal}>{account.washesThisMonth ?? 0}</Text>
+                <Text style={st.statLbl}>Washes{'\n'}This Month</Text>
+              </View>
+              <View style={st.statDivider} />
+              <View style={st.statBox}>
+                <Text style={st.statVal}>{account.totalWashes ?? 0}</Text>
+                <Text style={st.statLbl}>Total{'\n'}Washes</Text>
+              </View>
+              <View style={st.statDivider} />
+              <View style={st.statBox}>
+                <Text style={st.statVal}>{(account.pointsThisMonth ?? 0).toLocaleString()}</Text>
+                <Text style={st.statLbl}>Points{'\n'}This Month</Text>
+              </View>
+            </View>
+          </Reanimated.View>
+
+          {/* ── Rewards catalog ── */}
+          {rewards.length > 0 && (
+            <Reanimated.View entering={FadeInDown.delay(240).duration(300)}>
+              <SectionHeader title="Rewards Catalog" />
+              <View style={st.rewardsGrid}>
+                {rewards.map(r => (
+                  <RewardCard
+                    key={r._id}
+                    reward={r}
+                    currentPoints={account.points}
+                    onRedeem={handleRedeemReward}
+                  />
+                ))}
               </View>
             </Reanimated.View>
           )}
 
-          {/* ── Tier chips ── */}
-          <Reanimated.View entering={FadeInDown.delay(240).duration(300)}>
-            <View style={st.tiersRow}>
-              {[
-                { icon: '🥉', label: 'Bronze', pts: 0,       color: Colors.warning },
-                { icon: '🥈', label: 'Silver', pts: silverT, color: Colors.textMuted },
-                { icon: '🥇', label: 'Gold',   pts: goldT,   color: Colors.warning },
-              ].map(t => (
-                <View
-                  key={t.label}
-                  style={[
-                    st.tierChip,
-                    (earned >= t.pts && account.tier !== 'bronze') || t.pts === 0
-                      ? st.tierChipActive
-                      : {},
-                  ]}
-                >
-                  <Text style={st.tierChipEmoji}>{t.icon}</Text>
-                  <Text style={[st.tierChipLabel, { color: t.color }]}>{t.label}</Text>
-                  <Text style={st.tierChipPts}>
-                    {t.pts === 0 ? 'Start' : `${t.pts.toLocaleString()}+`}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </Reanimated.View>
-
-          {/* ── Redeem button ── */}
+          {/* ── Redeem points button ── */}
           {config.enabled !== false && account.points >= (config.minRedeem ?? 50) && (
             <Reanimated.View entering={FadeInDown.delay(320).duration(300)}>
               <Pressable
@@ -311,75 +381,33 @@ export default function LoyaltyScreen() {
             </Reanimated.View>
           )}
 
-          {/* ── Stats row ── */}
-          <Reanimated.View entering={FadeInDown.delay(400).duration(300)}>
-            <View style={st.statsRow}>
-              <View style={st.statBox}>
-                <Text style={st.statVal}>{account.totalEarned.toLocaleString()}</Text>
-                <Text style={st.statLbl}>Total Earned</Text>
-              </View>
-              <View style={st.statDivider} />
-              <View style={st.statBox}>
-                <Text style={st.statVal}>{account.totalRedeemed.toLocaleString()}</Text>
-                <Text style={st.statLbl}>Total Redeemed</Text>
-              </View>
-              <View style={st.statDivider} />
-              <View style={st.statBox}>
-                <Text style={st.statVal}>{account.points.toLocaleString()}</Text>
-                <Text style={st.statLbl}>Available</Text>
-              </View>
-            </View>
-          </Reanimated.View>
-
           {/* ── How to earn points ── */}
-          <Reanimated.View entering={FadeInDown.delay(480).duration(300)}>
+          <Reanimated.View entering={FadeInDown.delay(400).duration(300)}>
             <SectionHeader title="How to Earn Points" />
             <View style={st.earnCard}>
-              <EarnMethodRow
-                icon="water-outline"
-                label="Complete a wash"
-                points={`${config.pointsPerDollar ?? 1} pt/$1`}
-                delay={520}
-              />
+              <EarnMethodRow icon="water-outline"  label="Complete a wash"     points={`${config.pointsPerDollar ?? 1} pt/$1`} delay={440} />
               <View style={st.earnSeparator} />
-              <EarnMethodRow
-                icon="people-outline"
-                label="Refer a friend"
-                points="50 pts"
-                delay={560}
-              />
+              <EarnMethodRow icon="people-outline" label="Refer a friend"      points="50 pts"  delay={480} />
               <View style={st.earnSeparator} />
-              <EarnMethodRow
-                icon="star-outline"
-                label="Leave a review"
-                points="10 pts"
-                delay={600}
-              />
+              <EarnMethodRow icon="star-outline"   label="Leave a review"      points="10 pts"  delay={520} />
               <View style={st.earnSeparator} />
-              <EarnMethodRow
-                icon="card-outline"
-                label="Subscribe monthly"
-                points="100 pts"
-                delay={640}
-              />
+              <EarnMethodRow icon="card-outline"   label="Subscribe monthly"   points="100 pts" delay={560} />
             </View>
           </Reanimated.View>
 
-          {/* ── History ── */}
-          <Reanimated.View entering={FadeInDown.delay(560).duration(300)}>
-            <SectionHeader title="Recent Activity" />
+          {/* ── Points history ── */}
+          <Reanimated.View entering={FadeInDown.delay(480).duration(300)}>
+            <SectionHeader title="Points History" />
           </Reanimated.View>
 
           {account.history.length === 0 ? (
-            <Reanimated.View entering={FadeInDown.delay(600).duration(300)}>
+            <Reanimated.View entering={FadeInDown.delay(520).duration(300)}>
               <View style={st.emptyWrap}>
                 <View style={st.emptyIconWrap}>
                   <Ionicons name="receipt-outline" size={28} color={Colors.textMuted} />
                 </View>
                 <Text style={st.emptyTitle}>No activity yet</Text>
-                <Text style={st.empty}>
-                  Complete a wash to earn your first points!
-                </Text>
+                <Text style={st.emptyText}>Complete a wash to earn your first points!</Text>
               </View>
             </Reanimated.View>
           ) : (
@@ -388,38 +416,32 @@ export default function LoyaltyScreen() {
                 data={[...account.history].reverse()}
                 keyExtractor={h => h._id}
                 scrollEnabled={false}
-                contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }}
                 ItemSeparatorComponent={() => <View style={st.histSeparator} />}
                 renderItem={({ item: h, index }) => {
-                  const isEarn = h.type === 'earn' || h.type === 'bonus';
+                  const isEarn   = h.type === 'earn' || h.type === 'bonus';
+                  const isRedeem = h.type === 'redeem';
                   return (
-                    <Reanimated.View entering={FadeInDown.delay(index * 50).duration(250)}>
+                    <Reanimated.View entering={FadeInDown.delay(index * 40).duration(250)}>
                       <View style={st.histRow}>
                         <View style={[
                           st.histIconCircle,
-                          { backgroundColor: isEarn ? Colors.successBg : h.type === 'redeem' ? Colors.errorBg : Colors.warningBg },
+                          { backgroundColor: isEarn ? Colors.successBg : isRedeem ? Colors.errorBg : Colors.warningBg },
                         ]}>
                           <Ionicons
-                            name={isEarn ? 'add-circle-outline' : h.type === 'redeem' ? 'remove-circle-outline' : 'time-outline'}
+                            name={isEarn ? 'add-circle-outline' : isRedeem ? 'remove-circle-outline' : 'time-outline'}
                             size={16}
-                            color={isEarn ? Colors.success : h.type === 'redeem' ? Colors.error : Colors.warning}
+                            color={isEarn ? Colors.success : isRedeem ? Colors.error : Colors.warning}
                           />
                         </View>
                         <View style={{ flex: 1 }}>
                           <Text style={st.histDesc}>
-                            {h.description ||
-                              (h.type === 'earn' ? 'Points earned' : 'Points redeemed')}
+                            {h.description || (isEarn ? 'Points earned' : 'Points redeemed')}
                           </Text>
                           <Text style={st.histDate}>
                             {new Date(h.createdAt).toLocaleDateString()}
                           </Text>
                         </View>
-                        <Text
-                          style={[
-                            st.histPts,
-                            { color: isEarn ? Colors.success : Colors.error },
-                          ]}
-                        >
+                        <Text style={[st.histPts, { color: isEarn ? Colors.success : Colors.error }]}>
                           {isEarn ? '+' : '-'}{h.points}
                         </Text>
                       </View>
@@ -433,7 +455,7 @@ export default function LoyaltyScreen() {
         </Reanimated.View>
       </ScrollView>
 
-      {/* ── Redeem Modal ── */}
+      {/* ── Redeem modal ── */}
       <Modal
         visible={redeemModal}
         transparent
@@ -445,7 +467,9 @@ export default function LoyaltyScreen() {
           <View style={st.modalHandle} />
           <Text style={st.modalTitle}>Redeem Points</Text>
           <Text style={st.modalSub}>
-            You have <Text style={{ color: Colors.accent, fontWeight: '700' }}>{account.points}</Text> pts available.{'\n'}
+            You have{' '}
+            <Text style={{ color: Colors.accent, fontWeight: '700' }}>{account.points}</Text>{' '}
+            pts available.{'\n'}
             Min: {config.minRedeem ?? 50} pts · Value: ${config.redeemValue ?? 0.01}/pt
           </Text>
           <TextInput
@@ -478,11 +502,10 @@ export default function LoyaltyScreen() {
               disabled={redeeming}
               android_ripple={{ color: Colors.accentDark, borderless: false }}
             >
-              {redeeming ? (
-                <ActivityIndicator size="small" color={Colors.white} />
-              ) : (
-                <Text style={{ color: Colors.white, fontWeight: '700' }}>Confirm</Text>
-              )}
+              {redeeming
+                ? <ActivityIndicator size="small" color={Colors.white} />
+                : <Text style={{ color: Colors.white, fontWeight: '700' }}>Confirm</Text>
+              }
             </Pressable>
           </View>
         </View>
@@ -491,7 +514,8 @@ export default function LoyaltyScreen() {
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
+// ── Styles ────────────────────────────────────────────────────────────────────
+
 const st = StyleSheet.create({
   safe:             { flex: 1, backgroundColor: Colors.background },
   loadingContainer: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: 16 },
@@ -499,7 +523,7 @@ const st = StyleSheet.create({
 
   // Hero gradient card
   heroGradient: {
-    borderRadius: borderRadius.xl ?? borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: 24,
     marginBottom: 16,
     ...(IS_IOS
@@ -510,151 +534,117 @@ const st = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  heroPointsLabel: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.75)',
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  pointsNum: {
-    fontSize: 52,
-    fontWeight: '800',
-    color: Colors.white,
-    lineHeight: 58,
-  },
-  heroPointsUnit: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: '500',
-    marginTop: 2,
-  },
+  heroPointsLabel: { fontSize: 14, color: 'rgba(255,255,255,0.75)', fontWeight: '600', marginBottom: 4 },
+  pointsNum:       { fontSize: 48, fontWeight: '800', color: Colors.white, lineHeight: 54 },
+  heroPointsUnit:  { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '500', marginTop: 2 },
   tierBadgeWrap: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: borderRadius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 14, paddingVertical: 10,
   },
   tierEmoji:      { fontSize: 28, marginBottom: 4 },
   tierBadgeLabel: { fontSize: 12, fontWeight: '700', color: Colors.white },
-  heroValueRow:   { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  heroValueRow:   { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 16 },
   heroValue:      { fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: '500' },
 
-  // Progress card
-  progressCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...cardShadow,
-  },
-  progressTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  progressTitle:    { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  progressSub:      { fontSize: 12, color: Colors.textSecondary, marginBottom: 12 },
-  barTrack:         { height: 8, backgroundColor: Colors.accentMuted, borderRadius: 4, overflow: 'hidden' },
-  barFill:          { height: 8, backgroundColor: Colors.accent, borderRadius: 4 },
-  progressRemain:   { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  // Progress bar (inside hero card)
+  heroProgress:     { gap: 8 },
+  heroProgressText: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '600' },
+  heroBarTrack:     { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, overflow: 'hidden' },
+  heroBarFill:      { height: 6, backgroundColor: Colors.accentLight, borderRadius: 3 },
 
-  // Tier chips
-  tiersRow:       { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  tierChip:       { flex: 1, backgroundColor: Colors.surface, borderRadius: borderRadius.md, padding: 12, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.border, ...cardShadow },
-  tierChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  tierChipEmoji:  { fontSize: 22 },
-  tierChipLabel:  { fontSize: 12, fontWeight: '700', marginTop: 4 },
-  tierChipPts:    { fontSize: 10, color: Colors.textMuted, marginTop: 2 },
-
-  // Redeem button
-  redeemBtn:     { backgroundColor: Colors.accent, borderRadius: borderRadius.md, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16, ...cardShadow },
-  redeemBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
-
-  // Stats
+  // Quick stats row
   statsRow:    { flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: borderRadius.lg, padding: 16, marginBottom: 24, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
   statBox:     { flex: 1, alignItems: 'center' },
   statVal:     { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  statLbl:     { fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center' },
+  statLbl:     { fontSize: 11, color: Colors.textMuted, marginTop: 2, textAlign: 'center', lineHeight: 15 },
   statDivider: { width: 1, backgroundColor: Colors.border },
+
+  // Rewards catalog grid
+  rewardsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  rewardCard: {
+    width: '48%',
+    backgroundColor: Colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  rewardCardDim:    { opacity: 0.6 },
+  rewardIconWrap:   {
+    width: 52, height: 52, borderRadius: 14,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 10,
+  },
+  rewardName:       { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center', marginBottom: 4 },
+  rewardCost:       { fontSize: 12, fontWeight: '600', color: Colors.accent, marginBottom: 12 },
+  redeemCardBtn:    {
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14, paddingVertical: 8,
+    overflow: 'hidden',
+  },
+  redeemCardBtnDim: { backgroundColor: Colors.surfaceAlt },
+  redeemCardBtnText:{ fontSize: 12, fontWeight: '700', color: Colors.white },
+
+  // Redeem button
+  redeemBtn:     { backgroundColor: Colors.accent, borderRadius: borderRadius.md, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 24, ...cardShadow },
+  redeemBtnText: { color: Colors.white, fontWeight: '700', fontSize: 15 },
 
   // Earn methods
   earnCard: {
     backgroundColor: Colors.surface,
     borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.border,
     marginBottom: 24,
     overflow: 'hidden',
     ...cardShadow,
   },
-  earnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
+  earnRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
   earnIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+    width: 36, height: 36, borderRadius: 10,
     backgroundColor: Colors.accentMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
   earnLabel:       { flex: 1, fontSize: 14, fontWeight: '500', color: Colors.textPrimary },
-  earnPointsBadge: {
-    backgroundColor: Colors.accentMuted,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  earnPointsText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
-  earnSeparator:  { height: 1, backgroundColor: Colors.border, marginHorizontal: 16 },
+  earnPointsBadge: { backgroundColor: Colors.accentMuted, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  earnPointsText:  { fontSize: 12, fontWeight: '700', color: Colors.accent },
+  earnSeparator:   { height: 1, backgroundColor: Colors.border, marginHorizontal: 16 },
 
-  // History
-  emptyWrap:    { alignItems: 'center', paddingVertical: 28, gap: 8 },
+  // Points history
+  emptyWrap:     { alignItems: 'center', paddingVertical: 28, gap: 8 },
   emptyIconWrap: { width: 60, height: 60, borderRadius: 30, backgroundColor: Colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  emptyTitle:   { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
-  empty:        { color: Colors.textMuted, textAlign: 'center', fontSize: 13, lineHeight: 20 },
+  emptyTitle:    { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  emptyText:     { color: Colors.textMuted, textAlign: 'center', fontSize: 13, lineHeight: 20 },
 
-  historyCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: 16,
-    overflow: 'hidden',
-    ...cardShadow,
-  },
-  histRow:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-  histSeparator: { height: 1, backgroundColor: Colors.border, marginHorizontal: 16 },
-  histIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  histDesc:  { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
-  histDate:  { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
-  histPts:   { fontSize: 15, fontWeight: '700', flexShrink: 0 },
+  historyCard:    { backgroundColor: Colors.surface, borderRadius: borderRadius.lg, borderWidth: 1, borderColor: Colors.border, marginBottom: 16, overflow: 'hidden', ...cardShadow },
+  histRow:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  histSeparator:  { height: 1, backgroundColor: Colors.border, marginHorizontal: 16 },
+  histIconCircle: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  histDesc:       { fontSize: 13, color: Colors.textPrimary, fontWeight: '500' },
+  histDate:       { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  histPts:        { fontSize: 15, fontWeight: '700', flexShrink: 0 },
 
-  muted: { color: Colors.textMuted, fontSize: 14, marginTop: 8 },
-
-  // Modal
-  modalBackdrop: { flex: 1, backgroundColor: Colors.overlay },
-  modalSheet:    { backgroundColor: Colors.surface, borderTopLeftRadius: borderRadius.xl ?? borderRadius.lg, borderTopRightRadius: borderRadius.xl ?? borderRadius.lg, padding: 24, paddingBottom: 40 },
-  modalHandle:   { width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
-  modalTitle:    { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
-  modalSub:      { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 16 },
-  modalInput:    { borderWidth: 1.5, borderColor: Colors.border, borderRadius: borderRadius.md, padding: 14, fontSize: 16, color: Colors.textPrimary, marginBottom: 8, backgroundColor: Colors.surfaceAlt },
+  // Redeem modal
+  modalBackdrop:   { flex: 1, backgroundColor: Colors.overlay },
+  modalSheet:      { backgroundColor: Colors.surface, borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl, padding: 24, paddingBottom: 40 },
+  modalHandle:     { width: 40, height: 4, backgroundColor: Colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
+  modalTitle:      { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 6 },
+  modalSub:        { fontSize: 13, color: Colors.textSecondary, lineHeight: 20, marginBottom: 16 },
+  modalInput:      { borderWidth: 1.5, borderColor: Colors.border, borderRadius: borderRadius.md, padding: 14, fontSize: 16, color: Colors.textPrimary, marginBottom: 8, backgroundColor: Colors.surfaceAlt },
   modalPreviewBox: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
-  modalPreview:  { fontSize: 13, color: Colors.accent, fontWeight: '600' },
-  modalBtns:     { flexDirection: 'row', gap: 12 },
-  modalCancel:   { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.md, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.border },
-  modalConfirm:  { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
+  modalPreview:    { fontSize: 13, color: Colors.accent, fontWeight: '600' },
+  modalBtns:       { flexDirection: 'row', gap: 12 },
+  modalCancel:     { flex: 1, padding: 14, backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.md, alignItems: 'center', borderWidth: 1.5, borderColor: Colors.border },
+  modalConfirm:    { flex: 1, padding: 14, backgroundColor: Colors.accent, borderRadius: borderRadius.md, alignItems: 'center', justifyContent: 'center', minHeight: 48 },
 });

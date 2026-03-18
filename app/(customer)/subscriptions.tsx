@@ -62,7 +62,7 @@ export default function SubscriptionsScreen() {
     try {
       const [plansRes, subRes] = await Promise.all([
         axios.get<Plan[]>('/api/subscriptions/plans', { headers }),
-        axios.get<Subscription | null>('/api/subscriptions/my', { headers }),
+        axios.get<Subscription | null>('/api/subscriptions/current', { headers }),
       ]);
       setPlans(plansRes.data);
       setSubscription(subRes.data);
@@ -117,8 +117,11 @@ export default function SubscriptionsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={st.center}>
-        <ActivityIndicator color={Colors.accent} size="large" />
+      <SafeAreaView style={st.safe}>
+        <ScreenHeader title="Wash Plans" backButton />
+        <View style={st.center}>
+          <ActivityIndicator color={Colors.accent} size="large" />
+        </View>
       </SafeAreaView>
     );
   }
@@ -128,7 +131,7 @@ export default function SubscriptionsScreen() {
 
   return (
     <SafeAreaView style={st.safe}>
-      <ScreenHeader title="Subscription Plans" backButton />
+      <ScreenHeader title="Wash Plans" backButton />
 
       <ScrollView
         contentContainerStyle={st.scroll}
@@ -152,10 +155,17 @@ export default function SubscriptionsScreen() {
                   </Text>
                 </View>
                 <View style={st.activeBadgeWrap}>
-                  <View style={st.activeBadge}>
-                    <Ionicons name="checkmark-circle" size={10} color={Colors.success} />
-                    <Text style={st.activeBadgeText}>Active</Text>
-                  </View>
+                  {subscription.status === 'cancelled' ? (
+                    <View style={[st.activeBadge, st.cancelledBadge]}>
+                      <Ionicons name="close-circle" size={10} color={Colors.error} />
+                      <Text style={[st.activeBadgeText, { color: Colors.error }]}>Cancelled</Text>
+                    </View>
+                  ) : (
+                    <View style={st.activeBadge}>
+                      <Ionicons name="checkmark-circle" size={10} color={Colors.success} />
+                      <Text style={st.activeBadgeText}>Active</Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -200,7 +210,7 @@ export default function SubscriptionsScreen() {
                 disabled={cancelling}
                 android_ripple={{ color: Colors.accent + '20', borderless: false }}
               >
-                <Text style={st.cancelBtnText}>{cancelling ? 'Cancelling…' : 'Cancel Subscription'}</Text>
+                <Text style={st.cancelBtnText}>{cancelling ? 'Processing…' : 'Manage Plan'}</Text>
               </Pressable>
             </LinearGradient>
           </Animated.View>
@@ -268,7 +278,7 @@ export default function SubscriptionsScreen() {
                   android_ripple={{ color: Colors.accent + '20', borderless: false }}
                 >
                   <Text style={[st.subscribeBtnText, isActive ? { color: Colors.textMuted } : {}]}>
-                    {isActive ? 'Current Plan' : subscription ? 'Switch to this Plan' : 'Subscribe'}
+                    {isActive ? 'Current Plan' : 'Choose Plan'}
                   </Text>
                 </Pressable>
               </Animated.View>
@@ -320,7 +330,7 @@ export default function SubscriptionsScreen() {
 
 const st = StyleSheet.create({
   safe:   { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   scroll: { padding: SCREEN_PADDING, paddingTop: 20, paddingBottom: SCROLL_PADDING_BOTTOM },
   empty:  { color: Colors.textMuted, textAlign: 'center', marginTop: 20, fontSize: 14 },
 
@@ -332,6 +342,7 @@ const st = StyleSheet.create({
   activeBadgeWrap: { marginTop: 2 },
   activeBadge:     { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: Colors.white, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   activeBadgeText: { fontSize: 11, fontWeight: '700', color: Colors.success },
+  cancelledBadge:  { backgroundColor: Colors.errorBg },
   currentPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 20 },
   currentPrice:    { fontSize: 32, fontWeight: '700', color: Colors.white },
   currentPricePer: { fontSize: 16, color: Colors.white, opacity: 0.7 },
@@ -351,10 +362,10 @@ const st = StyleSheet.create({
   popularBadge:      { position: 'absolute', top: -1, right: 14, backgroundColor: Colors.accent, paddingHorizontal: 10, paddingVertical: 4, borderBottomLeftRadius: 8, borderBottomRightRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
   popularBadgeText:  { color: Colors.white, fontSize: 10, fontWeight: '700' },
   planTop:       { marginBottom: 8 },
-  planName:      { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
+  planName:      { fontSize: 20, fontWeight: '700', color: Colors.textPrimary, marginBottom: 4 },
   planDesc:      { fontSize: 12, color: Colors.textSecondary },
   priceRow:      { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 14 },
-  planPrice:     { fontSize: 26, fontWeight: '700', color: Colors.accent },
+  planPrice:     { fontSize: 28, fontWeight: '700', color: Colors.accent },
   planInterval:  { fontSize: 13, color: Colors.textMuted },
   features:      { marginBottom: 12 },
   featureRow:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },

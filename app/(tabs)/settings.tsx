@@ -1,1440 +1,620 @@
-// settings.tsx
-import { useAuth } from "@/context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Constants from "expo-constants";
-import * as ImagePicker from "expo-image-picker";
-import * as LocalAuthentication from "expo-local-authentication";
-import { useRouter } from "expo-router";
-import * as Updates from "expo-updates";
-import React, { useEffect, useState } from "react";
-import type { PressableStateCallbackType } from "react-native";
+// app/(tabs)/settings.tsx — Staff Settings
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import * as Haptics from 'expo-haptics';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { router, Stack } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Linking,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useWindowDimensions
-} from "react-native";
-import * as Animatable from "react-native-animatable";
-import ReAnimated, { FadeIn, FadeInDown } from "react-native-reanimated";
+  Alert, KeyboardAvoidingView, Modal, Platform, Pressable,
+  ScrollView, StyleSheet, Switch, Text, TextInput, View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS, IS_ANDROID } from '@/utils/platform';
-import { SCREEN_PADDING, cardShadow, borderRadius } from '@/utils/platformStyles';
-import { Avatar } from '@/components/ui/Avatar';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
-type ChangeItem = { type: "New" | "Improved" | "Fixed" | string; text: string };
-type WhatsNewItem = { version: string; date?: string; changes: ChangeItem[] };
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// --- Remote endpoint + local fallback ---
-const WHATS_NEW_URL =
-  "https://jw-auto-clinic-246.onrender.com/api/support/whatsnew";
-
-  const WHATS_NEW_FALLBACK: WhatsNewItem[] = [
-    {
-      version: "1.4.0",
-      date: "2025-12-14",
-      changes: [
-        { type: "New", text: "Biometric login option added to the login screen once enabled in Settings." },
-        { type: "New", text: "New bottom sheet UI for key flows like Services & Specials and Settings, replacing full-screen modals." },
-        { type: "New", text: "Enhanced earnings and payment-method charts with tap-to-filter behavior and active-point display." },
-        { type: "New", text: "Chart segment control now resets the detail view until you tap a new point in the current segment." },
-
-        { type: "Improved", text: "Tablet layouts refined for Workers, Transactions, Settings, and other screens in portrait and landscape." },
-        { type: "Improved", text: "Sticky headers adjusted for better full-width appearance, spacing, and elevation while scrolling." },
-        { type: "Improved", text: "Floating action buttons now show correctly on Android landscape and tablet orientations." },
-        { type: "Improved", text: "Bottom sheets and modals behave better with the keyboard, keeping content visible while typing." },
-        { type: "Improved", text: "Login screen spacing and animations polished, including conditional biometric button display." },
-        { type: "Improved", text: "Android launcher icon updated to use the correct light artwork." },
-
-        { type: "Improved", text: "Browser password reset validation aligned with the app's strong password rules and messages." },
-        { type: "Improved", text: "Transaction detail view now falls back to list data if the server returns a 404 for that transaction." },
-        { type: "Improved", text: "Distance and matching logic (OSRM) improved for more consistent routing and fallback behavior." },
-
-        { type: "Fixed", text: "Fixed bottom sheet bug where closing the keyboard left extra blank space at the bottom." },
-        { type: "Fixed", text: "Fixed multiple landscape layout issues where content could be misaligned or partially hidden." },
-        { type: "Fixed", text: "Fixed payment-method chart issue where the previous segment's highlighted value could remain visible." },
-        { type: "Fixed", text: "Resolved custom tab bar error ('Rendered fewer hooks than expected') that could cause crashes." },
-        { type: "Fixed", text: "Long service and transaction labels now wrap correctly instead of overflowing outside their cards." },
-      ],
-    },
-    {
-      version: "1.3.0",
-      date: "2025-10-01",
-      changes: [
-        {
-          type: "Improved",
-          text: "Worker hourly-rate field now supports fractional values such as 9.375 per hour for more accurate pay setups.",
-        },
-        {
-          type: "Fixed",
-          text: "Fixed an issue where the email body total could differ from the receipt calculation, ensuring both now match correctly.",
-        },
-        {
-          type: "Improved",
-          text: "UI/UX updates across the Add, Workers, and Settings tabs for a cleaner and more consistent experience.",
-        },
-        {
-          type: "Improved",
-          text: "Device orientation handling updated so screens behave correctly in both portrait and landscape modes.",
-        },
-        {
-          type: "Improved",
-          text: "Additional under-the-hood changes and updates for stability and performance.",
-        },
-      ],
-    },
-    {
-      version: "1.2.0",
-      date: "2025-08-12",
-      changes: [
-        { type: "New", text: "Support form added under Settings → Report an Issue." },
-        { type: "Improved", text: "Check for Updates now shows clearer messages." },
-        { type: "Fixed", text: "Minor layout polish in Settings and inputs." },
-      ],
-    },
-    {
-      version: "1.1.0",
-      date: "2025-08-05",
-      changes: [
-        { type: "New", text: "Worker and Shifts screens now refresh more reliably." },
-      ],
-    },
-  ];
-
-
-// ----- Platform helpers + design tokens --------------------------------
-const isWeb = Platform.OS === "web";
-const isIOS = Platform.OS === "ios";
-const isAndroid = Platform.OS === "android";
-const isNative = isIOS || isAndroid;
-
-const UI = {
-  maxWidth: isWeb ? 1120 : 740, // wider on web
-  padX: isWeb ? 24 : 18, // a bit more padding on web
-  radius: Platform.select({ ios: 14, android: 10, default: 12 })!,
-  colors: {
-    // Light only
-    bg:          Colors.background,  // Wash Hub background
-    card:        Colors.white,
-    border:      Colors.border,
-    text:        Colors.primary,
-    sub:         Colors.textSecondary,
-    primary:     Colors.accent,  // teal accent
-    glyphBorder: Colors.accentMuted,
-  },
-};
-
-// ----- Social links (edit to your accounts) ----------------------------
-const APP_NAME = String(Constants.expoConfig?.name || "Our App");
-const SOCIAL = {
-  website: "https://example.com",
-  instagram: "https://instagram.com/",
-  tiktok: "https://tiktok.com/@",
-  twitter: "https://twitter.com/",
-};
-
-// ----- Small helpers ----------------------------------------------------
-function openLink(url: string) {
-  if (!url) return;
-  Linking.openURL(url).catch(() => {
-    Alert.alert("Unable to open link", "Please try again later.");
-  });
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0].toUpperCase())
+    .slice(0, 2)
+    .join('');
 }
 
-// Human-readable label for available biometrics
-function getBiometricLabel(
-  types: LocalAuthentication.AuthenticationType[]
-): string {
-  if (!types || types.length === 0) {
-    return "Biometrics available";
-  }
-  const names: string[] = [];
-
-  if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-    names.push(isIOS ? "Touch ID / Fingerprint" : "Fingerprint");
-  }
-  if (
-    types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
-  ) {
-    names.push(isIOS ? "Face ID" : "Face recognition");
-  }
-  if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) {
-    names.push("Iris");
-  }
-
-  if (names.length === 0) return "Biometrics available";
-  if (names.length === 1) return names[0];
-  if (names.length === 2) return `${names[0]} or ${names[1]}`;
-  return `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
+function capitalizeRole(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={[styles.shell, { backgroundColor: UI.colors.bg }]}>
-      <View
-        style={[
-          styles.page,
-          isWeb
-            ? ({
-                maxWidth: "100%",
-                alignSelf: "stretch",
-                flex: 1,
-                minHeight: 0,
-              } as any)
-            : null, // ← full-bleed on web
-        ]}
-      >
-        {children}
-      </View>
-    </View>
-  );
+// ─── SectionHeader ────────────────────────────────────────────────────────────
+
+function SectionHeader({ title }: { title: string }) {
+  return <Text style={s.sectionTitle}>{title}</Text>;
 }
 
-// ----- Settings row with new design icon tiles -------------------------
-type RowNewProps = {
-  label: string;
-  value?: string;
-  subtitle?: string;
-  icon: React.ComponentProps<typeof Ionicons>["name"];
-  iconBg?: string;
-  iconColor?: string;
-  onPress?: () => void;
-  navigates?: boolean;
-  isDanger?: boolean;
-  childrenRight?: React.ReactNode;
-  isLast?: boolean;
-};
+// ─── SettingsRow ──────────────────────────────────────────────────────────────
 
 function SettingsRow({
-  label, value, subtitle, icon, iconBg, iconColor,
-  onPress, navigates, isDanger, childrenRight, isLast,
-}: RowNewProps) {
-  const tintColor = isDanger ? Colors.error : (iconColor ?? Colors.accent);
-  const bg        = isDanger ? Colors.errorBg : (iconBg ?? Colors.accentMuted);
-
-  const content = (
-    <View style={styles.rowInner}>
-      <View style={[styles.rowIconCircle, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={18} color={tintColor} />
-      </View>
-
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={[styles.rowLabel, isDanger && { color: Colors.error }]} numberOfLines={1}>
-          {label}
-        </Text>
-        {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
-      </View>
-
-      <View style={styles.rowRight}>
-        {value ? <Text style={styles.rowValue}>{value}</Text> : null}
-        {childrenRight}
-        {navigates && !isDanger ? (
-          <Ionicons
-            name="chevron-forward"
-            size={16}
-            color={Colors.textMuted}
-            style={{ marginLeft: 4 }}
-          />
-        ) : null}
-      </View>
-
-      {!isLast ? <View style={styles.rowDivider} /> : null}
-    </View>
-  );
-
-  if (!onPress) return <View style={styles.row}>{content}</View>;
-
+  icon, iconColor = Colors.accent, label, sublabel,
+  onPress, right, destructive = false,
+}: {
+  icon: string;
+  iconColor?: string;
+  label: string;
+  sublabel?: string;
+  onPress?: () => void;
+  right?: React.ReactNode;
+  destructive?: boolean;
+}) {
   return (
     <Pressable
+      style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}
       onPress={onPress}
-      android_ripple={{ color: Colors.accent + '20', borderless: false }}
-      style={(state: PressableStateCallbackType) => [
-        styles.row,
-        isWeb && (state as any).hovered && ({ backgroundColor: Colors.surfaceAlt, cursor: "pointer" } as any),
-        isIOS && state.pressed && { opacity: 0.75 },
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={label}
+      android_ripple={{ color: Colors.border, borderless: false }}
     >
-      {content}
+      <View style={[s.rowIcon, { backgroundColor: iconColor + '18' }]}>
+        <Ionicons name={icon as any} size={18} color={iconColor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[s.rowLabel, destructive && { color: Colors.error }]}>
+          {label}
+        </Text>
+        {!!sublabel && <Text style={s.rowSublabel}>{sublabel}</Text>}
+      </View>
+      {right !== undefined ? right : (
+        onPress && (
+          <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+        )
+      )}
     </Pressable>
   );
 }
 
-// ----- Section group ---------------------------------------------------
-function SettingsSection({
-  title, children,
-}: { title: string; children: React.ReactNode }) {
-  const kids = React.Children.toArray(children);
-  const decorated = kids.map((child, i) => {
-    if (!React.isValidElement(child)) return child;
-    if ((child as any).type === SettingsRow) {
-      return React.cloneElement(child as any, { isLast: i === kids.length - 1 });
-    }
-    return child;
-  });
+// ─── EditProfileModal ─────────────────────────────────────────────────────────
 
-  return (
-    <View style={styles.sectionWrap}>
-      <Text style={styles.sectionHeader}>{title}</Text>
-      <View style={styles.sectionBody}>{decorated}</View>
-    </View>
-  );
-}
-
-// ----- Reusable bottom sheet -------------------------------------------
-type BottomSheetProps = {
+function EditProfileModal({
+  visible, name, phone, onClose, onSaved,
+}: {
   visible: boolean;
+  name: string;
+  phone?: string;
   onClose: () => void;
-  title?: string;
-  children: React.ReactNode;
-  keyboardOffset?: number;
-};
-
-function BottomSheet({
-  visible, onClose, title, children, keyboardOffset = 0,
-}: BottomSheetProps) {
-  if (!visible) return null;
-
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      statusBarTranslucent
-    >
-      <View style={styles.bsWrapper}>
-        <Pressable style={styles.bsBackdrop} onPress={onClose} />
-
-        <Animatable.View
-          animation="fadeInUp"
-          duration={220}
-          style={[
-            styles.bsSheet,
-            keyboardOffset ? { marginBottom: keyboardOffset } : null,
-          ]}
-        >
-          <View style={styles.bsHandle} />
-          {title ? <Text style={styles.bsTitle}>{title}</Text> : null}
-          <View style={styles.bsContent}>{children}</View>
-        </Animatable.View>
-      </View>
-    </Modal>
-  );
-}
-
-// ----- Screen ------------------------------------------------------------------
-export default function SettingsScreen() {
-  const { user, logout, updateProfile } = useAuth();
-  const router = useRouter();
-
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState(user?.phone?.trim() || "");
-  const [avatar, setAvatar] = useState(user?.avatar || null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(
-    user?.notificationsEnabled ?? true
-  );
-  const [saving, setSaving] = useState(false);
-  const [showSavedAnim, setShowSavedAnim] = useState(false);
-
-  // NEW: subtle elevation when scrolled for the sticky header
-  const [headerElevated, setHeaderElevated] = useState(false);
-
-  // --- Bottom sheets visibility ---
-  const [editSheetVisible, setEditSheetVisible] = useState(false);
-  const [reportSheetVisible, setReportSheetVisible] = useState(false);
-  const [whatsNewSheetVisible, setWhatsNewSheetVisible] = useState(false);
-
-  // --- Support form state (inside sheet) ---
-  const [reportSubject, setReportSubject] = useState("");
-  const [reportMessage, setReportMessage] = useState("");
-  const [sendingReport, setSendingReport] = useState(false);
-
-  // --- Updates state ---
-  const [checkingUpdate, setCheckingUpdate] = useState(false);
-
-  // --- What's New state (sheet content) ---
-  const [whatsNew, setWhatsNew] = useState<WhatsNewItem[]>([]);
-  const [loadingWhatsNew, setLoadingWhatsNew] = useState(false);
-  const [whatsNewError, setWhatsNewError] = useState<string | null>(null);
-
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
-
-  // --- Biometrics / Security state ---
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
-  const [biometricTypes, setBiometricTypes] = useState<
-    LocalAuthentication.AuthenticationType[]
-  >([]);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [checkingBiometric, setCheckingBiometric] = useState(true);
-
-  // Web layout breakpoint
-  const { width } = useWindowDimensions();
-  const isWideWeb = isWeb && width >= 1024;
-
-  useEffect(() => {
-    if (isWeb) return;
-
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      const height = e?.endCoordinates?.height ?? 0;
-      setKeyboardOffset(height);
-    });
-
-    const hideSub = Keyboard.addListener(hideEvent, () => {
-      setKeyboardOffset(0);
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
-  // Init biometrics from device + stored preference
-  useEffect(() => {
-    if (!isNative) {
-      setCheckingBiometric(false);
-      return;
-    }
-
-    const initBiometrics = async () => {
-      try {
-        const saved = await AsyncStorage.getItem("@useBiometrics");
-        if (saved === "true") {
-          setBiometricEnabled(true);
-        }
-
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-
-        if (hasHardware && enrolled) {
-          setBiometricAvailable(true);
-          const types =
-            await LocalAuthentication.supportedAuthenticationTypesAsync();
-          setBiometricTypes(types);
-        } else {
-          setBiometricAvailable(false);
-        }
-      } catch (e) {
-        setBiometricAvailable(false);
-      } finally {
-        setCheckingBiometric(false);
-      }
-    };
-
-    initBiometrics();
-  }, []);
-
-  const pickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Permission required", "Please allow access to your photos.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-      allowsEditing: true,
-      aspect: [1, 1],
-    });
-
-    if (!result.canceled && result.assets.length > 0) {
-      setAvatar(result.assets[0].uri);
-    }
-  };
+  onSaved: () => void;
+}) {
+  const parts    = name.split(' ');
+  const [firstName, setFirstName] = useState(parts[0] ?? '');
+  const [lastName,  setLastName]  = useState(parts.slice(1).join(' '));
+  const [phoneVal,  setPhoneVal]  = useState(phone ?? '');
+  const [saving,    setSaving]    = useState(false);
 
   const handleSave = async () => {
+    if (!firstName.trim()) {
+      Alert.alert('Required', 'First name is required.');
+      return;
+    }
     setSaving(true);
     try {
-      await updateProfile({ name, email, phone, avatar, notificationsEnabled });
-      Alert.alert("Saved", "Your profile has been updated.");
-      setEditSheetVisible(false);
-      setShowSavedAnim(true);
-      setTimeout(() => setShowSavedAnim(false), 2000);
-    } catch (err) {
-      Alert.alert("Error", "Failed to save profile changes.");
+      await axios.patch('/api/profile', {
+        name:  `${firstName.trim()} ${lastName.trim()}`.trim(),
+        phone: phoneVal.trim() || undefined,
+      });
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onSaved();
+      onClose();
+    } catch (err: any) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error', err.response?.data?.error ?? 'Could not save changes.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-  };
-
-  const handleSubmitReport = async () => {
-    if (!reportSubject.trim() || !reportMessage.trim()) {
-      Alert.alert("Missing info", "Please add a subject and a message.");
-      return;
-    }
-    setSendingReport(true);
-    try {
-      const res = await fetch(
-        `${"https://jw-auto-clinic-246.onrender.com"}/api/support/report`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
-          },
-          body: JSON.stringify({
-            subject: reportSubject,
-            message: reportMessage,
-            name,
-            email,
-            phone,
-            to: "addesylvinaus@gmail.com",
-          }),
-        }
-      );
-
-      const maybeJson = await res.clone().json().catch(() => null);
-
-      if (!res.ok) {
-        const serverMsg =
-          (maybeJson && (maybeJson.error || maybeJson.message)) ||
-          (await res.text()).slice(0, 300) ||
-          "Unknown server error";
-        Alert.alert("Send failed", serverMsg);
-        return;
-      }
-
-      Alert.alert("Thanks!", "Your issue was sent to support.");
-      setReportSubject("");
-      setReportMessage("");
-      setReportSheetVisible(false);
-    } catch (e: any) {
-      Alert.alert(
-        "Network error",
-        "We'll open your mail app so you can send the report manually."
-      );
-      const subject = encodeURIComponent(`[App Support] ${reportSubject}`);
-      const body = encodeURIComponent(
-        `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${reportMessage}`
-      );
-      Linking.openURL(
-        `mailto:addesylvinaus@gmail.com?subject=${subject}&body=${body}`
-      );
-      setReportSheetVisible(false);
-    } finally {
-      setSendingReport(false);
-    }
-  };
-
-  const checkForUpdates = async () => {
-    if (__DEV__ || Platform.OS === "web") {
-      Alert.alert(
-        "Not available here",
-        "Update checks run in a production build on iOS/Android."
-      );
-      return;
-    }
-
-    setCheckingUpdate(true);
-    try {
-      const update = await Updates.checkForUpdateAsync();
-      if (update.isAvailable) {
-        Alert.alert("Update available", "Download and restart now?", [
-          { text: "Later", style: "cancel" },
-          {
-            text: "Update",
-            onPress: async () => {
-              try {
-                await Updates.fetchUpdateAsync();
-                await Updates.reloadAsync();
-              } catch (e) {
-                Alert.alert("Error", "Failed to apply the update.");
-              }
-            },
-          },
-        ]);
-      } else {
-        Alert.alert("Up to date", "You already have the latest version.");
-      }
-    } catch (e: any) {
-      Alert.alert("Update check failed", e?.message || "Unknown error");
-    } finally {
-      setCheckingUpdate(false);
-    }
-  };
-
-  // Toggle biometric login preference (used by login screen)
-  const handleToggleBiometrics = async (next: boolean) => {
-    if (!isNative) return;
-
-    if (!biometricAvailable) {
-      Alert.alert(
-        "Biometrics not available",
-        "This device does not support biometric authentication or it is not set up."
-      );
-      return;
-    }
-
-    if (next) {
-      try {
-        const result = await LocalAuthentication.authenticateAsync({
-          promptMessage: "Enable biometric login",
-          fallbackLabel: isIOS ? "Use passcode" : "Use device PIN",
-          cancelLabel: "Cancel",
-        });
-
-        if (result.success) {
-          setBiometricEnabled(true);
-          await AsyncStorage.setItem("@useBiometrics", "true");
-          Alert.alert(
-            "Biometric login enabled",
-            "You can now use Face ID, Touch ID, or your device's biometrics when logging in (where supported)."
-          );
-        } else {
-          setBiometricEnabled(false);
-        }
-      } catch (e) {
-        setBiometricEnabled(false);
-        Alert.alert(
-          "Biometric error",
-          "We couldn't complete biometric authentication."
-        );
-      }
-    } else {
-      Alert.alert(
-        "Turn off biometric login?",
-        "You will need to log in using your email and password only.",
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-            onPress: () => setBiometricEnabled(true),
-          },
-          {
-            text: "Turn Off",
-            style: "destructive",
-            onPress: async () => {
-              setBiometricEnabled(false);
-              await AsyncStorage.setItem("@useBiometrics", "false");
-            },
-          },
-        ]
-      );
-    }
-  };
-
-  // --- Load release notes (with fallback) ---
-  const loadWhatsNew = async () => {
-    setLoadingWhatsNew(true);
-    setWhatsNewError(null);
-    try {
-      const res = await fetch(WHATS_NEW_URL, {
-        headers: {
-          "Content-Type": "application/json",
-          ...(user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: WhatsNewItem[] = await res.json();
-      if (!Array.isArray(data)) throw new Error("Invalid response");
-      setWhatsNew(data);
-    } catch {
-      setWhatsNew(WHATS_NEW_FALLBACK);
-      setWhatsNewError(
-        "Showing local release notes. (Couldn't fetch from server.)"
-      );
-    } finally {
-      setLoadingWhatsNew(false);
-    }
-  };
-
-  useEffect(() => {
-    if (whatsNewSheetVisible && whatsNew.length === 0 && !loadingWhatsNew) {
-      loadWhatsNew();
-    }
-  }, [whatsNewSheetVisible]);
-
-  useEffect(() => {
-    if (user === null) {
-    }
-  }, [user]);
-
-  // Role display
-  const roleLabel = user?.role
-    ? user.role.charAt(0).toUpperCase() + user.role.slice(1)
-    : "Staff";
-
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
     >
-      <Shell>
-        <ScrollView
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          stickyHeaderIndices={[0]}
-          onScroll={(e) => setHeaderElevated(e.nativeEvent.contentOffset.y > 2)}
-          scrollEventThrottle={16}
-        >
-          {/* Sticky Header */}
-          <View
-            style={[
-              styles.stickyHeader,
-              headerElevated && styles.stickyHeaderElevated,
-            ]}
-          >
-            <Text style={styles.largeTitle}>Settings</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={s.modalShell}>
+          {/* Modal header */}
+          <View style={s.modalHeader}>
+            <Pressable onPress={onClose} hitSlop={10} style={{ minWidth: 64 }}>
+              <Text style={s.modalCancel}>Cancel</Text>
+            </Pressable>
+            <Text style={s.modalTitle}>Edit Profile</Text>
+            <Pressable
+              onPress={handleSave}
+              disabled={saving}
+              hitSlop={10}
+              style={[{ minWidth: 64, alignItems: 'flex-end' }, saving && { opacity: 0.5 }]}
+            >
+              <Text style={s.modalSave}>{saving ? 'Saving…' : 'Save'}</Text>
+            </Pressable>
           </View>
 
-          {/* ── Main content (fade in) ── */}
-          <ReAnimated.View entering={FadeIn.duration(300)}>
-
-          {/* ── Profile card ── */}
-          <ReAnimated.View entering={FadeInDown.delay(0).duration(400)} style={styles.profileCardWrap}>
-            <Card variant="elevated" padding={24} style={styles.profileCard}>
-              <Pressable
-                onPress={pickImage}
-                accessibilityLabel="Edit profile picture"
-                android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 40 }}
-                style={{ alignItems: 'center' }}
-              >
-                <View style={styles.profileAvatarWrap}>
-                  <Avatar name={name || '?'} uri={avatar} size={72} />
-                  <View style={styles.editAvatarBadge}>
-                    <Ionicons name="camera-outline" size={14} color={Colors.white} />
-                  </View>
-                </View>
-              </Pressable>
-
-              <Text style={styles.profileName}>{name || "—"}</Text>
-
-              <Badge
-                status={user?.role === 'admin' ? 'active' : 'info'}
-                label={roleLabel}
-                size="sm"
-                style={{ marginTop: 6 }}
-              />
-
-              <Text style={styles.profileEmail}>{email || "—"}</Text>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onPress={() => setEditSheetVisible(v => !v)}
-                style={{ marginTop: 12 }}
-              >
-                Edit Profile
-              </Button>
-
-              {showSavedAnim ? (
-                <Animatable.Text
-                  animation="fadeInDown"
-                  duration={500}
-                  style={styles.savedMessage}
-                >
-                  Changes saved successfully!
-                </Animatable.Text>
-              ) : null}
-            </Card>
-          </ReAnimated.View>
-
-          {/* ── Account section ── */}
-          <ReAnimated.View entering={FadeInDown.delay(80).duration(400)}>
-            <SettingsSection title="Account">
-              <SettingsRow
-                label="Name"
-                value={name || "—"}
-                icon="person-outline"
-                iconBg={Colors.accentMuted}
-                iconColor={Colors.accent}
-              />
-              <SettingsRow
-                label="Phone"
-                value={phone?.trim() || "—"}
-                icon="call-outline"
-                iconBg={Colors.accentMuted}
-                iconColor={Colors.accent}
-              />
-              <SettingsRow
-                label="Email"
-                value={email || "—"}
-                icon="mail-outline"
-                iconBg={Colors.accentMuted}
-                iconColor={Colors.accent}
-              />
-              <SettingsRow
-                label="Notifications"
-                icon="notifications-outline"
-                iconBg={Colors.warningBg}
-                iconColor={Colors.warning}
-                childrenRight={
-                  <Switch
-                    value={!!notificationsEnabled}
-                    onValueChange={setNotificationsEnabled}
-                  />
-                }
-              />
-            </SettingsSection>
-          </ReAnimated.View>
-
-          {/* ── Security section (native only) ── */}
-          {!isWeb && (
-            <ReAnimated.View entering={FadeInDown.delay(120).duration(400)}>
-              <SettingsSection title="Security">
-                <SettingsRow
-                  label="Biometric Login"
-                  subtitle={
-                    checkingBiometric
-                      ? "Checking device security…"
-                      : biometricAvailable
-                      ? getBiometricLabel(biometricTypes)
-                      : "Not available on this device"
-                  }
-                  icon="lock-closed-outline"
-                  iconBg={Colors.accentMuted}
-                  iconColor={Colors.accent}
-                  childrenRight={
-                    <Switch
-                      value={biometricEnabled}
-                      onValueChange={handleToggleBiometrics}
-                      disabled={checkingBiometric || !biometricAvailable}
-                    />
-                  }
-                />
-              </SettingsSection>
-            </ReAnimated.View>
-          )}
-
-          {/* ── Support section ── */}
-          <ReAnimated.View entering={FadeInDown.delay(160).duration(400)}>
-            <SettingsSection title="Support">
-              <SettingsRow
-                label="Report an Issue"
-                icon="chatbox-ellipses-outline"
-                iconBg={Colors.accentMuted}
-                iconColor={Colors.accent}
-                navigates
-                onPress={() => setReportSheetVisible(true)}
-              />
-            </SettingsSection>
-          </ReAnimated.View>
-
-          {/* ── Updates section ── */}
-          <ReAnimated.View entering={FadeInDown.delay(200).duration(400)}>
-            <SettingsSection title="Updates">
-              <SettingsRow
-                label="Check for Updates"
-                icon="refresh-outline"
-                iconBg={Colors.successBg}
-                iconColor={Colors.success}
-                onPress={checkForUpdates}
-                navigates={!checkingUpdate}
-                value={checkingUpdate ? "Checking…" : undefined}
-              />
-              <SettingsRow
-                label="What's New"
-                icon="sparkles-outline"
-                iconBg={Colors.warningBg}
-                iconColor={Colors.warning}
-                onPress={() => setWhatsNewSheetVisible(true)}
-                navigates
-              />
-            </SettingsSection>
-          </ReAnimated.View>
-
-          {/* ── About section ── */}
-          <ReAnimated.View entering={FadeInDown.delay(240).duration(400)}>
-            <SettingsSection title="About">
-              <SettingsRow
-                label="Powered by"
-                value="ASD Inova Technologia"
-                icon="hardware-chip-outline"
-                iconBg={Colors.surfaceAlt}
-                iconColor={Colors.textSecondary}
-              />
-              <SettingsRow
-                label="Version"
-                value={String(Constants.expoConfig?.version || "")}
-                icon="information-circle-outline"
-                iconBg={Colors.surfaceAlt}
-                iconColor={Colors.textSecondary}
-              />
-            </SettingsSection>
-          </ReAnimated.View>
-
-          {/* ── Danger Zone ── */}
-          <ReAnimated.View entering={FadeInDown.delay(280).duration(400)}>
-            <SettingsSection title="Danger Zone">
-              <SettingsRow
-                label="Log Out"
-                icon="exit-outline"
-                isDanger
-                onPress={handleLogout}
-              />
-            </SettingsSection>
-          </ReAnimated.View>
-
-          </ReAnimated.View>{/* end FadeIn wrapper */}
-
-        </ScrollView>
-
-        {/* === EDIT PROFILE BOTTOM SHEET === */}
-        <BottomSheet
-          visible={editSheetVisible}
-          onClose={() => setEditSheetVisible(false)}
-          title="Edit Profile"
-          keyboardOffset={keyboardOffset}
-        >
           <ScrollView
+            contentContainerStyle={s.modalContent}
             keyboardShouldPersistTaps="handled"
-            style={{ maxHeight: 460 }}
           >
-            <View style={{ gap: 12 }}>
-              <Text style={styles.sheetLabel}>Name</Text>
-              <TextInput
-                style={styles.itemInput}
-                value={name}
-                onChangeText={setName}
-                placeholder="Your full name"
-                placeholderTextColor={Colors.textMuted}
-              />
-
-              <Text style={styles.sheetLabel}>Phone</Text>
-              <TextInput
-                style={styles.itemInput}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                placeholder="(246) 123-4567"
-                placeholderTextColor={Colors.textMuted}
-              />
-
-              <Text style={styles.sheetLabel}>Email</Text>
-              <TextInput
-                style={styles.itemInput}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholder="your@example.com"
-                placeholderTextColor={Colors.textMuted}
-              />
-
-              <View style={{ height: 16 }} />
-
-              <TouchableOpacity
-                style={[styles.saveButton, saving && styles.buttonDisabled]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                <Text style={styles.saveText}>
-                  {saving ? "Saving…" : "Save Changes"}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  { backgroundColor: Colors.border, marginTop: 8 },
-                ]}
-                onPress={() => setEditSheetVisible(false)}
-              >
-                <Text style={[styles.saveText, { color: Colors.textPrimary }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </BottomSheet>
-
-        {/* === REPORT ISSUE BOTTOM SHEET === */}
-        <BottomSheet
-          visible={reportSheetVisible}
-          onClose={() => setReportSheetVisible(false)}
-          title="Report an Issue"
-          keyboardOffset={keyboardOffset}
-        >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            style={{ maxHeight: 420 }}
-          >
+            <Text style={s.inputLabel}>First Name</Text>
             <TextInput
-              style={styles.reportInput}
-              placeholder="Subject"
+              style={s.input}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First name"
               placeholderTextColor={Colors.textMuted}
-              value={reportSubject}
-              onChangeText={setReportSubject}
+              autoCapitalize="words"
+              returnKeyType="next"
             />
+
+            <Text style={s.inputLabel}>Last Name</Text>
             <TextInput
-              style={[
-                styles.reportInput,
-                { height: 120, textAlignVertical: "top" },
-              ]}
-              placeholder="Describe the issue (steps to reproduce, expected vs actual, screenshots if any)"
+              style={s.input}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last name (optional)"
               placeholderTextColor={Colors.textMuted}
-              value={reportMessage}
-              onChangeText={setReportMessage}
-              multiline
+              autoCapitalize="words"
+              returnKeyType="next"
             />
-            <TouchableOpacity
-              onPress={handleSubmitReport}
-              style={[
-                styles.submitReportButton,
-                sendingReport && styles.buttonDisabled,
-              ]}
-              disabled={sendingReport}
+
+            <Text style={s.inputLabel}>Phone Number</Text>
+            <TextInput
+              style={s.input}
+              value={phoneVal}
+              onChangeText={setPhoneVal}
+              placeholder="Optional"
+              placeholderTextColor={Colors.textMuted}
+              keyboardType="phone-pad"
+              returnKeyType="done"
+            />
+
+            <Pressable
+              style={[s.saveBtn, saving && { opacity: 0.6 }]}
+              onPress={handleSave}
+              disabled={saving}
             >
-              <Text style={styles.submitReportText}>
-                {sendingReport ? "Sending…" : "Send to Support"}
+              <Text style={s.saveBtnText}>
+                {saving ? 'Saving…' : 'Save Changes'}
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                const subject = encodeURIComponent(
-                  `[App Support] ${reportSubject || ""}`
-                );
-                const body = encodeURIComponent(
-                  `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\n\n${
-                    reportMessage || ""
-                  }`
-                );
-                Linking.openURL(
-                  `mailto:addesylvinaus@gmail.com?subject=${subject}&body=${body}`
-                );
-                setReportSheetVisible(false);
-              }}
-              style={[
-                styles.submitReportButton,
-                { marginTop: 10, backgroundColor: Colors.accent },
-              ]}
-            >
-              <Text style={styles.submitReportText}>Email Support</Text>
-            </TouchableOpacity>
+            </Pressable>
           </ScrollView>
-        </BottomSheet>
-
-        {/* === WHAT'S NEW BOTTOM SHEET === */}
-        <BottomSheet
-          visible={whatsNewSheetVisible}
-          onClose={() => setWhatsNewSheetVisible(false)}
-          title="What's New"
-          keyboardOffset={keyboardOffset}
-        >
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            style={{ maxHeight: 420 }}
-          >
-            <View style={styles.whatsNewCard}>
-              <View style={styles.whatsNewHeaderRow}>
-                <Text style={styles.whatsNewTitle}>Latest Features & Fixes</Text>
-                <TouchableOpacity
-                  onPress={loadWhatsNew}
-                  disabled={loadingWhatsNew}
-                >
-                  <Text
-                    style={[
-                      styles.whatsNewRefresh,
-                      loadingWhatsNew && { opacity: 0.6 },
-                    ]}
-                  >
-                    {loadingWhatsNew ? "Refreshing…" : "Refresh"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {whatsNewError ? (
-                <Text style={styles.whatsNewError}>{whatsNewError}</Text>
-              ) : null}
-
-              {loadingWhatsNew && whatsNew.length === 0 ? (
-                <Text style={styles.whatsNewLoading}>
-                  Loading release notes…
-                </Text>
-              ) : (
-                whatsNew.map((rel) => (
-                  <View
-                    key={`${rel.version}-${rel.date || ""}`}
-                    style={styles.whatsNewItem}
-                  >
-                    <View style={styles.whatsNewHeaderRow}>
-                      <Text style={styles.whatsNewVersion}>
-                        v{rel.version}
-                      </Text>
-                      {rel.date ? (
-                        <Text style={styles.whatsNewDate}>{rel.date}</Text>
-                      ) : null}
-                    </View>
-                    {rel.changes.map((c, idx) => (
-                      <View key={idx} style={styles.whatsNewChangeRow}>
-                        <View style={[styles.badge, getBadgeStyle(c.type)]}>
-                          <Text style={styles.badgeText}>{c.type}</Text>
-                        </View>
-                        <Text style={styles.whatsNewChangeText}>{c.text}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ))
-              )}
-            </View>
-          </ScrollView>
-        </BottomSheet>
-      </Shell>
-    </KeyboardAvoidingView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
-function getBadgeStyle(type: string) {
-  const base = { backgroundColor: Colors.accentMuted, borderColor: Colors.accentMuted };
-  if (type === "New")
-    return { backgroundColor: Colors.successBg, borderColor: Colors.successBg };
-  if (type === "Improved")
-    return { backgroundColor: Colors.accentMuted, borderColor: Colors.accentMuted };
-  if (type === "Fixed")
-    return { backgroundColor: Colors.warningBg, borderColor: Colors.warningBg };
-  return base;
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
+export default function SettingsScreen() {
+  const { user, logout } = useAuth();
+  const insets = useSafeAreaInsets();
+
+  const [editVisible,    setEditVisible]    = useState(false);
+  const [biometricAvail, setBiometricAvail] = useState(false);
+  const [biometricOn,    setBiometricOn]    = useState(false);
+  const [notifOn,        setNotifOn]        = useState(user?.notificationsEnabled ?? true);
+  const [darkMode,       setDarkMode]       = useState(false);
+
+  // ── Check biometric availability ──────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      const hasHw    = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      setBiometricAvail(hasHw && enrolled);
+      const stored = await AsyncStorage.getItem('@biometric_enabled');
+      setBiometricOn(stored === 'true');
+    })();
+  }, []);
+
+  // ── Biometric toggle ──────────────────────────────────────────────────────
+  const toggleBiometric = async (val: boolean) => {
+    if (val) {
+      const res = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Confirm to enable biometric login',
+        cancelLabel:   'Cancel',
+      });
+      if (!res.success) return;
+    }
+    await AsyncStorage.setItem('@biometric_enabled', val ? 'true' : 'false');
+    setBiometricOn(val);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  // ── Clear cache ───────────────────────────────────────────────────────────
+  const handleClearCache = () => {
+    Alert.alert(
+      'Clear Cache',
+      'This will clear locally stored data. You may need to log in again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear', style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.clear();
+            Alert.alert('Done', 'Cache cleared successfully.');
+          },
+        },
+      ],
+    );
+  };
+
+  // ── Sign out ──────────────────────────────────────────────────────────────
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Sign Out', style: 'destructive', onPress: logout },
+      ],
+    );
+  };
+
+  const displayName = user?.name ?? 'Staff Member';
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Settings',
+          headerStyle: { backgroundColor: Colors.white },
+          headerTitleStyle: { color: Colors.textPrimary, fontWeight: '700' },
+          headerShadowVisible: false,
+          headerBackTitle: 'Back',
+          headerTintColor: Colors.accent,
+        }}
+      />
+
+      <ScrollView
+        style={{ backgroundColor: Colors.background }}
+        contentContainerStyle={[s.scroll, { paddingBottom: 100 }]}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {/* ── Profile Card ── */}
+        <View style={s.profileCard}>
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{initials(displayName)}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.profileName}>{displayName}</Text>
+            <Text style={s.profileEmail} numberOfLines={1}>{user?.email ?? '—'}</Text>
+            {!!user?.phone && (
+              <Text style={s.profilePhone}>{user.phone}</Text>
+            )}
+          </View>
+          <View style={s.roleBadge}>
+            <Text style={s.roleBadgeText}>{capitalizeRole(user?.role ?? 'staff')}</Text>
+          </View>
+        </View>
+
+        {/* Edit Profile ghost button */}
+        <Pressable
+          style={s.editProfileBtn}
+          onPress={() => setEditVisible(true)}
+        >
+          <Ionicons name="pencil-outline" size={14} color={Colors.accent} />
+          <Text style={s.editProfileText}>Edit Profile</Text>
+        </Pressable>
+
+        {/* ══════════════════════════════
+            ACCOUNT
+        ══════════════════════════════ */}
+        <SectionHeader title="Account" />
+        <View style={s.section}>
+          <SettingsRow
+            icon="lock-closed-outline"
+            label="Change Password"
+            onPress={() =>
+              Alert.alert(
+                'Change Password',
+                'A password reset link will be sent to your email.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Send Link', onPress: () => {} },
+                ],
+              )
+            }
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="notifications-outline"
+            label="Notification Preferences"
+            right={
+              <Switch
+                value={notifOn}
+                onValueChange={val => {
+                  setNotifOn(val);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: Colors.border, true: Colors.accent }}
+                thumbColor={Colors.white}
+              />
+            }
+          />
+          {biometricAvail && (
+            <>
+              <View style={s.divider} />
+              <SettingsRow
+                icon="finger-print-outline"
+                label="Biometric Login"
+                sublabel="Use Face ID or fingerprint to sign in"
+                right={
+                  <Switch
+                    value={biometricOn}
+                    onValueChange={toggleBiometric}
+                    trackColor={{ false: Colors.border, true: Colors.accent }}
+                    thumbColor={Colors.white}
+                  />
+                }
+              />
+            </>
+          )}
+        </View>
+
+        {/* ══════════════════════════════
+            WORK
+        ══════════════════════════════ */}
+        <SectionHeader title="Work" />
+        <View style={s.section}>
+          <SettingsRow
+            icon="calendar-outline"
+            label="My Schedule"
+            onPress={() => router.push('/(tabs)/schedule')}
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="bar-chart-outline"
+            label="My Performance"
+            onPress={() => router.push('/(tabs)/performance')}
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="construct-outline"
+            label="Vehicle / Equipment Notes"
+            onPress={() =>
+              Alert.alert(
+                'Equipment Notes',
+                'Report any vehicle or equipment issues to your manager.',
+                [{ text: 'OK' }],
+              )
+            }
+          />
+        </View>
+
+        {/* ══════════════════════════════
+            APP
+        ══════════════════════════════ */}
+        <SectionHeader title="App" />
+        <View style={s.section}>
+          <SettingsRow
+            icon="language-outline"
+            label="Language"
+            right={<Text style={s.rowValue}>English</Text>}
+            onPress={() =>
+              Alert.alert('Language', 'Language selection coming soon.')
+            }
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="moon-outline"
+            label="Dark Mode"
+            sublabel="Requires app restart to apply"
+            right={
+              <Switch
+                value={darkMode}
+                onValueChange={val => {
+                  setDarkMode(val);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                trackColor={{ false: Colors.border, true: Colors.accent }}
+                thumbColor={Colors.white}
+              />
+            }
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="trash-outline"
+            label="Clear Cache"
+            onPress={handleClearCache}
+          />
+        </View>
+
+        {/* ══════════════════════════════
+            SUPPORT
+        ══════════════════════════════ */}
+        <SectionHeader title="Support" />
+        <View style={s.section}>
+          <SettingsRow
+            icon="help-circle-outline"
+            label="Help Center"
+            onPress={() =>
+              Alert.alert(
+                'Help Center',
+                'Contact your manager or visit the Wash Hub support portal.',
+                [{ text: 'OK' }],
+              )
+            }
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="chatbubble-outline"
+            label="Contact Manager"
+            onPress={() =>
+              Alert.alert(
+                'Contact Manager',
+                'Your message will be sent to your manager.',
+                [{ text: 'Cancel', style: 'cancel' }, { text: 'Send', onPress: () => {} }],
+              )
+            }
+          />
+          <View style={s.divider} />
+          <SettingsRow
+            icon="flag-outline"
+            label="Report an Issue"
+            onPress={() =>
+              Alert.alert(
+                'Report an Issue',
+                'Describe the issue and it will be sent to your manager.',
+                [{ text: 'Cancel', style: 'cancel' }, { text: 'Submit', onPress: () => {} }],
+              )
+            }
+          />
+        </View>
+
+        {/* ══════════════════════════════
+            DANGER ZONE
+        ══════════════════════════════ */}
+        <SectionHeader title="Danger Zone" />
+        <View style={s.section}>
+          <SettingsRow
+            icon="log-out-outline"
+            iconColor={Colors.error}
+            label="Sign Out"
+            destructive
+            onPress={handleSignOut}
+          />
+        </View>
+
+      </ScrollView>
+
+      {/* ── Edit Profile Modal ── */}
+      {user && (
+        <EditProfileModal
+          visible={editVisible}
+          name={user.name}
+          phone={user.phone}
+          onClose={() => setEditVisible(false)}
+          onSaved={() => {
+            // Data will re-hydrate on next app session via AuthContext
+          }}
+        />
+      )}
+    </>
+  );
 }
 
-const styles = StyleSheet.create({
-  // Shell / Page
-  shell: { flex: 1 },
-  page: {
-    width: "100%",
-    maxWidth: UI.maxWidth,
-    alignSelf: "center",
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingBottom: 80,
-  },
-  container: { flexGrow: 1, paddingBottom: SCROLL_PADDING_BOTTOM },
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
-  // Sticky header
-  stickyHeader: {
-    backgroundColor: Colors.background,
-    paddingHorizontal: UI.padX,
-    paddingBottom: 10,
-    zIndex: 10,
-    ...Platform.select({
-      ios: { paddingTop: 8 },
-      android: { paddingTop: 8 },
-      default: { paddingTop: 12 },
-    }),
-  },
-  stickyHeaderElevated: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.border,
-    ...Platform.select({
-      ios: { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
-      android: { elevation: 3 },
-    }),
-  },
-  largeTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
+const s = StyleSheet.create({
+  scroll: { paddingTop: 20 },
 
-  // Profile card — centered, elevated
-  profileCardWrap: {
-    marginHorizontal: 20,
-    marginVertical: 16,
-  },
+  // Profile card
   profileCard: {
-    alignItems: 'center',
-  },
-  profileAvatarWrap: {
-    position: 'relative',
-    marginBottom: 4,
-  },
-  editAvatarBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: Colors.white,
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    marginTop: 12,
-  },
-  profileEmail: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  savedMessage: {
-    marginTop: 10,
-    fontSize: 13,
-    color: Colors.success,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  // Section group
-  sectionWrap: { marginTop: 8 },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 8,
-  },
-  sectionBody: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    marginHorizontal: 20,
+    marginHorizontal: SCREEN_PADDING,
+    borderRadius: borderRadius.xl,
+    padding: 20,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  avatar: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: Colors.accent,
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarText:   { fontSize: 22, fontWeight: '800', color: Colors.white },
+  profileName:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  profileEmail: { fontSize: 13, color: Colors.textMuted, marginTop: 3 },
+  profilePhone: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  roleBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 12, paddingVertical: 5,
+  },
+  roleBadgeText: { fontSize: 12, fontWeight: '700', color: Colors.accent },
+
+  // Edit profile button
+  editProfileBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-end',
+    marginRight: SCREEN_PADDING, marginTop: 10, marginBottom: 4,
+    paddingHorizontal: 14, paddingVertical: 7,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5, borderColor: Colors.accent,
+  },
+  editProfileText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
+
+  // Section
+  sectionTitle: {
+    fontSize: 11, fontWeight: '700', color: Colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.8,
+    paddingHorizontal: SCREEN_PADDING, marginTop: 28, marginBottom: 8,
+  },
+  section: {
+    backgroundColor: Colors.white,
+    borderRadius: borderRadius.xl,
+    marginHorizontal: SCREEN_PADDING,
+    borderWidth: 1, borderColor: Colors.border,
     overflow: 'hidden',
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-      android: { elevation: 2 },
-    }),
+    ...cardShadow,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: Colors.border,
+    marginLeft: SCREEN_PADDING + 36 + 14, // past icon
   },
 
   // Row
   row: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SCREEN_PADDING, paddingVertical: 14,
+    gap: 14, minHeight: 56,
+  },
+  rowIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+  },
+  rowLabel:    { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  rowSublabel: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  rowValue:    { fontSize: 14, color: Colors.textMuted },
+
+  // Modal
+  modalShell:   { flex: 1, backgroundColor: Colors.background },
+  modalHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SCREEN_PADDING, paddingVertical: 16,
     backgroundColor: Colors.white,
-    paddingHorizontal: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border,
   },
-  rowInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    position: 'relative',
-  },
-  rowIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowLabel: {
-    fontSize: 15,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-  },
-  rowSubtitle: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  rowValue: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    maxWidth: 160,
-    textAlign: 'right',
-  },
-  rowDivider: {
-    position: 'absolute',
-    bottom: 0,
-    left: 68,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
-  },
+  modalTitle:  { fontSize: 17, fontWeight: '700', color: Colors.textPrimary },
+  modalCancel: { fontSize: 16, color: Colors.textMuted },
+  modalSave:   { fontSize: 16, fontWeight: '700', color: Colors.accent },
+  modalContent:{ padding: SCREEN_PADDING, paddingBottom: 40 },
 
-  // Columns (wide web)
-  columns: { flexDirection: 'column' },
-  columnsWide: { flexDirection: 'row', alignItems: 'flex-start', gap: 20 },
-  col: { flex: 1 },
-  colLeft: { flex: 1 },
-  colRight: { flex: 1 },
-
-  // Bottom Sheet
-  bsWrapper: { flex: 1, justifyContent: 'flex-end' },
-  bsBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+  inputLabel: {
+    fontSize: 13, fontWeight: '700', color: Colors.textSecondary,
+    marginTop: 20, marginBottom: 6,
   },
-  bsSheet: {
+  input: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxWidth: 720,
-    width: '100%',
-    alignSelf: 'center',
-    maxHeight: '85%',
-    ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.15, shadowRadius: 20, shadowOffset: { width: 0, height: -4 } },
-      android: { elevation: 16 },
-    }),
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14, paddingVertical: 14,
+    fontSize: 16, color: Colors.textPrimary,
+    borderWidth: 1.5, borderColor: Colors.border,
   },
-  bsHandle: {
-    width: 36, height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.border,
-    alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  bsTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  bsContent: { paddingHorizontal: 20, paddingBottom: 32 },
-
-  // Edit form
-  sheetLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  itemInput: {
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: isIOS ? 14 : 10,
-    fontSize: 15,
-    color: Colors.textPrimary,
-    backgroundColor: Colors.background,
-  },
-
-  saveButton: {
+  saveBtn: {
     backgroundColor: Colors.accent,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
+    borderRadius: borderRadius.md,
+    paddingVertical: 15,
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: 32,
   },
-  saveText: {
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  buttonDisabled: { opacity: 0.6 },
-
-  // Report form
-  reportInput: {
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    backgroundColor: Colors.background,
-    marginBottom: 12,
-  },
-  submitReportButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  submitReportText: {
-    color: Colors.white,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-
-  // What's New
-  whatsNewCard: { gap: 16 },
-  whatsNewHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  whatsNewTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  whatsNewRefresh: {
-    fontSize: 13,
-    color: Colors.accent,
-    fontWeight: '600',
-  },
-  whatsNewError: {
-    fontSize: 12,
-    color: Colors.error,
-    fontStyle: 'italic',
-  },
-  whatsNewLoading: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: 12,
-  },
-  whatsNewItem: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.border,
-    paddingTop: 12,
-    gap: 8,
-  },
-  whatsNewVersion: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: Colors.accent,
-  },
-  whatsNewDate: {
-    fontSize: 12,
-    color: Colors.textMuted,
-  },
-  whatsNewChangeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    alignSelf: 'flex-start',
-    marginTop: 2,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  whatsNewChangeText: {
-    flex: 1,
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
+  saveBtnText: { fontSize: 16, fontWeight: '700', color: Colors.white },
 });

@@ -42,6 +42,7 @@ router.put('/', authenticate, async (req, res) => {
       phone: updated.phone || '',
       avatar: updated.avatar || '',                        // Workers: will be '' unless you add to schema
       role: updated.role,
+      businessId: updated.businessId,
       notificationsEnabled:
         typeof updated.notificationsEnabled === 'boolean'
           ? updated.notificationsEnabled
@@ -59,7 +60,7 @@ router.get('/', authenticate, async (req, res) => {
 
   try {
     // Select common fields; missing ones will be undefined (we’ll default in response)
-    const doc = await Model.findById(id).select('name email phone avatar role notificationsEnabled');
+    const doc = await Model.findById(id).select('_id name email phone avatar role businessId notificationsEnabled');
     if (!doc) return res.status(404).json({ message: `${type} not found` });
 
     return res.json({
@@ -69,6 +70,7 @@ router.get('/', authenticate, async (req, res) => {
       phone: doc.phone || '',
       avatar: doc.avatar || '',
       role: doc.role,
+      businessId: doc.businessId,
       notificationsEnabled:
         typeof doc.notificationsEnabled === 'boolean' ? doc.notificationsEnabled : true,
     });

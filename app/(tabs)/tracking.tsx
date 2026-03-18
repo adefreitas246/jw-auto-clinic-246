@@ -1,202 +1,500 @@
-// app/(tabs)/tracking.tsx — Staff GPS Tracking Screen
+// app/(tabs)/tracking.tsx — Staff GPS Tracking (full screen map)
 import { Ionicons } from '@expo/vector-icons';
 import * as Battery  from 'expo-battery';
 import * as Location from 'expo-location';
 import { router }    from 'expo-router';
+import axios         from 'axios';
 import React, {
   useCallback, useEffect, useRef, useState,
 } from 'react';
 import {
-  ActivityIndicator, Alert, Animated, Platform,
-  Pressable, ScrollView, StyleSheet, Text, View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth }         from '@/context/AuthContext';
-import {
-  isLocationTaskRunning,
-  startLocationTracking,
-  stopLocationTracking,
-} from '@/tasks/locationTask';
-import { ScreenHeader } from '@/components/ui';
-import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS } from '@/utils/platform';
+import { useAuth }             from '@/context/AuthContext';
+import { isLocationTaskRunning } from '@/tasks/locationTask';
+import { Colors }              from '@/constants/Colors';
 import { borderRadius, cardShadow } from '@/utils/platformStyles';
-import ReAnimated, { FadeIn } from 'react-native-reanimated';
 
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'https://jw-auto-clinic-246.onrender.com';
+const LOCATION_TASK = 'STAFF_LOCATION';
+const LOW_BATTERY   = 0.15;
 
-const LOW_BATTERY_THRESHOLD = 0.15;
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-// ─── Battery bar ─────────────────────────────────────────────────────────────
+interface CurrentJob {
+  _id:               string;
+  customerName?:     string;
+  serviceName?:      string;
+  serviceLabel?:     string;
+  address?:          string;
+  lat?:              number;
+  lng?:              number;
+  estimatedDuration?: number;
+  status?:           string;
+}
 
-function BatteryBar({ level }: { level: number }) {
-  const pct   = level === -1 ? null : Math.round(level * 100);
-  const isLow = pct !== null && pct < 15;
-  const color = isLow ? Colors.error : pct !== null && pct < 30 ? Colors.warning : Colors.success;
+interface NextJob {
+  _id:             string;
+  appointmentTime: string;
+  address?:        string;
+  minutesAway?:    number;
+}
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function formatElapsed(startMs: number): string {
+  const s = Math.floor((Date.now() - startMs) / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function openNavigation(address?: string, lat?: number, lng?: number) {
+  const dest = lat && lng
+    ? `${lat},${lng}`
+    : encodeURIComponent(address ?? '');
+  const url = Platform.OS === 'ios'
+    ? `maps://?daddr=${dest}`
+    : `https://maps.google.com/maps?daddr=${dest}`;
+  Linking.openURL(url).catch(() => {});
+}
+
+// ── Battery warning banner ────────────────────────────────────────────────────
+
+function BatteryWarning() {
   return (
-    <View style={tr.batteryWrap}>
-      <View style={tr.batteryBody}>
-        <View
-          style={[
-            tr.batteryFill,
-            { width: `${pct ?? 0}%` as any, backgroundColor: color },
-          ]}
-        />
+    <View style={bw.banner}>
+      <Ionicons name="battery-dead-outline" size={16} color={Colors.warningText} />
+      <Text style={bw.text}>Low battery — location updates may stop</Text>
+    </View>
+  );
+}
+
+const bw = StyleSheet.create({
+  banner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.warningBg,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: Colors.warning,
+  },
+  text: { flex: 1, fontSize: 13, fontWeight: '600', color: Colors.warningText },
+});
+
+// ── Shift status banner ───────────────────────────────────────────────────────
+
+function ShiftBanner({
+  shiftActive,
+  startMs,
+  actionBusy,
+  onStart,
+  onEnd,
+}: {
+  shiftActive: boolean;
+  startMs:     number | null;
+  actionBusy:  boolean;
+  onStart:     () => void;
+  onEnd:       () => void;
+}) {
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    if (!shiftActive) return;
+    const id = setInterval(() => tick(n => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, [shiftActive]);
+
+  if (shiftActive) {
+    return (
+      <View style={[sb.card, sb.cardActive]}>
+        <View style={sb.dot} />
+        <View style={{ flex: 1 }}>
+          <Text style={sb.activeLabel}>Shift Active</Text>
+          {startMs && (
+            <Text style={sb.duration}>{formatElapsed(startMs)}</Text>
+          )}
+        </View>
+        <Pressable
+          style={[sb.endBtn, actionBusy && { opacity: 0.6 }]}
+          onPress={onEnd}
+          disabled={actionBusy}
+          android_ripple={{ color: Colors.errorText, borderless: false }}
+        >
+          {actionBusy
+            ? <ActivityIndicator size="small" color={Colors.white} />
+            : <Text style={sb.endBtnText}>End Shift</Text>
+          }
+        </Pressable>
       </View>
-      <View style={[tr.batteryNib, { backgroundColor: color }]} />
-      <Text style={[tr.batteryPct, { color }]}>
-        {pct === null ? 'Unknown' : `${pct}%`}
-      </Text>
-    </View>
-  );
-}
+    );
+  }
 
-// ─── Permission row ───────────────────────────────────────────────────────────
-
-function PermRow({ label, granted }: { label: string; granted: boolean }) {
   return (
-    <View style={tr.permRow}>
-      <View style={[tr.permDot, { backgroundColor: granted ? Colors.success : Colors.border }]} />
-      <Text style={tr.permLabel}>{label}</Text>
-      <Text style={[tr.permValue, { color: granted ? Colors.success : Colors.error }]}>
-        {granted ? 'Granted' : 'Not granted'}
+    <View style={[sb.card, sb.cardIdle]}>
+      <Ionicons name="navigate-outline" size={18} color={Colors.textMuted} />
+      <View style={{ flex: 1 }}>
+        <Text style={sb.idleLabel}>Shift not started</Text>
+        <Text style={sb.idleSub}>Start to broadcast your location</Text>
+      </View>
+      <Pressable
+        style={[sb.startBtn, actionBusy && { opacity: 0.6 }]}
+        onPress={onStart}
+        disabled={actionBusy}
+        android_ripple={{ color: Colors.accentDark, borderless: false }}
+      >
+        {actionBusy
+          ? <ActivityIndicator size="small" color={Colors.white} />
+          : <Text style={sb.startBtnText}>Start Shift</Text>
+        }
+      </Pressable>
+    </View>
+  );
+}
+
+const sb = StyleSheet.create({
+  card: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    borderRadius: borderRadius.xl,
+    paddingVertical: 14, paddingHorizontal: 16,
+    ...cardShadow,
+  },
+  cardActive: { backgroundColor: Colors.successBg, borderWidth: 1, borderColor: Colors.success + '50' },
+  cardIdle:   { backgroundColor: Colors.surface,   borderWidth: 1, borderColor: Colors.border },
+
+  dot:         { width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
+  activeLabel: { fontSize: 14, fontWeight: '700', color: Colors.success },
+  duration:    { fontSize: 12, color: Colors.successText, marginTop: 1 },
+  idleLabel:   { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
+  idleSub:     { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
+
+  startBtn: {
+    backgroundColor: Colors.accent, borderRadius: borderRadius.full,
+    paddingHorizontal: 16, paddingVertical: 8, minWidth: 90,
+    alignItems: 'center', overflow: 'hidden',
+  },
+  startBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
+  endBtn: {
+    backgroundColor: Colors.error, borderRadius: borderRadius.full,
+    paddingHorizontal: 16, paddingVertical: 8, minWidth: 90,
+    alignItems: 'center', overflow: 'hidden',
+  },
+  endBtnText: { color: Colors.white, fontWeight: '700', fontSize: 13 },
+});
+
+// ── Next job preview ──────────────────────────────────────────────────────────
+
+function NextJobPreview({ job }: { job: NextJob }) {
+  return (
+    <View style={nj.card}>
+      <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
+      <View style={{ flex: 1 }}>
+        <Text style={nj.label}>Next up · {job.appointmentTime}</Text>
+        {job.address ? (
+          <Text style={nj.address} numberOfLines={1}>{job.address}</Text>
+        ) : null}
+      </View>
+      {job.minutesAway != null && (
+        <Text style={nj.eta}>{job.minutesAway} min away</Text>
+      )}
+    </View>
+  );
+}
+
+const nj = StyleSheet.create({
+  card:    { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.lg, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: Colors.border },
+  label:   { fontSize: 11, fontWeight: '700', color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 },
+  address: { fontSize: 13, color: Colors.textSecondary, marginTop: 1 },
+  eta:     { fontSize: 12, fontWeight: '700', color: Colors.accent },
+});
+
+// ── Current job card ──────────────────────────────────────────────────────────
+
+function CurrentJobCard({
+  job,
+  onMarkArrived,
+  arrivedBusy,
+}: {
+  job:           CurrentJob | null;
+  onMarkArrived: () => void;
+  arrivedBusy:   boolean;
+}) {
+  if (!job) {
+    return (
+      <View style={cj.emptyCard}>
+        <Ionicons name="calendar-outline" size={18} color={Colors.textMuted} />
+        <Text style={cj.emptyText}>No active job — check your schedule</Text>
+      </View>
+    );
+  }
+
+  const service = job.serviceName ?? job.serviceLabel ?? '—';
+
+  return (
+    <View style={cj.card}>
+      {/* Header */}
+      <View style={cj.headerRow}>
+        <View style={cj.iconWrap}>
+          <Ionicons name="car-outline" size={18} color={Colors.accent} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={cj.customerName}>{job.customerName ?? 'Customer'}</Text>
+          <Text style={cj.serviceName}>{service}</Text>
+        </View>
+        {job.estimatedDuration ? (
+          <View style={cj.etaBadge}>
+            <Text style={cj.etaText}>{job.estimatedDuration}m</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* Address */}
+      {job.address ? (
+        <View style={cj.addressRow}>
+          <Ionicons name="location-outline" size={13} color={Colors.textMuted} />
+          <Text style={cj.addressText} numberOfLines={2}>{job.address}</Text>
+        </View>
+      ) : null}
+
+      {/* Buttons */}
+      <View style={cj.btnRow}>
+        <Pressable
+          style={cj.navBtn}
+          onPress={() => openNavigation(job.address, job.lat, job.lng)}
+          android_ripple={{ color: Colors.accent + '20', borderless: false }}
+        >
+          <Ionicons name="navigate" size={15} color={Colors.accent} />
+          <Text style={cj.navBtnText}>Navigate</Text>
+        </Pressable>
+
+        <Pressable
+          style={[cj.arrivedBtn, arrivedBusy && { opacity: 0.65 }]}
+          onPress={onMarkArrived}
+          disabled={arrivedBusy}
+          android_ripple={{ color: Colors.accentDark, borderless: false }}
+        >
+          {arrivedBusy
+            ? <ActivityIndicator size="small" color={Colors.white} />
+            : <>
+                <Ionicons name="checkmark-circle-outline" size={15} color={Colors.white} />
+                <Text style={cj.arrivedBtnText}>Mark Arrived</Text>
+              </>
+          }
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const cj = StyleSheet.create({
+  card:        { backgroundColor: Colors.surface, borderRadius: borderRadius.xl, padding: 16, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
+  emptyCard:   { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.surface, borderRadius: borderRadius.xl, padding: 16, borderWidth: 1, borderColor: Colors.border, ...cardShadow },
+  emptyText:   { fontSize: 14, color: Colors.textMuted, flex: 1 },
+  headerRow:   { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
+  iconWrap:    { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
+  customerName:{ fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  serviceName: { fontSize: 13, color: Colors.textSecondary, marginTop: 1 },
+  etaBadge:    { backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
+  etaText:     { fontSize: 12, fontWeight: '700', color: Colors.accent },
+  addressRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 14 },
+  addressText: { fontSize: 13, color: Colors.textSecondary, flex: 1, lineHeight: 18 },
+  btnRow:      { flexDirection: 'row', gap: 10 },
+  navBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: Colors.accentMuted, borderRadius: borderRadius.md, paddingVertical: 11,
+    overflow: 'hidden',
+  },
+  navBtnText:     { fontSize: 14, fontWeight: '700', color: Colors.accent },
+  arrivedBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: Colors.accent, borderRadius: borderRadius.md, paddingVertical: 11, minHeight: 42,
+    overflow: 'hidden',
+  },
+  arrivedBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
+});
+
+// ── Web fallback ──────────────────────────────────────────────────────────────
+
+function WebFallback() {
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32, paddingTop: insets.top + 16 }]}>
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={{ position: 'absolute', top: insets.top + 12, left: 16, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 20, width: 40, height: 40, alignItems: 'center', justifyContent: 'center', elevation: 4 }}
+      >
+        <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+      </TouchableOpacity>
+      <Ionicons name="navigate-outline" size={48} color={Colors.accent} />
+      <Text style={{ fontSize: 20, fontWeight: '800', color: Colors.textPrimary }}>GPS Tracking</Text>
+      <Text style={{ fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 22 }}>
+        Location tracking is only available on the mobile app.
       </Text>
     </View>
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function TrackingScreen() {
-  const { user }                         = useAuth();
-  const [tracking,     setTracking]      = useState(false);
-  const [loading,      setLoading]       = useState(true);
-  const [actionBusy,   setActionBusy]    = useState(false);
-  const [fgGranted,    setFgGranted]     = useState(false);
-  const [bgGranted,    setBgGranted]     = useState(false);
-  const [location,     setLocation]      = useState<Location.LocationObject | null>(null);
-  const [batteryLevel, setBatteryLevel]  = useState<number>(-1);
-  const [batteryState, setBatteryState]  = useState<Battery.BatteryState>(Battery.BatteryState.UNKNOWN);
+  if (Platform.OS === 'web') return <WebFallback />;
 
-  const pulseAnim      = useRef(new Animated.Value(1)).current;
-  const batterySubRef  = useRef<Battery.Subscription | null>(null);
-  const locationSubRef = useRef<Location.LocationSubscription | null>(null);
+  return <TrackingScreenNative />;
+}
 
-  // Pulse animation for live dot
-  useEffect(() => {
-    if (!tracking) { pulseAnim.setValue(1); return; }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.5, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulseAnim, { toValue: 1.0, duration: 700, useNativeDriver: true }),
-      ])
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [tracking]);
+function TrackingScreenNative() {
+  const { user }    = useAuth();
+  const insets      = useSafeAreaInsets();
 
-  // Check permission + task state on mount
+  const [shiftActive,  setShiftActive]  = useState(false);
+  const [shiftStartMs, setShiftStartMs] = useState<number | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [actionBusy,   setActionBusy]   = useState(false);
+  const [arrivedBusy,  setArrivedBusy]  = useState(false);
+  const [currentJob,   setCurrentJob]   = useState<CurrentJob | null>(null);
+  const [nextJob,      setNextJob]      = useState<NextJob | null>(null);
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
+  const [batteryLevel, setBatteryLevel] = useState(-1);
+  const [batteryState, setBatteryState] = useState<Battery.BatteryState>(Battery.BatteryState.UNKNOWN);
+
+  const cardAnim   = useRef(new Animated.Value(280)).current;
+  const pollRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const batteryRef = useRef<Battery.Subscription | null>(null);
+  const locationRef= useRef<Location.LocationSubscription | null>(null);
+  const mounted    = useRef(true);
+
+  useEffect(() => () => {
+    mounted.current = false;
+    pollRef.current    && clearInterval(pollRef.current);
+    batteryRef.current?.remove();
+    locationRef.current?.remove();
+  }, []);
+
+  // ── Initialise ─────────────────────────────────────────────────────────────
+
   useEffect(() => {
     (async () => {
-      const [fg, bg] = await Promise.all([
-        Location.getForegroundPermissionsAsync(),
-        Location.getBackgroundPermissionsAsync(),
-      ]);
-      setFgGranted(fg.status === 'granted');
-      setBgGranted(bg.status === 'granted');
       const running = await isLocationTaskRunning();
-      setTracking(running);
+      if (mounted.current) setShiftActive(running);
       setLoading(false);
     })();
   }, []);
 
-  // Battery monitoring
-  useEffect(() => {
-    (async () => {
-      const [level, state] = await Promise.all([
-        Battery.getBatteryLevelAsync(),
-        Battery.getBatteryStateAsync(),
-      ]);
-      setBatteryLevel(level);
-      setBatteryState(state);
-    })();
+  // ── Battery ────────────────────────────────────────────────────────────────
 
-    batterySubRef.current = Battery.addBatteryLevelListener(({ batteryLevel: l }) => {
-      setBatteryLevel(l);
-      if (l < LOW_BATTERY_THRESHOLD && l !== -1) {
-        isLocationTaskRunning().then(running => {
-          if (running && user) {
-            startLocationTracking({ userId: user._id, apiUrl: API_URL, lowBattery: true }).catch(() => {});
-          }
-        });
-      }
+  useEffect(() => {
+    Battery.getBatteryLevelAsync().then(l => { if (mounted.current) setBatteryLevel(l); });
+    Battery.getBatteryStateAsync().then(s => { if (mounted.current) setBatteryState(s); });
+    batteryRef.current = Battery.addBatteryLevelListener(({ batteryLevel: l }) => {
+      if (mounted.current) setBatteryLevel(l);
     });
+    return () => { batteryRef.current?.remove(); };
+  }, []);
 
-    return () => { batterySubRef.current?.remove(); };
-  }, [user]);
+  // ── Foreground location subscription ──────────────────────────────────────
 
-  // Foreground location subscription
   useEffect(() => {
-    if (!tracking || !fgGranted) {
-      locationSubRef.current?.remove();
-      locationSubRef.current = null;
+    if (!shiftActive) {
+      locationRef.current?.remove();
+      locationRef.current = null;
       return;
     }
-
     Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.Balanced, timeInterval: 5_000, distanceInterval: 10 },
-      loc => setLocation(loc)
-    ).then(sub => { locationSubRef.current = sub; });
+      { accuracy: Location.Accuracy.Balanced, timeInterval: 10_000, distanceInterval: 15 },
+      loc => { if (mounted.current) setUserLocation(loc); },
+    ).then(sub => { locationRef.current = sub; });
 
-    return () => {
-      locationSubRef.current?.remove();
-      locationSubRef.current = null;
-    };
-  }, [tracking, fgGranted]);
+    return () => { locationRef.current?.remove(); locationRef.current = null; };
+  }, [shiftActive]);
 
-  const requestPermissions = async (): Promise<boolean> => {
-    if (!fgGranted) {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      const ok = status === 'granted';
-      setFgGranted(ok);
-      if (!ok) {
-        Alert.alert('Permission Required', 'Foreground location access is required to track your position.');
-        return false;
+  // ── Slide bottom card ──────────────────────────────────────────────────────
+
+  useEffect(() => {
+    Animated.spring(cardAnim, {
+      toValue: loading ? 280 : 0,
+      useNativeDriver: true,
+      bounciness: 4,
+    }).start();
+  }, [loading]);
+
+  // ── Fetch current job ──────────────────────────────────────────────────────
+
+  const fetchCurrentJob = useCallback(async () => {
+    try {
+      const { data } = await axios.get<{ current?: CurrentJob; next?: NextJob }>('/api/jobs/current');
+      if (mounted.current) {
+        setCurrentJob(data.current ?? null);
+        setNextJob(data.next ?? null);
       }
+    } catch {
+      // Non-critical
     }
-    if (!bgGranted) {
-      const { status } = await Location.requestBackgroundPermissionsAsync();
-      const ok = status === 'granted';
-      setBgGranted(ok);
-      if (!ok) {
-        Alert.alert('Background Location', 'Background location was not granted. Tracking will only work while the app is open.');
-      }
-    }
-    return true;
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCurrentJob();
+    pollRef.current = setInterval(fetchCurrentJob, 60_000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [fetchCurrentJob]);
+
+  // ── Start shift ────────────────────────────────────────────────────────────
 
   const handleStart = async () => {
-    if (!user) return;
-    const ok = await requestPermissions();
-    if (!ok) return;
     setActionBusy(true);
     try {
-      const isLow = batteryLevel !== -1 && batteryLevel < LOW_BATTERY_THRESHOLD;
-      await startLocationTracking({ userId: user._id, apiUrl: API_URL, lowBattery: isLow });
-      setTracking(true);
+      // Request foreground permission
+      const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+      if (fgStatus !== 'granted') {
+        Alert.alert('Permission Required', 'Foreground location access is needed to track your position.');
+        return;
+      }
+
+      // Request background permission
+      const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+      if (bgStatus !== 'granted') {
+        Alert.alert('Background Location', 'Background location was not granted. Tracking only works while the app is open.');
+      }
+
+      // Start background task
+      await Location.startLocationUpdatesAsync(LOCATION_TASK, {
+        accuracy:         Location.Accuracy.High,
+        timeInterval:     15_000,
+        distanceInterval: 20,
+        showsBackgroundLocationIndicator: true,
+        foregroundService: {
+          notificationTitle: 'Wash Hub',
+          notificationBody:  'Tracking your location for active shift',
+          notificationColor: Colors.accent,
+        },
+      });
+
+      // Notify server
+      await axios.post('/api/staff/shift/start');
+
+      if (mounted.current) {
+        setShiftActive(true);
+        setShiftStartMs(Date.now());
+      }
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Could not start tracking.');
+      Alert.alert('Error', err?.message ?? 'Could not start shift. Please try again.');
     } finally {
-      setActionBusy(false);
+      if (mounted.current) setActionBusy(false);
     }
   };
 
-  const handleStop = async () => {
-    if (!user) return;
+  // ── End shift ──────────────────────────────────────────────────────────────
+
+  const handleEnd = () => {
     Alert.alert('End Shift', 'Stop location tracking and go offline?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -205,310 +503,178 @@ export default function TrackingScreen() {
         onPress: async () => {
           setActionBusy(true);
           try {
-            await stopLocationTracking({ userId: user._id, apiUrl: API_URL });
-            setTracking(false);
-            setLocation(null);
+            await Location.stopLocationUpdatesAsync(LOCATION_TASK);
+            await axios.post('/api/staff/shift/end');
+            if (mounted.current) {
+              setShiftActive(false);
+              setShiftStartMs(null);
+              setUserLocation(null);
+            }
           } catch {
-            setTracking(false);
-            setLocation(null);
+            if (mounted.current) {
+              setShiftActive(false);
+              setShiftStartMs(null);
+            }
           } finally {
-            setActionBusy(false);
+            if (mounted.current) setActionBusy(false);
           }
         },
       },
     ]);
   };
 
-  const isLowBattery = batteryLevel !== -1 && batteryLevel < LOW_BATTERY_THRESHOLD;
-  const isCharging   = batteryState === Battery.BatteryState.CHARGING || batteryState === Battery.BatteryState.FULL;
+  // ── Mark arrived ───────────────────────────────────────────────────────────
 
-  if (Platform.OS === 'web') {
-    return (
-      <SafeAreaView style={tr.safe} edges={['top']}>
-        <View style={tr.centered}>
-          <View style={tr.webIconWrap}>
-            <Ionicons name="navigate-outline" size={36} color={Colors.accent} />
-          </View>
-          <Text style={tr.webTitle}>Location Tracking</Text>
-          <Text style={tr.webSub}>GPS tracking is only available on the mobile app.</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleMarkArrived = async () => {
+    if (!currentJob) return;
+    setArrivedBusy(true);
+    try {
+      await axios.patch(`/api/jobs/${currentJob._id}/status`, { status: 'arrived' });
+      await fetchCurrentJob();
+    } catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.error ?? 'Could not update status.');
+    } finally {
+      if (mounted.current) setArrivedBusy(false);
+    }
+  };
+
+  const isLowBattery = batteryLevel > 0 && batteryLevel < LOW_BATTERY;
+  const isCharging   = batteryState === Battery.BatteryState.CHARGING
+                    || batteryState === Battery.BatteryState.FULL;
+
+  // Route coordinates for Polyline
+  const routeCoords =
+    userLocation && currentJob?.lat && currentJob?.lng
+      ? [
+          { latitude: userLocation.coords.latitude, longitude: userLocation.coords.longitude },
+          { latitude: currentJob.lat,               longitude: currentJob.lng               },
+        ]
+      : [];
+
+  // Map initial region
+  const mapRegion = userLocation
+    ? {
+        latitude:       userLocation.coords.latitude,
+        longitude:      userLocation.coords.longitude,
+        latitudeDelta:  0.01,
+        longitudeDelta: 0.01,
+      }
+    : undefined;
 
   if (loading) {
     return (
-      <SafeAreaView style={tr.safe} edges={['top']}>
-        <View style={tr.centered}>
-          <ActivityIndicator size="large" color={Colors.accent} />
-        </View>
-      </SafeAreaView>
+      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color={Colors.accent} />
+      </View>
+    );
+  }
+
+  // Lazy-require react-native-maps to avoid crash if not installed
+  let MapView: any, Polyline: any;
+  try {
+    const maps = require('react-native-maps');
+    MapView   = maps.default;
+    Polyline  = maps.Polyline;
+  } catch {
+    return (
+      <View style={{ flex: 1, backgroundColor: Colors.background, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 }}>
+        <Ionicons name="map-outline" size={48} color={Colors.textMuted} />
+        <Text style={{ fontSize: 16, color: Colors.textMuted, textAlign: 'center' }}>Map unavailable (react-native-maps not installed)</Text>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={tr.safe} edges={['top']}>
-      <ScreenHeader title="Location Tracking" backButton />
+    <View style={{ flex: 1, backgroundColor: Colors.black }}>
 
-      <ScrollView
-        style={tr.scroll}
-        contentContainerStyle={tr.content}
-        showsVerticalScrollIndicator={false}
+      {/* ── Full screen map ── */}
+      <MapView
+        style={StyleSheet.absoluteFill}
+        initialRegion={mapRegion}
+        showsUserLocation
+        followsUserLocation={shiftActive}
+        showsMyLocationButton={false}
+        showsCompass={false}
       >
-        <ReAnimated.View entering={FadeIn.duration(300)}>
-        {/* Status hero card */}
-        <View style={[tr.heroCard, tracking ? tr.heroActive : tr.heroIdle]}>
-          <View style={tr.heroRow}>
-            <Animated.View style={[
-              tr.liveDot,
-              tracking ? tr.liveDotOn : tr.liveDotOff,
-              tracking && { transform: [{ scale: pulseAnim }] },
-            ]} />
-            <View>
-              <Text style={[tr.heroStatus, { color: tracking ? Colors.success : Colors.textMuted }]}>
-                {tracking ? 'TRACKING ACTIVE' : 'NOT TRACKING'}
-              </Text>
-              <Text style={tr.heroSub}>
-                {tracking
-                  ? `Broadcasting every ${isLowBattery ? '60' : '15'} seconds`
-                  : 'Start your shift to begin broadcasting your location.'}
-              </Text>
-            </View>
-          </View>
-          {tracking && (
-            <View style={tr.shiftBadge}>
-              <Ionicons name="radio" size={11} color={Colors.success} />
-              <Text style={tr.shiftBadgeText}>LIVE</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Low battery warning */}
-        {isLowBattery && !isCharging && (
-          <View style={tr.warningBanner}>
-            <Ionicons name="battery-dead-outline" size={18} color={Colors.warningText} />
-            <Text style={tr.warningText}>
-              Battery below 15% — update interval reduced to 60 s to save power.
-            </Text>
-          </View>
+        {/* Route line to current job */}
+        {routeCoords.length === 2 && (
+          <Polyline
+            coordinates={routeCoords}
+            strokeColor={Colors.accent}
+            strokeWidth={3}
+          />
         )}
+      </MapView>
 
-        {/* Battery card */}
-        <View style={tr.card}>
-          <View style={tr.cardTitleRow}>
-            <Ionicons name="battery-half-outline" size={16} color={Colors.textMuted} />
-            <Text style={tr.cardTitle}>Battery</Text>
-          </View>
-          <BatteryBar level={batteryLevel} />
-          {isCharging && (
-            <View style={tr.chargingRow}>
-              <Ionicons name="flash" size={12} color={Colors.success} />
-              <Text style={tr.chargingText}>Charging</Text>
-            </View>
-          )}
-        </View>
+      {/* ── Floating back button (top left) ── */}
+      <TouchableOpacity
+        onPress={() => router.back()}
+        style={{
+          position: 'absolute',
+          top: insets.top + 12,
+          left: 16,
+          zIndex: 100,
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          borderRadius: 20,
+          width: 40,
+          height: 40,
+          alignItems: 'center',
+          justifyContent: 'center',
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.2,
+          shadowRadius: 4,
+        }}
+      >
+        <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+      </TouchableOpacity>
 
-        {/* Permissions card */}
-        <View style={tr.card}>
-          <View style={tr.cardTitleRow}>
-            <Ionicons name="shield-checkmark-outline" size={16} color={Colors.textMuted} />
-            <Text style={tr.cardTitle}>Permissions</Text>
-          </View>
-          <PermRow label="Foreground location" granted={fgGranted} />
-          <PermRow label="Background location" granted={bgGranted} />
-          {!bgGranted && fgGranted && (
-            <Pressable
-              style={tr.grantBtn}
-              onPress={async () => {
-                const { status } = await Location.requestBackgroundPermissionsAsync();
-                setBgGranted(status === 'granted');
-              }}
-              android_ripple={{ color: Colors.accent + '12', borderless: false }}
-            >
-              <Text style={tr.grantBtnText}>Grant Background Permission</Text>
-            </Pressable>
-          )}
-        </View>
+      {/* ── Top floating panel (shift banner + battery warning) ── */}
+      <View
+        style={{
+          position: 'absolute',
+          top: insets.top + 12,
+          left: 68,   // clear of back button
+          right: 16,
+          gap: 8,
+          zIndex: 50,
+        }}
+        pointerEvents="box-none"
+      >
+        <ShiftBanner
+          shiftActive={shiftActive}
+          startMs={shiftStartMs}
+          actionBusy={actionBusy}
+          onStart={handleStart}
+          onEnd={handleEnd}
+        />
+        {isLowBattery && !isCharging && <BatteryWarning />}
+      </View>
 
-        {/* Current position card */}
-        {tracking && (
-          <View style={tr.card}>
-            <View style={tr.cardTitleRow}>
-              <Ionicons name="location-outline" size={16} color={Colors.textMuted} />
-              <Text style={tr.cardTitle}>Current Position</Text>
-            </View>
-            {location ? (
-              <>
-                <View style={tr.coordRow}>
-                  <View style={tr.coordIconWrap}>
-                    <Ionicons name="location" size={14} color={Colors.accent} />
-                  </View>
-                  <Text style={tr.coordText}>
-                    {location.coords.latitude.toFixed(6)}°,{'  '}
-                    {location.coords.longitude.toFixed(6)}°
-                  </Text>
-                </View>
-                <View style={tr.coordSubRow}>
-                  <Ionicons name="radio-button-on" size={12} color={Colors.textMuted} />
-                  <Text style={tr.coordSub}>
-                    ±{Math.round(location.coords.accuracy ?? 0)} m accuracy
-                  </Text>
-                  <View style={tr.coordDot} />
-                  <Text style={tr.coordSub}>
-                    {new Date(location.timestamp).toLocaleTimeString()}
-                  </Text>
-                </View>
-              </>
-            ) : (
-              <View style={tr.locWaiting}>
-                <ActivityIndicator size="small" color={Colors.accent} />
-                <Text style={tr.locWaitingText}>Acquiring GPS signal…</Text>
-              </View>
-            )}
-          </View>
-        )}
+      {/* ── Bottom floating panel ── */}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          bottom: insets.bottom + 16,
+          left: 16,
+          right: 16,
+          gap: 10,
+          transform: [{ translateY: cardAnim }],
+        }}
+        pointerEvents="box-none"
+      >
+        {/* Next job preview */}
+        {nextJob && <NextJobPreview job={nextJob} />}
 
-        {/* Main CTA */}
-        {tracking ? (
-          <Pressable
-            style={({ pressed }) => [tr.endBtn, pressed && { opacity: 0.85 }, actionBusy && { opacity: 0.6 }]}
-            onPress={handleStop}
-            disabled={actionBusy}
-            android_ripple={{ color: Colors.accent + '12', borderless: false }}
-          >
-            {actionBusy ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <>
-                <Ionicons name="stop-circle" size={20} color={Colors.white} />
-                <Text style={tr.endBtnText}>End Shift</Text>
-              </>
-            )}
-          </Pressable>
-        ) : (
-          <Pressable
-            style={({ pressed }) => [tr.startBtn, pressed && { opacity: 0.88 }, actionBusy && { opacity: 0.6 }]}
-            onPress={handleStart}
-            disabled={actionBusy}
-            android_ripple={{ color: Colors.accent + '12', borderless: false }}
-          >
-            {actionBusy ? (
-              <ActivityIndicator color={Colors.white} />
-            ) : (
-              <>
-                <Ionicons name="navigate" size={20} color={Colors.white} />
-                <Text style={tr.startBtnText}>Start Shift</Text>
-              </>
-            )}
-          </Pressable>
-        )}
+        {/* Current job card */}
+        <CurrentJobCard
+          job={currentJob}
+          onMarkArrived={handleMarkArrived}
+          arrivedBusy={arrivedBusy}
+        />
+      </Animated.View>
 
-        {/* Info note */}
-        <View style={tr.infoBox}>
-          <Ionicons name="information-circle-outline" size={15} color={Colors.textMuted} />
-          <Text style={tr.infoText}>
-            Keep the app running in the background for uninterrupted tracking. Customers
-            assigned to mobile jobs will see your live position on their map.
-          </Text>
-        </View>
-        </ReAnimated.View>
-      </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const tr = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
-  scroll:  { flex: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: SCROLL_PADDING_BOTTOM },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-
-  // Web fallback
-  webIconWrap: { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  webTitle:    { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  webSub:      { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', paddingHorizontal: 32, lineHeight: 20 },
-
-  // Hero card
-  heroCard: {
-    borderRadius: borderRadius.lg, padding: 20, marginBottom: 12, ...cardShadow,
-  },
-  heroActive: { backgroundColor: Colors.successBg },
-  heroIdle:   { backgroundColor: Colors.surface },
-  heroRow:    { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  liveDot:    { width: 14, height: 14, borderRadius: 7 },
-  liveDotOn:  { backgroundColor: Colors.success },
-  liveDotOff: { backgroundColor: Colors.border },
-  heroStatus: { fontSize: 13, fontWeight: '800', letterSpacing: 0.8 },
-  heroSub:    { fontSize: 13, color: Colors.textSecondary, lineHeight: 18, marginTop: 2, maxWidth: 220 },
-  shiftBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: Colors.success + '18', borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 4, marginTop: 12 },
-  shiftBadgeText: { fontSize: 10, fontWeight: '800', color: Colors.success, letterSpacing: 0.8 },
-
-  // Warning banner
-  warningBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: Colors.warningBg, borderRadius: borderRadius.md, padding: 14,
-    marginBottom: 12, borderLeftWidth: 3, borderLeftColor: Colors.warning,
-  },
-  warningText: { flex: 1, fontSize: 13, color: Colors.warningText, fontWeight: '600', lineHeight: 18 },
-
-  // Generic card
-  card: {
-    backgroundColor: Colors.surface, borderRadius: borderRadius.md,
-    padding: 16, marginBottom: 12, ...cardShadow,
-  },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  cardTitle:    { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
-
-  // Battery bar
-  batteryWrap:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  batteryBody:  { flex: 1, height: 14, backgroundColor: Colors.surfaceAlt, borderRadius: 7, overflow: 'hidden', borderWidth: 1, borderColor: Colors.border },
-  batteryFill:  { height: '100%', borderRadius: 7 },
-  batteryNib:   { width: 4, height: 8, borderRadius: 2 },
-  batteryPct:   { fontSize: 14, fontWeight: '700', minWidth: 44 },
-  chargingRow:  { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 10 },
-  chargingText: { fontSize: 12, color: Colors.success, fontWeight: '600' },
-
-  // Permissions
-  permRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
-  permDot:   { width: 8, height: 8, borderRadius: 4 },
-  permLabel: { flex: 1, fontSize: 14, color: Colors.textSecondary },
-  permValue: { fontSize: 12, fontWeight: '700' },
-  grantBtn:  {
-    marginTop: 4, backgroundColor: Colors.accentMuted, borderRadius: borderRadius.sm,
-    paddingVertical: 10, alignItems: 'center',
-  },
-  grantBtnText: { color: Colors.accent, fontSize: 13, fontWeight: '700' },
-
-  // Coordinates
-  coordRow:     { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  coordIconWrap:{ width: 28, height: 28, borderRadius: 8, backgroundColor: Colors.accentMuted, alignItems: 'center', justifyContent: 'center' },
-  coordText:    { fontSize: 14, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
-  coordSubRow:  { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  coordSub:     { fontSize: 12, color: Colors.textMuted },
-  coordDot:     { width: 3, height: 3, borderRadius: 2, backgroundColor: Colors.border },
-  locWaiting:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
-  locWaitingText:{ fontSize: 13, color: Colors.textMuted },
-
-  // Buttons
-  startBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.accent, borderRadius: borderRadius.md, paddingVertical: 16,
-    marginBottom: 12, ...cardShadow,
-  },
-  startBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
-  endBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: Colors.error, borderRadius: borderRadius.md, paddingVertical: 16,
-    marginBottom: 12, ...cardShadow,
-  },
-  endBtnText: { color: Colors.white, fontSize: 16, fontWeight: '700' },
-
-  // Info note
-  infoBox: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    marginBottom: 8,
-  },
-  infoText: { flex: 1, fontSize: 12, color: Colors.textMuted, lineHeight: 18 },
-});

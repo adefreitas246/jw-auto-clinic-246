@@ -4,47 +4,39 @@
 //
 // Resolution order (first match wins):
 //   1. x-business-id header       — used by mobile apps (stored in SecureStore)
-//   2. Subdomain                  — e.g. "acme.washhub.com" → slug "acme"
-//   3. JWT claim (req.user)       — fallback if auth middleware already ran
-//
-// Routes that require a resolved business should call this AFTER authMiddleware.
+//   2. req.user?.businessId       — from JWT via authMiddleware
+//   3. First active Business in DB — single-tenant fallback
 
 const Business = require('../models/Business');
 
 const resolveBusiness = async (req, res, next) => {
   try {
-    let business = null;
+    let businessId =
+      req.headers['x-business-id'] ||
+      req.user?.businessId;
 
-    // 1. Explicit header (highest priority — mobile clients always send this)
-    const headerId = req.headers['x-business-id'];
-    if (headerId) {
-      business = await Business.findById(headerId).lean();
-    }
-
-    // 2. Subdomain routing (web / white-label domains)
-    if (!business) {
-      const host = req.headers.host || '';
-      const subdomain = host.split('.')[0];
-      // Ignore generic subdomains like "www", "api", "staging", IP addresses
-      if (subdomain && !/^(www|api|staging|localhost|\d+)$/.test(subdomain)) {
-        business = await Business.findOne({ slug: subdomain, active: true }).lean();
+    if (!businessId) {
+      // Fallback: use the first business in the database
+      const business = await Business.findOne({ active: true });
+      if (!business) {
+        return res.status(404).json({ message: 'No business found' });
       }
+      req.business = business;
+      req.businessId = business._id;
+      return next();
     }
 
-    // 3. JWT claim fallback (req.user set by authMiddleware)
-    if (!business && req.user?.businessId) {
-      business = await Business.findById(req.user.businessId).lean();
-    }
-
+    const business = await Business.findById(businessId);
     if (!business) {
-      return res.status(400).json({ error: 'Unable to resolve business tenant.' });
+      return res.status(404).json({ message: 'Business not found' });
     }
 
+    req.business = business;
     req.businessId = business._id;
-    req.business   = business;   // full doc available for settings, branding, etc.
     next();
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    console.error('resolveBusiness error:', error);
+    res.status(500).json({ message: 'Error resolving business' });
   }
 };
 

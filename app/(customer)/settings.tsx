@@ -1,4 +1,4 @@
-// app/(customer)/settings.tsx — Customer profile & settings
+// app/(customer)/settings.tsx — Customer settings (tab screen)
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
@@ -15,135 +15,125 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ReAnimated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { ScreenHeader, Avatar } from '@/components/ui';
+import { ScreenHeader } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
 import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type EditableField = 'name' | 'email' | 'phone';
-
-type SettingRow = {
-  icon:     React.ComponentProps<typeof Ionicons>['name'];
-  label:    string;
-  value?:   string;
-  onPress:  () => void;
-  danger?:  boolean;
-  editable?: boolean;
+type RowDef = {
+  icon:    React.ComponentProps<typeof Ionicons>['name'];
+  label:   string;
+  onPress: () => void;
+  danger?: boolean;
 };
 
-const FIELD_LABELS: Record<EditableField, string> = {
-  name:  'Name',
-  email: 'Email',
-  phone: 'Phone',
+type SectionDef = {
+  title: string;
+  rows:  RowDef[];
 };
 
-const FIELD_INPUT_PROPS: Record<EditableField, object> = {
-  name:  { autoCapitalize: 'words',  keyboardType: 'default',       textContentType: 'name' },
-  email: { autoCapitalize: 'none',   keyboardType: 'email-address', textContentType: 'emailAddress' },
-  phone: { autoCapitalize: 'none',   keyboardType: 'phone-pad',     textContentType: 'telephoneNumber' },
-};
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function getInitials(name: string): string {
+  return (
+    name.trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(w => w[0]?.toUpperCase() ?? '')
+      .join('') || '?'
+  );
+}
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 export default function CustomerSettingsScreen() {
   const { user, logout, updateProfile } = useAuth();
 
-  const [editField,  setEditField]  = useState<EditableField | null>(null);
-  const [editValue,  setEditValue]  = useState('');
-  const [saving,     setSaving]     = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [firstName,    setFirstName]    = useState('');
+  const [lastName,     setLastName]     = useState('');
+  const [phone,        setPhone]        = useState('');
+  const [saving,       setSaving]       = useState(false);
 
-  const firstName = user?.name?.split(' ')[0] ?? 'Customer';
+  // ── Edit profile modal ─────────────────────────────────────────────────────
 
-  // ── Edit modal ─────────────────────────────────────────────────────────────
+  function openEditModal() {
+    const parts = (user?.name ?? '').trim().split(/\s+/);
+    setFirstName(parts[0] ?? '');
+    setLastName(parts.slice(1).join(' '));
+    setPhone(user?.phone ?? '');
+    setModalVisible(true);
+  }
 
-  const openEdit = (field: EditableField, current: string) => {
-    setEditField(field);
-    setEditValue(current);
-  };
-
-  const closeEdit = () => {
+  function closeEditModal() {
     if (saving) return;
-    setEditField(null);
-    setEditValue('');
-  };
+    setModalVisible(false);
+  }
 
-  const handleSave = async () => {
-    if (!editField || !editValue.trim()) return;
+  async function handleSave() {
+    const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
+    if (!name) return;
     try {
       setSaving(true);
-      await updateProfile({ [editField]: editValue.trim() });
-      setEditField(null);
-      setEditValue('');
+      await updateProfile({ name, phone: phone.trim() || undefined });
+      setModalVisible(false);
     } catch (e: any) {
       Alert.alert('Could not save', e?.response?.data?.error ?? 'Please try again.');
     } finally {
       setSaving(false);
     }
-  };
+  }
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  // ── Sign out ───────────────────────────────────────────────────────────────
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            await logout();
-            router.replace('/auth/login');
-          },
-        },
-      ]
-    );
-  };
+  function handleSignOut() {
+    Alert.alert('Sign Out', 'Are you sure?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: () => logout() },
+    ]);
+  }
 
-  // ── Rows ───────────────────────────────────────────────────────────────────
+  // ── Sections ───────────────────────────────────────────────────────────────
 
-  const profileRows: SettingRow[] = [
+  const sections: SectionDef[] = [
     {
-      icon:     'person-outline',
-      label:    'Name',
-      value:    user?.name ?? '—',
-      editable: true,
-      onPress:  () => openEdit('name', user?.name ?? ''),
+      title: 'Account',
+      rows: [
+        { icon: 'lock-closed-outline',    label: 'Change Password',           onPress: () => {} },
+        { icon: 'notifications-outline',  label: 'Notification Preferences',  onPress: () => {} },
+        { icon: 'card-outline',           label: 'Payment Methods',           onPress: () => {} },
+      ],
     },
     {
-      icon:     'mail-outline',
-      label:    'Email',
-      value:    user?.email ?? '—',
-      editable: true,
-      onPress:  () => openEdit('email', user?.email ?? ''),
+      title: 'My Stuff',
+      rows: [
+        { icon: 'car-outline',      label: 'My Vehicles',       onPress: () => router.push('/(customer)/vehicles')     },
+        { icon: 'calendar-outline', label: 'My Bookings',       onPress: () => router.push('/(customer)/booking')      },
+        { icon: 'star-outline',     label: 'My Rewards',        onPress: () => router.push('/(customer)/loyalty')      },
+        { icon: 'refresh-outline',  label: 'Subscription Plan', onPress: () => router.push('/(customer)/subscriptions') },
+        { icon: 'people-outline',   label: 'Refer a Friend',    onPress: () => router.push('/(customer)/referral')     },
+      ],
     },
     {
-      icon:     'call-outline',
-      label:    'Phone',
-      value:    user?.phone ?? 'Not set',
-      editable: true,
-      onPress:  () => openEdit('phone', user?.phone ?? ''),
-    },
-  ];
-
-  const accountRows: SettingRow[] = [
-    {
-      icon:    'notifications-outline',
-      label:   'Notifications',
-      onPress: () => router.push('/(customer)/notifications'),
+      title: 'Support',
+      rows: [
+        { icon: 'help-circle-outline',   label: 'Help Center',       onPress: () => {} },
+        { icon: 'chatbubble-outline',    label: 'Contact Support',   onPress: () => {} },
+        { icon: 'document-text-outline', label: 'Privacy Policy',    onPress: () => {} },
+        { icon: 'document-text-outline', label: 'Terms of Service',  onPress: () => {} },
+      ],
     },
     {
-      icon:    'log-out-outline',
-      label:   'Sign Out',
-      onPress: handleLogout,
-      danger:  true,
+      title: 'Danger Zone',
+      rows: [
+        { icon: 'log-out-outline', label: 'Sign Out',       onPress: handleSignOut,  danger: true },
+        { icon: 'trash-outline',   label: 'Delete Account', onPress: () => {},        danger: true },
+      ],
     },
   ];
 
@@ -151,117 +141,125 @@ export default function CustomerSettingsScreen() {
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <ScreenHeader title="Profile" backButton />
+      <ScreenHeader title="Settings" />
 
       <ScrollView
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Avatar hero ── */}
-        <ReAnimated.View entering={FadeInDown.duration(300)} style={s.hero}>
-          <Avatar name={firstName} size={80} />
-          <Text style={s.name}>{user?.name ?? 'Customer'}</Text>
-          <Text style={s.email}>{user?.email ?? ''}</Text>
-        </ReAnimated.View>
 
-        {/* ── Profile rows ── */}
-        <ReAnimated.View entering={FadeInDown.delay(80).duration(300)}>
-          <Text style={s.sectionLabel}>Profile</Text>
-          <View style={s.card}>
-            {profileRows.map((row, i) => (
-              <React.Fragment key={row.label}>
-                {i > 0 && <View style={s.divider} />}
-                <Pressable
-                  style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}
-                  onPress={row.onPress}
-                  android_ripple={{ color: Colors.accent + '18', borderless: false }}
-                >
-                  <View style={s.iconWrap}>
-                    <Ionicons name={row.icon} size={18} color={Colors.accent} />
-                  </View>
-                  <View style={s.rowText}>
-                    <Text style={s.rowLabel}>{row.label}</Text>
-                    {row.value ? (
-                      <Text style={s.rowValue} numberOfLines={1}>{row.value}</Text>
-                    ) : null}
-                  </View>
-                  <Ionicons name="pencil-outline" size={15} color={Colors.textMuted} />
-                </Pressable>
-              </React.Fragment>
-            ))}
+        {/* ── Profile card ── */}
+        <Animated.View entering={FadeIn.duration(300)} style={s.profileCard}>
+          {/* Avatar */}
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{getInitials(user?.name ?? '')}</Text>
           </View>
-        </ReAnimated.View>
 
-        {/* ── Account rows ── */}
-        <ReAnimated.View entering={FadeInDown.delay(160).duration(300)}>
-          <Text style={s.sectionLabel}>Account</Text>
-          <View style={s.card}>
-            {accountRows.map((row, i) => (
-              <React.Fragment key={row.label}>
-                {i > 0 && <View style={s.divider} />}
-                <Pressable
-                  style={({ pressed }) => [s.row, pressed && { opacity: 0.7 }]}
-                  onPress={row.onPress}
-                  android_ripple={{ color: Colors.accent + '18', borderless: false }}
-                >
-                  <View style={[s.iconWrap, row.danger && s.iconWrapDanger]}>
-                    <Ionicons
-                      name={row.icon}
-                      size={18}
-                      color={row.danger ? Colors.error : Colors.accent}
-                    />
-                  </View>
-                  <View style={s.rowText}>
+          {/* Name + email + badge */}
+          <Text style={s.profileName}>{user?.name ?? 'Customer'}</Text>
+          <Text style={s.profileEmail}>{user?.email ?? ''}</Text>
+          <View style={s.roleBadge}>
+            <Text style={s.roleBadgeText}>Customer</Text>
+          </View>
+
+          {/* Edit button */}
+          <Pressable
+            style={s.editBtn}
+            onPress={openEditModal}
+            android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          >
+            <Ionicons name="pencil-outline" size={14} color={Colors.accent} />
+            <Text style={s.editBtnText}>Edit Profile</Text>
+          </Pressable>
+        </Animated.View>
+
+        {/* ── Setting sections ── */}
+        {sections.map((section, si) => (
+          <Animated.View
+            key={section.title}
+            entering={FadeInDown.delay(60 + si * 60).duration(280)}
+          >
+            <Text style={s.sectionLabel}>{section.title}</Text>
+            <View style={s.card}>
+              {section.rows.map((row, ri) => (
+                <React.Fragment key={row.label}>
+                  {ri > 0 && <View style={s.divider} />}
+                  <Pressable
+                    style={({ pressed }) => [s.row, pressed && { opacity: 0.72 }]}
+                    onPress={row.onPress}
+                    android_ripple={{ color: Colors.accent + '18', borderless: false }}
+                  >
+                    <View style={[s.iconWrap, row.danger && s.iconWrapDanger]}>
+                      <Ionicons
+                        name={row.icon}
+                        size={18}
+                        color={row.danger ? Colors.error : Colors.accent}
+                      />
+                    </View>
                     <Text style={[s.rowLabel, row.danger && s.rowLabelDanger]}>
                       {row.label}
                     </Text>
-                  </View>
-                  {!row.danger && (
-                    <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-                  )}
-                </Pressable>
-              </React.Fragment>
-            ))}
-          </View>
-        </ReAnimated.View>
+                    <Ionicons name="chevron-forward" size={16} color={Colors.border} />
+                  </Pressable>
+                </React.Fragment>
+              ))}
+            </View>
+          </Animated.View>
+        ))}
+
       </ScrollView>
 
-      {/* ── Edit field modal ── */}
+      {/* ── Edit Profile modal (bottom sheet) ── */}
       <Modal
-        visible={editField !== null}
+        visible={modalVisible}
         transparent
         animationType="slide"
-        onRequestClose={closeEdit}
+        onRequestClose={closeEditModal}
       >
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={IS_IOS ? 'padding' : undefined}
-        >
-          <Pressable style={s.backdrop} onPress={closeEdit} />
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={IS_IOS ? 'padding' : undefined}>
+          <Pressable style={s.backdrop} onPress={closeEditModal} />
 
           <View style={s.sheet}>
             <View style={s.sheetHandle} />
+            <Text style={s.sheetTitle}>Edit Profile</Text>
 
-            <Text style={s.sheetTitle}>
-              Edit {editField ? FIELD_LABELS[editField] : ''}
-            </Text>
-
+            <Text style={s.inputLabel}>First Name</Text>
             <TextInput
               style={s.input}
-              value={editValue}
-              onChangeText={setEditValue}
-              placeholder={editField ? FIELD_LABELS[editField] : ''}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First name"
               placeholderTextColor={Colors.textMuted}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={handleSave}
-              {...(editField ? FIELD_INPUT_PROPS[editField] : {})}
+              autoCapitalize="words"
+              textContentType="givenName"
+            />
+
+            <Text style={s.inputLabel}>Last Name</Text>
+            <TextInput
+              style={s.input}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Last name"
+              placeholderTextColor={Colors.textMuted}
+              autoCapitalize="words"
+              textContentType="familyName"
+            />
+
+            <Text style={s.inputLabel}>Phone Number</Text>
+            <TextInput
+              style={[s.input, { marginBottom: 24 }]}
+              value={phone}
+              onChangeText={setPhone}
+              placeholder="Phone number"
+              placeholderTextColor={Colors.textMuted}
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
             />
 
             <View style={s.sheetBtns}>
               <Pressable
                 style={s.cancelBtn}
-                onPress={closeEdit}
+                onPress={closeEditModal}
                 disabled={saving}
                 android_ripple={{ color: Colors.border, borderless: false }}
               >
@@ -269,16 +267,15 @@ export default function CustomerSettingsScreen() {
               </Pressable>
 
               <Pressable
-                style={[s.saveBtn, (!editValue.trim() || saving) && { opacity: 0.5 }]}
+                style={[s.saveBtn, saving && { opacity: 0.6 }]}
                 onPress={handleSave}
-                disabled={!editValue.trim() || saving}
+                disabled={saving}
                 android_ripple={{ color: Colors.accentDark, borderless: false }}
               >
-                {saving ? (
-                  <ActivityIndicator size="small" color={Colors.white} />
-                ) : (
-                  <Text style={s.saveBtnText}>Save</Text>
-                )}
+                {saving
+                  ? <ActivityIndicator size="small" color={Colors.white} />
+                  : <Text style={s.saveBtnText}>Save Changes</Text>
+                }
               </Pressable>
             </View>
           </View>
@@ -292,16 +289,47 @@ export default function CustomerSettingsScreen() {
 
 const s = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
-  content: { paddingBottom: SCROLL_PADDING_BOTTOM },
+  content: { paddingBottom: 100 },
 
-  // Hero
-  hero: {
+  // Profile card
+  profileCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: SCREEN_PADDING,
+    marginTop: 16,
+    marginBottom: 20,
+    borderRadius: borderRadius.lg,
+    padding: 24,
     alignItems: 'center',
-    paddingVertical: 28,
-    gap: 8,
+    gap: 6,
+    ...cardShadow,
   },
-  name:  { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
-  email: { fontSize: 14, color: Colors.textSecondary },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  avatarText:   { fontSize: 22, fontWeight: '800', color: Colors.accent },
+  profileName:  { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
+  profileEmail: { fontSize: 14, color: Colors.textMuted },
+  roleBadge:    { backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full, paddingHorizontal: 12, paddingVertical: 4, marginTop: 2 },
+  roleBadgeText:{ fontSize: 12, fontWeight: '700', color: Colors.accent },
+  editBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    borderRadius: borderRadius.full,
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
+    overflow: 'hidden',
+  },
+  editBtnText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
 
   // Section label
   sectionLabel: {
@@ -321,13 +349,13 @@ const s = StyleSheet.create({
     marginHorizontal: SCREEN_PADDING,
     borderRadius: borderRadius.lg,
     marginBottom: 20,
-    ...cardShadow,
     overflow: 'hidden',
+    ...cardShadow,
   },
   divider: {
     height: 1,
     backgroundColor: Colors.border,
-    marginLeft: 60,
+    marginLeft: 64,
   },
   row: {
     flexDirection: 'row',
@@ -345,72 +373,56 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapDanger: { backgroundColor: Colors.errorBg },
-  rowText:        { flex: 1 },
-  rowLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
+  rowLabel:       { flex: 1, fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
   rowLabelDanger: { color: Colors.error },
-  rowValue: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    marginTop: 1,
-  },
 
-  // Edit modal
+  // Edit modal (bottom sheet)
   backdrop:    { flex: 1, backgroundColor: Colors.overlay },
   sheet: {
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: borderRadius.xl ?? borderRadius.lg,
-    borderTopRightRadius: borderRadius.xl ?? borderRadius.lg,
-    padding: 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: SCREEN_PADDING,
     paddingBottom: IS_IOS ? 40 : 24,
   },
   sheetHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
+    width: 40, height: 4, borderRadius: 2,
     backgroundColor: Colors.border,
     alignSelf: 'center',
     marginBottom: 20,
   },
-  sheetTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-    marginBottom: 16,
-  },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary, marginBottom: 20 },
+
+  inputLabel: { fontSize: 12, fontWeight: '700', color: Colors.textMuted, marginBottom: 6 },
   input: {
     borderWidth: 1.5,
-    borderColor: Colors.borderFocus,
+    borderColor: Colors.border,
     borderRadius: borderRadius.md,
     paddingHorizontal: 14,
     paddingVertical: 13,
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.textPrimary,
     backgroundColor: Colors.surface,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  sheetBtns: { flexDirection: 'row', gap: 12 },
+
+  sheetBtns:    { flexDirection: 'row', gap: 12 },
   cancelBtn: {
-    flex: 1,
-    padding: 14,
+    flex: 1, padding: 14,
     backgroundColor: Colors.surfaceAlt,
     borderRadius: borderRadius.md,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.border,
+    overflow: 'hidden',
   },
   cancelBtnText: { fontWeight: '600', color: Colors.textSecondary },
   saveBtn: {
-    flex: 1,
-    padding: 14,
+    flex: 1, padding: 14,
     backgroundColor: Colors.accent,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
     minHeight: 48,
+    overflow: 'hidden',
   },
   saveBtnText: { fontWeight: '700', color: Colors.white, fontSize: 15 },
 });

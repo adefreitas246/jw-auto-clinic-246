@@ -1,11 +1,9 @@
 // app/(tabs)/jobs/index.tsx — Staff Job Dashboard
-// Shows today's confirmed bookings for this business, sorted by appointment time.
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/context/AuthContext';
+import axios from 'axios';
 import { router } from 'expo-router';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -14,150 +12,216 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, { FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import axios from 'axios';
 
-import {
-  JobSummary,
-  JobStatus,
-  STAFF_STATUS_LABELS,
-  STAFF_STATUS_COLORS,
-} from '@/types/job';
+import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
-import { Badge } from '@/components/ui';
-import { ScreenHeader } from '@/components/ui';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type JobStatus = 'assigned' | 'in_progress' | 'completed' | 'quality_check' | 'cancelled';
+
+interface Job {
+  _id:             string;
+  customerName:    string;
+  vehicleMake?:    string;
+  vehicleModel?:   string;
+  vehiclePlate?:   string;
+  vehicleLabel?:   string;
+  serviceName:     string;
+  appointmentTime: string;
+  status:          JobStatus;
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString(undefined, {
-    weekday: 'long', month: 'short', day: 'numeric',
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function todayLabel(): string {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: 'long', month: 'long', day: 'numeric',
   });
 }
 
-function formatTime12(time: string): string {
+function formatTime(time: string): string {
   if (!time) return '';
   const [h, m] = time.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
+  const h12  = h % 12 || 12;
   return `${h12}:${String(m ?? 0).padStart(2, '0')} ${ampm}`;
 }
 
-// ── Status color for left border ──────────────────────────────────────────────
-function borderColorForStatus(status: JobStatus): string {
+function statusBorderColor(status: JobStatus): string {
   switch (status) {
-    case 'assigned':    return Colors.warning;
-    case 'in_progress': return Colors.accent;
-    case 'finished':    return Colors.success;
-    case 'cancelled':   return Colors.error;
-    default:            return Colors.border;
+    case 'assigned':      return Colors.info;
+    case 'in_progress':   return Colors.warning;
+    case 'completed':     return Colors.success;
+    case 'quality_check': return Colors.accent;
+    default:              return Colors.border;
   }
 }
 
-// ── Status badge mapping to Badge component status ───────────────────────────
-function badgeStatusForJob(status: JobStatus): 'warning' | 'active' | 'success' | 'error' | 'pending' {
+function statusBadgeStyle(status: JobStatus): { bg: string; text: string; label: string } {
   switch (status) {
-    case 'assigned':    return 'warning';
-    case 'in_progress': return 'active';
-    case 'finished':    return 'success';
-    case 'cancelled':   return 'error';
-    default:            return 'pending';
+    case 'assigned':      return { bg: Colors.infoBg,    text: Colors.infoText,    label: 'Assigned'       };
+    case 'in_progress':   return { bg: Colors.warningBg, text: Colors.warningText, label: 'In Progress'    };
+    case 'completed':     return { bg: Colors.successBg, text: Colors.successText, label: 'Completed'      };
+    case 'quality_check': return { bg: Colors.accentMuted, text: Colors.accentDark, label: 'Quality Check' };
+    case 'cancelled':     return { bg: Colors.errorBg,   text: Colors.errorText,   label: 'Cancelled'      };
+    default:              return { bg: Colors.surfaceAlt, text: Colors.textMuted,   label: status           };
   }
 }
 
-// ── Summary chip ──────────────────────────────────────────────────────────────
-function SummaryChip({
-  count,
-  label,
-  color,
-}: {
-  count: number;
-  label: string;
-  color: string;
-}) {
+// ── Skeleton card ─────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  const opacity = useSharedValue(0.4);
+
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(1, { duration: 750 }),
+      -1,
+      true,
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
   return (
-    <View style={[jd.chip]}>
-      <Text style={[jd.chipCount, { color }]}>{count}</Text>
-      <Text style={jd.chipLabel}>{label}</Text>
-    </View>
+    <Animated.View style={[sk.row, animStyle]}>
+      <View style={sk.timeCol}>
+        <View style={sk.timeLine} />
+      </View>
+      <View style={sk.card}>
+        <View style={sk.lineLg} />
+        <View style={sk.lineMd} />
+        <View style={sk.lineSm} />
+      </View>
+    </Animated.View>
   );
 }
 
-// ── Job timeline row ──────────────────────────────────────────────────────────
-function JobTimelineItem({ job, index }: { job: JobSummary; index: number }) {
-  const borderColor = borderColorForStatus(job.jobStatus);
+const sk = StyleSheet.create({
+  row:     { flexDirection: 'row', alignItems: 'stretch', gap: 12, marginBottom: 10 },
+  timeCol: { width: 60, paddingTop: 14, alignItems: 'center' },
+  timeLine:{ width: 44, height: 12, borderRadius: 6, backgroundColor: Colors.border },
+  card:    { flex: 1, backgroundColor: Colors.surface, borderRadius: borderRadius.lg, padding: 14, borderLeftWidth: 4, borderLeftColor: Colors.border, gap: 8, ...cardShadow },
+  lineLg:  { height: 14, borderRadius: 7, backgroundColor: Colors.border, width: '65%' },
+  lineMd:  { height: 11, borderRadius: 6, backgroundColor: Colors.surfaceAlt, width: '45%' },
+  lineSm:  { height: 10, borderRadius: 5, backgroundColor: Colors.surfaceAlt, width: '30%' },
+});
+
+// ── Summary chip ──────────────────────────────────────────────────────────────
+
+type ChipFilter = JobStatus | null;
+
+function SummaryChip({
+  label,
+  count,
+  bg,
+  color,
+  active,
+  onPress,
+}: {
+  label:   string;
+  count:   number;
+  bg:      string;
+  color:   string;
+  active:  boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={[
+        ch.chip,
+        { backgroundColor: bg },
+        active && { borderWidth: 1.5, borderColor: color },
+      ]}
+      onPress={onPress}
+      android_ripple={{ color: color + '30', borderless: false }}
+    >
+      <Text style={[ch.count, { color }, active && ch.countActive]}>{count}</Text>
+      <Text style={[ch.label, { color }, active && ch.labelActive]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+const ch = StyleSheet.create({
+  chip:        { alignItems: 'center', minWidth: 84, borderRadius: borderRadius.md, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, borderColor: 'transparent' },
+  count:       { fontSize: 20, fontWeight: '800' },
+  countActive: { fontSize: 22 },
+  label:       { fontSize: 11, fontWeight: '600', marginTop: 2 },
+  labelActive: { fontSize: 12 },
+});
+
+// ── Job card ──────────────────────────────────────────────────────────────────
+
+function JobCard({ job, index }: { job: Job; index: number }) {
+  const borderColor = statusBorderColor(job.status);
+  const badge       = statusBadgeStyle(job.status);
+
+  const vehicleParts = [job.vehicleMake, job.vehicleModel].filter(Boolean).join(' ')
+    || job.vehicleLabel
+    || 'No vehicle';
 
   return (
-    <ReAnimated.View entering={FadeInDown.delay(index * 60).springify()}>
+    <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
       <Pressable
         style={jd.timelineRow}
-        onPress={() => {
-          if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push({ pathname: '/(tabs)/jobs/[id]', params: { id: job._id } });
-        }}
-        android_ripple={{ color: Colors.accent + '20', borderless: false }}
+        onPress={() => router.push({ pathname: '/(tabs)/jobs/[id]', params: { id: job._id } })}
+        android_ripple={{ color: Colors.accent + '18', borderless: false }}
       >
         {/* Time column */}
         <View style={jd.timeCol}>
-          <Text style={jd.timeText}>{formatTime12(job.appointmentTime)}</Text>
-          <Ionicons
-            name={job.locationType === 'mobile' ? 'navigate' : 'business'}
-            size={12}
-            color={Colors.textMuted}
-            style={{ marginTop: 4 }}
-          />
+          <Text style={jd.timeText}>{formatTime(job.appointmentTime)}</Text>
         </View>
 
         {/* Card */}
-        <View style={[jd.timelineCard, { borderLeftColor: borderColor }]}>
+        <View style={[jd.card, { borderLeftColor: borderColor }]}>
+          {/* Row 1: customer name + status badge */}
           <View style={jd.cardTopRow}>
-            <Text style={jd.customerName} numberOfLines={1}>
-              {job.serviceLabel}
-            </Text>
-            <Badge
-              status={badgeStatusForJob(job.jobStatus)}
-              label={STAFF_STATUS_LABELS[job.jobStatus]}
-              size="sm"
-            />
+            <Text style={jd.customerName} numberOfLines={1}>{job.customerName}</Text>
+            <View style={[jd.statusBadge, { backgroundColor: badge.bg }]}>
+              <Text style={[jd.statusText, { color: badge.text }]}>{badge.label}</Text>
+            </View>
           </View>
-          <Text style={jd.vehicleText} numberOfLines={1}>
-            {job.vehicleLabel || 'No vehicle'}
-          </Text>
-          <View style={jd.cardFooterRow}>
-            <Text style={jd.serviceText} numberOfLines={1}>
-              {job.locationType === 'mobile'
-                ? (job.mobileAddress || 'Mobile')
-                : (job.bayLabel || 'Bay')}
-            </Text>
-            <Text style={jd.priceText}>${job.totalPrice.toFixed(2)}</Text>
+
+          {/* Row 2: vehicle */}
+          <View style={jd.vehicleRow}>
+            <Text style={jd.vehicleName} numberOfLines={1}>{vehicleParts}</Text>
+            {job.vehiclePlate ? (
+              <View style={jd.plateBadge}>
+                <Text style={jd.plateText}>{job.vehiclePlate}</Text>
+              </View>
+            ) : null}
           </View>
+
+          {/* Row 3: service */}
+          <Text style={jd.serviceName} numberOfLines={1}>{job.serviceName}</Text>
         </View>
       </Pressable>
-    </ReAnimated.View>
+    </Animated.View>
   );
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
+
 export default function JobDashboard() {
   const { user } = useAuth();
-  const [jobs,       setJobs]       = useState<JobSummary[]>([]);
+
+  const [jobs,       setJobs]       = useState<Job[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [date,       setDate]       = useState(todayISO());
+  const [activeChip, setActiveChip] = useState<ChipFilter>(null);
+
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchJobs = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const { data } = await axios.get<JobSummary[]>(`/api/jobs?date=${date}`);
+      const params: Record<string, string> = { date: 'today' };
+      if (user?._id) params.staffId = user._id;
+      const { data } = await axios.get<Job[]>('/api/jobs', { params });
       setJobs(data);
     } catch {
       setJobs([]);
@@ -165,210 +229,298 @@ export default function JobDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [date]);
+  }, [user?._id]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => {
+    fetchJobs();
+    pollRef.current = setInterval(() => fetchJobs(true), 60_000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [fetchJobs]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchJobs(true);
   }, [fetchJobs]);
 
-  // Navigate date ± 1 day
-  const shiftDate = (delta: number) => {
-    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const d = new Date(date + 'T00:00:00');
-    d.setDate(d.getDate() + delta);
-    setDate(d.toISOString().slice(0, 10));
-  };
+  // ── Derived counts ──────────────────────────────────────────────────────────
+  const assignedCount   = jobs.filter(j => j.status === 'assigned').length;
+  const inProgressCount = jobs.filter(j => j.status === 'in_progress').length;
+  const completedCount  = jobs.filter(j => j.status === 'completed').length;
 
-  const isToday = date === todayISO();
+  // ── Filtered list ───────────────────────────────────────────────────────────
+  const displayed = activeChip ? jobs.filter(j => j.status === activeChip) : jobs;
 
-  // Stats
-  const assignedCount    = jobs.filter(j => j.jobStatus === 'assigned').length;
-  const inProgressCount  = jobs.filter(j => j.jobStatus === 'in_progress').length;
-  const completedCount   = jobs.filter(j => j.jobStatus === 'finished').length;
-  const cancelledCount   = jobs.filter(j => j.jobStatus === 'cancelled').length;
+  const isAdminOrManager = user?.role === 'admin';
 
   return (
     <SafeAreaView style={jd.safe} edges={['top']}>
-      <ScreenHeader
-        title="Today's Jobs"
-        subtitle={formatDate(date)}
-        rightAction={
-          user?.role === 'admin'
-            ? {
-                label: 'Manage',
-                icon: 'settings-outline',
-                onPress: () => {
-                  if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push('/(tabs)/jobs/manage');
-                },
-              }
-            : {
-                label: 'Scan QR',
-                icon: 'qr-code-outline',
-                onPress: () => {
-                  if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  router.push('/(tabs)/scanner');
-                },
-              }
-        }
-      />
 
-      {/* ── Date navigation ── */}
-      <View style={jd.datePicker}>
-        <Pressable
-          style={jd.dateArrow}
-          onPress={() => shiftDate(-1)}
-          android_ripple={{ color: Colors.accent + '20', borderless: false }}
-          hitSlop={8}
-        >
-          <Ionicons name="chevron-back" size={22} color={Colors.accent} />
-        </Pressable>
-        <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={jd.dateText}>{formatDate(date)}</Text>
-          {isToday && (
-            <View style={jd.todayBadge}>
-              <Text style={jd.todayBadgeText}>Today</Text>
-            </View>
-          )}
+      {/* ── Header ── */}
+      <Animated.View entering={FadeIn.duration(300)} style={jd.header}>
+        <View style={{ flex: 1 }}>
+          <Text style={jd.title}>Today's Jobs</Text>
+          <Text style={jd.dateSubtitle}>{todayLabel()}</Text>
         </View>
         <Pressable
-          style={jd.dateArrow}
-          onPress={() => shiftDate(1)}
-          android_ripple={{ color: Colors.accent + '20', borderless: false }}
+          style={jd.bellBtn}
           hitSlop={8}
+          android_ripple={{ color: Colors.accent + '20', borderless: true }}
         >
-          <Ionicons name="chevron-forward" size={22} color={Colors.accent} />
+          <Ionicons name="notifications-outline" size={24} color={Colors.textPrimary} />
         </Pressable>
-      </View>
+      </Animated.View>
 
-      {/* ── Summary chips (horizontal scroll) ── */}
-      {jobs.length > 0 && (
-        <ReAnimated.View entering={FadeIn.duration(300)}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={jd.chipsRow}
-          >
-            <SummaryChip count={assignedCount}   label="Assigned"    color={Colors.warning} />
-            <SummaryChip count={inProgressCount} label="In Progress" color={Colors.accent} />
-            <SummaryChip count={completedCount}  label="Completed"   color={Colors.success} />
-            <SummaryChip count={cancelledCount}  label="Cancelled"   color={Colors.error} />
-          </ScrollView>
-        </ReAnimated.View>
-      )}
+      {/* ── Summary chips ── */}
+      <Animated.View entering={FadeIn.delay(80).duration(300)}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={jd.chipsRow}
+        >
+          <SummaryChip
+            label="Assigned"
+            count={assignedCount}
+            bg={Colors.infoBg}
+            color={Colors.info}
+            active={activeChip === 'assigned'}
+            onPress={() => setActiveChip(prev => prev === 'assigned' ? null : 'assigned')}
+          />
+          <SummaryChip
+            label="In Progress"
+            count={inProgressCount}
+            bg={Colors.warningBg}
+            color={Colors.warning}
+            active={activeChip === 'in_progress'}
+            onPress={() => setActiveChip(prev => prev === 'in_progress' ? null : 'in_progress')}
+          />
+          <SummaryChip
+            label="Completed"
+            count={completedCount}
+            bg={Colors.successBg}
+            color={Colors.success}
+            active={activeChip === 'completed'}
+            onPress={() => setActiveChip(prev => prev === 'completed' ? null : 'completed')}
+          />
+        </ScrollView>
+      </Animated.View>
 
+      {/* ── List / skeleton / empty ── */}
       {loading ? (
-        <View style={jd.centered}>
-          <ActivityIndicator size="large" color={Colors.accent} />
+        <View style={jd.listPadding}>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </View>
       ) : (
         <FlatList
-          data={jobs}
+          data={displayed}
           keyExtractor={j => j._id}
           contentContainerStyle={jd.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={Colors.accent}
+            />
           }
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           ListEmptyComponent={
-            <ReAnimated.View entering={FadeIn.duration(300)} style={jd.empty}>
+            <Animated.View entering={FadeIn.duration(300)} style={jd.empty}>
               <View style={jd.emptyIconWrap}>
-                <Ionicons name="calendar-outline" size={40} color={Colors.textMuted} />
+                <Ionicons name="briefcase-outline" size={40} color={Colors.textMuted} />
               </View>
-              <Text style={jd.emptyTitle}>No jobs scheduled</Text>
-              <Text style={jd.emptyText}>
-                There are no confirmed bookings for{'\n'}{formatDate(date)}.
-              </Text>
-            </ReAnimated.View>
+              <Text style={jd.emptyTitle}>No jobs assigned today</Text>
+              <Text style={jd.emptyText}>Your schedule is clear for now.</Text>
+              <Pressable
+                style={jd.scheduleBtn}
+                onPress={() => router.push('/(tabs)/schedule')}
+                android_ripple={{ color: Colors.white + '30', borderless: false }}
+              >
+                <Text style={jd.scheduleBtnText}>Check your schedule</Text>
+              </Pressable>
+            </Animated.View>
           }
           renderItem={({ item, index }) => (
-            <JobTimelineItem job={item} index={index} />
+            <JobCard job={item} index={index} />
           )}
         />
       )}
+
+      {/* ── FAB (admin only) ── */}
+      {isAdminOrManager && (
+        <Pressable
+          style={jd.fab}
+          onPress={() => router.push('/(tabs)/jobs/new' as any)}
+          android_ripple={{ color: Colors.white + '40', borderless: false }}
+        >
+          <Ionicons name="add" size={28} color={Colors.white} />
+        </Pressable>
+      )}
+
     </SafeAreaView>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const jd = StyleSheet.create({
-  safe:     { flex: 1, backgroundColor: Colors.background },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  // Date picker strip
-  datePicker: {
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: SCREEN_PADDING, marginVertical: 12,
-    backgroundColor: Colors.surface, borderRadius: borderRadius.lg,
-    paddingVertical: 10, paddingHorizontal: 4,
-    borderWidth: 1, borderColor: Colors.border,
+const jd = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: Colors.background },
+
+  // Header
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
-  dateArrow: {
+  title:       { fontSize: 28, fontWeight: '800', color: Colors.textPrimary },
+  dateSubtitle:{ fontSize: 14, color: Colors.textSecondary, marginTop: 2 },
+  bellBtn: {
     width: 40, height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
-    borderRadius: borderRadius.full,
     overflow: 'hidden',
   },
-  dateText: { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  todayBadge: {
-    marginTop: 4, backgroundColor: Colors.accentMuted,
-    borderRadius: borderRadius.full, paddingHorizontal: 10, paddingVertical: 2,
-  },
-  todayBadgeText: { fontSize: 11, color: Colors.accent, fontWeight: '700' },
 
-  // Summary chips
-  chipsRow: { paddingHorizontal: SCREEN_PADDING, gap: 8, paddingBottom: 100 },
-  chip: {
-    alignItems: 'center', minWidth: 90,
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
-    borderWidth: 1, borderColor: Colors.border,
-    paddingVertical: 12, paddingHorizontal: 16,
+  // Chips
+  chipsRow: {
+    paddingHorizontal: SCREEN_PADDING,
+    paddingBottom: 12,
+    gap: 8,
   },
-  chipCount: { fontSize: 22, fontWeight: '800' },
-  chipLabel: { fontSize: 11, color: Colors.textMuted, marginTop: 2, fontWeight: '600' },
 
-  // Timeline
-  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM, gap: 8 },
+  // List
+  listPadding: { paddingHorizontal: SCREEN_PADDING, paddingTop: 4 },
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 100 },
+
+  // Timeline row
   timelineRow: {
-    flexDirection: 'row', alignItems: 'stretch', gap: 12,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 12,
+    overflow: 'hidden',
+    borderRadius: borderRadius.lg,
   },
   timeCol: {
-    width: 60, alignItems: 'center', paddingTop: 14,
+    width: 60,
+    alignItems: 'center',
+    paddingTop: 16,
   },
-  timeText: { fontSize: 12, color: Colors.textMuted, fontWeight: '600', textAlign: 'center' },
+  timeText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 
-  // Timeline card
-  timelineCard: {
+  // Card
+  card: {
     flex: 1,
     backgroundColor: Colors.surface,
     borderRadius: borderRadius.lg,
     padding: 14,
     borderLeftWidth: 4,
+    gap: 4,
     ...cardShadow,
   },
   cardTopRow: {
-    flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'space-between', marginBottom: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
   },
   customerName: {
-    fontSize: 15, fontWeight: '700', color: Colors.textPrimary, flex: 1, marginRight: 8,
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: 8,
   },
-  vehicleText: { fontSize: 13, color: Colors.textMuted, marginBottom: 6 },
-  cardFooterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  serviceText: { fontSize: 13, color: Colors.textSecondary, flex: 1 },
-  priceText:   { fontSize: 13, fontWeight: '800', color: Colors.textPrimary },
+  statusBadge: {
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // Vehicle row
+  vehicleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  vehicleName: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    flex: 1,
+  },
+  plateBadge: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  plateText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textSecondary,
+    letterSpacing: 0.5,
+  },
+
+  // Service
+  serviceName: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+  },
 
   // Empty
-  empty: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
-  emptyIconWrap: {
-    width: 80, height: 80, borderRadius: borderRadius.full,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+  empty: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingHorizontal: 32,
+    gap: 8,
   },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 22 },
+  emptyIconWrap: {
+    width: 80, height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 8,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
+  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  scheduleBtn: {
+    marginTop: 12,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 24,
+    paddingVertical: 11,
+    overflow: 'hidden',
+  },
+  scheduleBtnText: { color: Colors.white, fontWeight: '700', fontSize: 14 },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    ...cardShadow,
+  },
 });

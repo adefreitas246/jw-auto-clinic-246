@@ -123,7 +123,11 @@ function VehicleCard({
         )}
         overshootRight={false}
       >
-        <View style={styles.card}>
+        <Pressable
+          style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+          onPress={handleEdit}
+          android_ripple={{ color: Colors.accent + '15', borderless: false }}
+        >
           {/* Icon circle */}
           <View style={styles.cardIconWrap}>
             <Ionicons name="car-sport-outline" size={24} color={Colors.accent} />
@@ -140,7 +144,10 @@ function VehicleCard({
             <View style={styles.cardMetaRow}>
               {!!vehicle.size && <SizeTag size={vehicle.size} />}
               {!!vehicle.color && (
-                <Text style={styles.cardColor}>{vehicle.color}</Text>
+                <View style={styles.colorRow}>
+                  <View style={styles.colorDot} />
+                  <Text style={styles.cardColor}>{vehicle.color}</Text>
+                </View>
               )}
             </View>
 
@@ -158,7 +165,7 @@ function VehicleCard({
           <View style={styles.chevronCircle}>
             <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
           </View>
-        </View>
+        </Pressable>
       </Swipeable>
     </Animated2.View>
   );
@@ -291,7 +298,9 @@ const styles = StyleSheet.create({
   cardTitleRow:  { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   cardTitle:     { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
   cardMetaRow:   { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
-  cardColor:     { fontSize: 12, color: Colors.textSecondary },
+  colorRow:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  colorDot:  { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.chrome },
+  cardColor: { fontSize: 12, color: Colors.textSecondary },
   cardNotes:     { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
   chevronCircle: {
     width: 28,

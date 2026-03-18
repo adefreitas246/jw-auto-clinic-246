@@ -1,6 +1,7 @@
 // app/(customer)/vehicles/_form.tsx
 // Shared form for adding and editing a vehicle.
 // Not an Expo Router route (prefixed with _).
+import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -131,10 +132,11 @@ interface Props {
 
 export default function AddEditVehicleScreen({ mode }: Props) {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { vehicles, addVehicle, updateVehicle, scanPlate } = useVehicles();
+  const { vehicles, addVehicle, updateVehicle, deleteVehicle, scanPlate } = useVehicles();
 
   const [form, setForm] = useState<VehicleForm>(EMPTY_VEHICLE_FORM);
-  const [saving, setSaving] = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
 
@@ -215,6 +217,32 @@ export default function AddEditVehicleScreen({ mode }: Props) {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleDelete = () => {
+    if (!id) return;
+    Alert.alert(
+      'Delete Vehicle',
+      'Are you sure you want to delete this vehicle? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deleteVehicle(id);
+              router.back();
+            } catch {
+              Alert.alert('Error', 'Could not delete vehicle. Please try again.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -310,9 +338,9 @@ export default function AddEditVehicleScreen({ mode }: Props) {
                       <ActivityIndicator color={Colors.white} size="small" />
                     ) : (
                       <>
-                        <Text style={s.scanBtnIcon}>⬛</Text>
-                        <Text style={s.scanBtnText}>Scan</Text>
-                      </>
+                      <Ionicons name="camera-outline" size={18} color={Colors.white} />
+                      <Text style={s.scanBtnText}>Scan</Text>
+                    </>
                     )}
                   </Pressable>
                 </View>
@@ -381,6 +409,24 @@ export default function AddEditVehicleScreen({ mode }: Props) {
                 )}
               </Pressable>
             </Animated.View>
+
+            {/* Delete button — edit mode only */}
+            {mode === "edit" && (
+              <Animated.View entering={FadeInDown.delay(480).duration(300)}>
+                <Pressable
+                  style={[s.deleteBtn, deleting && { opacity: 0.7 }]}
+                  onPress={handleDelete}
+                  disabled={deleting || saving}
+                  android_ripple={{ color: Colors.error + '20', borderless: false }}
+                >
+                  {deleting ? (
+                    <ActivityIndicator color={Colors.error} />
+                  ) : (
+                    <Text style={s.deleteBtnText}>Delete Vehicle</Text>
+                  )}
+                </Pressable>
+              </Animated.View>
+            )}
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -447,7 +493,6 @@ const s = StyleSheet.create({
     gap: 4,
     minWidth: 80,
   },
-  scanBtnIcon: { fontSize: 12, color: Colors.white },
   scanBtnText: { color: Colors.white, fontWeight: "700", fontSize: 13 },
 
   sizeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -480,6 +525,18 @@ const s = StyleSheet.create({
       : { elevation: 6 }),
   },
   saveBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
+
+  deleteBtn: {
+    backgroundColor: Colors.errorBg,
+    borderRadius: borderRadius.lg,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.error + '40',
+    marginTop: 12,
+  },
+  deleteBtnText: { color: Colors.error, fontSize: 16, fontWeight: "700" },
 });
 
 // Camera modal styles

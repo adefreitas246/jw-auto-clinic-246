@@ -3,7 +3,6 @@
 // No tab bar — immersive full-screen with floating back button.
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -34,8 +33,15 @@ interface JobTrackingExtended extends JobTracking {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const isExpoGo         = Constants.appOwnership === 'expo';
+const isExpoGo           = Constants.appOwnership === 'expo';
 const FOREGROUND_POLL_MS = 15_000;
+
+// Lazy-load expo-notifications so it never runs in Expo Go (crashes on SDK 53+)
+function getNotifications() {
+  if (isExpoGo) return null;
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  return require('expo-notifications') as typeof import('expo-notifications');
+}
 
 function getJobTrackingTask() {
   return require('@/tasks/jobTrackingTask') as typeof import('@/tasks/jobTrackingTask');
@@ -266,12 +272,16 @@ export default function TrackJobScreen() {
 
   // ── Notification permission ────────────────────────────────────────────────
   useEffect(() => {
+    const Notifications = getNotifications();
+    if (!Notifications) return; // Expo Go — skip
     Notifications.getPermissionsAsync().then(({ status }) => {
       setNotifEnabled(status === 'granted');
     });
   }, []);
 
   const requestNotifPermission = useCallback(async () => {
+    const Notifications = getNotifications();
+    if (!Notifications) return;
     const { status } = await Notifications.requestPermissionsAsync();
     setNotifEnabled(status === 'granted');
   }, []);

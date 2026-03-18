@@ -1,462 +1,325 @@
-// app/(tabs)/inventory/index.tsx — Inventory List with Quick-Adjust Steppers
-//
-// Features:
-//   • Live list with green/yellow/red stock indicators
-//   • Category filter chips
-//   • Search bar
-//   • Quick ±1 / long-press ±10 stepper per card (calls PATCH /:id/adjust)
-//   • Pull-to-refresh syncs from API and writes to SQLite cache
-//   • Offline fallback: shows cached data with a banner
-//   • Admin: FAB + per-card Edit/Delete actions
+// app/(tabs)/inventory/index.tsx — Inventory List
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { router, useSegments } from 'expo-router';
+import axios from 'axios';
 import * as Haptics from 'expo-haptics';
-import React, {
-  useCallback, useMemo, useRef, useState,
-} from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Platform,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+  ActivityIndicator, Alert, FlatList, Platform, Pressable,
+  RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import axios from 'axios';
-import { useAuth } from '@/context/AuthContext';
-import { useInventoryCache } from '@/hooks/useInventoryCache';
-import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM, TAB_BAR_HEIGHT } from '@/constants/Layout';
-import { IS_IOS } from '@/utils/platform';
-import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
-import { ScreenHeader } from '@/components/ui';
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+import { Colors } from '@/constants/Colors';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface InventoryItem {
-  _id:               string;
-  name:              string;
-  category:          string;
-  currentStock:      number;
-  unit:              string;
+  _id: string;
+  name: string;
+  category: string;
+  currentStock: number;
+  unit: string;
   lowStockThreshold: number;
-  notes:             string;
-  updatedAt:         string;
+  notes?: string;
 }
 
-type StockLevel = 'ok' | 'warn' | 'low' | 'out';
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const CATEGORIES = ['All', 'Soap', 'Wax', 'Cloths', 'Equipment', 'Other'];
 
-function stockLevel(item: InventoryItem): StockLevel {
-  const { currentStock: s, lowStockThreshold: t } = item;
-  if (s <= 0)        return 'out';
-  if (s < t)         return 'low';
-  if (s < t * 1.75)  return 'warn';
-  return 'ok';
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function stockPct(item: InventoryItem): number {
+  if (item.lowStockThreshold <= 0) return 1;
+  return Math.min(item.currentStock / (item.lowStockThreshold * 2), 1);
 }
 
-function stockFillColor(level: StockLevel): string {
-  switch (level) {
-    case 'ok':   return Colors.success;
-    case 'warn': return Colors.warning;
-    case 'low':  return Colors.error;
-    case 'out':  return Colors.error;
-  }
+function stockBarColor(item: InventoryItem): string {
+  const pct = stockPct(item);
+  if (pct > 0.5) return Colors.success;  // above 50% → green
+  if (pct > 0.2) return Colors.warning;  // 20–50% → yellow
+  return Colors.error;                   // below 20% → red
 }
 
-function stockBadgeColor(level: StockLevel): { bg: string; text: string; label: string } {
-  switch (level) {
-    case 'ok':   return { bg: Colors.successBg, text: Colors.successText, label: 'In Stock' };
-    case 'warn': return { bg: Colors.warningBg, text: Colors.warningText, label: 'Watch' };
-    case 'low':  return { bg: Colors.errorBg,   text: Colors.errorText,   label: 'Low Stock' };
-    case 'out':  return { bg: Colors.accentMuted, text: Colors.accent,    label: 'Out' };
-  }
+function isLowStock(item: InventoryItem): boolean {
+  return item.currentStock <= item.lowStockThreshold;
 }
 
-const ALL_CATEGORIES = [
-  'All',
-  'Soaps & Chemicals',
-  'Wax & Polish',
-  'Interior Care',
-  'Towels & Cloths',
-  'Disposables',
-  'Equipment',
-  'Other',
-];
-
-// ── Low-stock alert flash ──────────────────────────────────────────────────────
-
-function LowStockBanner({ visible }: { visible: boolean }) {
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    if (visible) {
-      Animated.sequence([
-        Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.delay(2500),
-        Animated.timing(opacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [visible]);
-
-  return (
-    <Animated.View style={[lb.wrap, { opacity }]}>
-      <Ionicons name="warning-outline" size={14} color={Colors.white} />
-      <Text style={lb.text}>Low stock alert sent to admin</Text>
-    </Animated.View>
-  );
+function fmtQty(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
-const lb = StyleSheet.create({
-  wrap: {
-    position: 'absolute', top: 0, alignSelf: 'center',
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.error, borderRadius: borderRadius.full,
-    paddingHorizontal: 14, paddingVertical: 7,
-    zIndex: 100,
-    ...Platform.select({
-      ios:     { shadowColor: Colors.error, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 8 },
-    }),
-  },
-  text: { fontSize: 12, fontWeight: '700', color: Colors.white },
-});
-
-// ── Inventory Card ────────────────────────────────────────────────────────────
+// ─── InventoryCard ────────────────────────────────────────────────────────────
 
 function InventoryCard({
   item,
-  isAdmin,
-  adjusting,
+  adjustingId,
   onAdjust,
-  onEdit,
-  onDelete,
-  index,
 }: {
-  item:      InventoryItem;
-  isAdmin:   boolean;
-  adjusting: boolean;
-  onAdjust:  (id: string, delta: number) => void;
-  onEdit:    (item: InventoryItem) => void;
-  onDelete:  (item: InventoryItem) => void;
-  index:     number;
+  item: InventoryItem;
+  adjustingId: string | null;
+  onAdjust: (id: string, delta: number) => void;
 }) {
-  const level  = stockLevel(item);
-  const fill   = stockFillColor(level);
-  const badge  = stockBadgeColor(level);
-  const pct    = item.lowStockThreshold > 0
-    ? Math.min(item.currentStock / (item.lowStockThreshold * 2), 1)
-    : 1;
+  const barColor    = stockBarColor(item);
+  const pct         = stockPct(item);
+  const low         = isLowStock(item);
+  const isAdjusting = adjustingId === item._id;
 
   return (
-    <ReAnimated.View entering={FadeInDown.delay(index * 50).springify()}>
-      <View style={ic.card}>
-        {/* Header row */}
-        <View style={ic.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={ic.name} numberOfLines={1}>{item.name}</Text>
-          </View>
-          <View style={[ic.badge, { backgroundColor: badge.bg }]}>
-            <Text style={[ic.badgeText, { color: badge.text }]}>{badge.label}</Text>
-          </View>
-          {isAdmin && (
-            <View style={ic.actions}>
-              <Pressable
-                onPress={() => onEdit(item)}
-                hitSlop={8}
-                style={ic.iconBtn}
-                android_ripple={{ color: Colors.accentMuted, borderless: true, radius: 16 }}
-              >
-                <Ionicons name="create-outline" size={17} color={Colors.accent} />
-              </Pressable>
-              <Pressable
-                onPress={() => onDelete(item)}
-                hitSlop={8}
-                style={ic.iconBtn}
-                android_ripple={{ color: Colors.errorBg, borderless: true, radius: 16 }}
-              >
-                <Ionicons name="trash-outline" size={17} color={Colors.error} />
-              </Pressable>
-            </View>
-          )}
+    <Pressable
+      style={ic.card}
+      onPress={() =>
+        router.push({
+          pathname: '/(tabs)/inventory/edit' as any,
+          params:   { id: item._id },
+        })
+      }
+      android_ripple={{ color: Colors.accent + '10', borderless: false }}
+    >
+      {/* Name + badge row */}
+      <View style={ic.topRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={ic.name} numberOfLines={1}>{item.name}</Text>
+          <Text style={ic.category}>{item.category}</Text>
         </View>
-
-        {/* Category row */}
-        <Text style={ic.category}>{item.category}</Text>
-
-        {/* Stock progress bar */}
-        <View style={ic.barTrack}>
-          <View style={[ic.barFill, { width: `${Math.max(pct * 100, 2)}%`, backgroundColor: fill }]} />
-        </View>
-        <Text style={ic.stockLabel}>
-          {item.currentStock % 1 === 0 ? item.currentStock : item.currentStock.toFixed(1)} {item.unit} remaining
-        </Text>
-
-        {/* +/- stepper */}
-        <View style={ic.stepperRow}>
-          {/* minus */}
-          <Pressable
-            style={ic.stepBtn}
-            onPress={() => {
-              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onAdjust(item._id, -1);
-            }}
-            onLongPress={() => {
-              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onAdjust(item._id, -10);
-            }}
-            android_ripple={{ color: Colors.accent + '20', borderless: false }}
-            disabled={adjusting}
-            delayLongPress={500}
-          >
-            <Text style={ic.stepBtnText}>−</Text>
-          </Pressable>
-
-          <View style={ic.stepDisplay}>
-            {adjusting
-              ? <ActivityIndicator size="small" color={Colors.accent} />
-              : <Text style={ic.stepValue}>
-                  {item.currentStock % 1 === 0 ? item.currentStock : item.currentStock.toFixed(1)}
-                </Text>
-            }
-            <Text style={ic.stepUnit}>{item.unit}</Text>
+        {low && (
+          <View style={ic.lowBadge}>
+            <Text style={ic.lowBadgeText}>Low Stock</Text>
           </View>
-
-          {/* plus */}
-          <Pressable
-            style={[ic.stepBtn, ic.stepBtnPlus]}
-            onPress={() => {
-              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onAdjust(item._id, 1);
-            }}
-            onLongPress={() => {
-              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              onAdjust(item._id, 10);
-            }}
-            android_ripple={{ color: Colors.accentDark, borderless: false }}
-            disabled={adjusting}
-            delayLongPress={500}
-          >
-            <Text style={[ic.stepBtnText, { color: Colors.white }]}>+</Text>
-          </Pressable>
-        </View>
-
-        {item.notes ? (
-          <Text style={ic.notes} numberOfLines={1}>{item.notes}</Text>
-        ) : null}
+        )}
       </View>
-    </ReAnimated.View>
+
+      {/* Progress bar */}
+      <View style={ic.barTrack}>
+        <View
+          style={[
+            ic.barFill,
+            {
+              width:           `${Math.max(pct * 100, pct > 0 ? 3 : 0)}%` as any,
+              backgroundColor: barColor,
+            },
+          ]}
+        />
+      </View>
+
+      {/* Stock label */}
+      <Text style={ic.stockLabel}>
+        {fmtQty(item.currentStock)} {item.unit} remaining
+      </Text>
+
+      {/* Quick-adjust stepper */}
+      <View style={ic.stepRow}>
+        {/* − button */}
+        <Pressable
+          style={ic.stepBtn}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onAdjust(item._id, -1);
+          }}
+          onLongPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onAdjust(item._id, -10);
+          }}
+          disabled={isAdjusting}
+          hitSlop={8}
+          delayLongPress={500}
+        >
+          <Text style={ic.minusText}>−</Text>
+        </Pressable>
+
+        {/* Quantity display */}
+        <View style={ic.stepDisplay}>
+          {isAdjusting ? (
+            <ActivityIndicator size="small" color={Colors.accent} />
+          ) : (
+            <Text style={ic.stepValue}>{fmtQty(item.currentStock)}</Text>
+          )}
+          <Text style={ic.stepUnit}>{item.unit}</Text>
+        </View>
+
+        {/* + button */}
+        <Pressable
+          style={[ic.stepBtn, ic.plusBtn]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onAdjust(item._id, 1);
+          }}
+          onLongPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            onAdjust(item._id, 10);
+          }}
+          disabled={isAdjusting}
+          hitSlop={8}
+          delayLongPress={500}
+        >
+          <Text style={ic.plusText}>+</Text>
+        </Pressable>
+      </View>
+    </Pressable>
   );
 }
 
 const ic = StyleSheet.create({
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: 16,
-    borderWidth: 1, borderColor: Colors.border,
+    backgroundColor: Colors.white,
+    borderRadius:    borderRadius.xl,
+    padding:         16,
+    borderWidth:     1,
+    borderColor:     Colors.border,
     ...cardShadow,
   },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 2 },
-  name:      { fontSize: 15, fontWeight: '700', color: Colors.textPrimary },
-  category:  { fontSize: 12, color: Colors.textMuted, marginBottom: 10 },
-  badge:     { borderRadius: borderRadius.full, paddingHorizontal: 8, paddingVertical: 3, alignSelf: 'flex-start' },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  actions:   { flexDirection: 'row', gap: 4 },
-  iconBtn:   { width: 32, height: 32, borderRadius: borderRadius.sm, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-
-  barTrack:   { height: 6, backgroundColor: Colors.surfaceAlt, borderRadius: 3, overflow: 'hidden', marginBottom: 4 },
-  barFill:    { height: 6, borderRadius: 3 },
-  stockLabel: { fontSize: 12, color: Colors.textMuted, marginBottom: 12 },
-
-  stepperRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8 },
-  stepBtn: {
-    width: 36, height: 36,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1, borderColor: Colors.border,
-    alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
+  topRow:   { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
+  name:     { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  category: { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  lowBadge: {
+    backgroundColor: Colors.errorBg,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 8, paddingVertical: 3,
+    alignSelf: 'flex-start',
   },
-  stepBtnPlus: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  stepBtnText: { fontSize: 18, fontWeight: '700', color: Colors.accent, lineHeight: 22 },
-  stepDisplay: { flexDirection: 'row', alignItems: 'baseline', gap: 4, minWidth: 70, justifyContent: 'center' },
-  stepValue:   { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
-  stepUnit:    { fontSize: 11, color: Colors.textMuted },
-  notes:       { fontSize: 11, color: Colors.textMuted, marginTop: 8 },
+  lowBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.errorText },
+
+  barTrack: {
+    height: 6, backgroundColor: Colors.surfaceAlt,
+    borderRadius: 3, overflow: 'hidden', marginBottom: 6,
+  },
+  barFill:     { height: 6, borderRadius: 3 },
+  stockLabel:  { fontSize: 12, color: Colors.textSecondary, marginBottom: 14 },
+
+  stepRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  stepBtn: {
+    width: 44, height: 44,
+    borderRadius: borderRadius.md,
+    borderWidth: 1.5, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: Colors.surface, overflow: 'hidden',
+  },
+  minusText: { fontSize: 22, fontWeight: '700', color: Colors.textSecondary, lineHeight: 26 },
+  plusBtn:   { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  plusText:  { fontSize: 22, fontWeight: '700', color: Colors.white, lineHeight: 26 },
+  stepDisplay: {
+    flex: 1, flexDirection: 'row',
+    alignItems: 'baseline', gap: 4, justifyContent: 'center',
+  },
+  stepValue: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
+  stepUnit:  { fontSize: 12, color: Colors.textMuted },
 });
 
-// ── Screen ────────────────────────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function InventoryScreen() {
-  const { user } = useAuth();
-  const isAdmin  = user?.role === 'admin';
-  const cache    = useInventoryCache();
-  const segments = useSegments();
-  const routeGroup = `/${segments[0]}`; // '/(tabs)' or '/(staff)'
-
   const [items,       setItems]       = useState<InventoryItem[]>([]);
   const [loading,     setLoading]     = useState(true);
   const [refreshing,  setRefreshing]  = useState(false);
-  const [isOffline,   setIsOffline]   = useState(false);
   const [search,      setSearch]      = useState('');
   const [category,    setCategory]    = useState('All');
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
-  const [showAlert,   setShowAlert]   = useState(false);
+  const [showLowOnly, setShowLowOnly] = useState(false);
 
-  // ── Fetch ───────────────────────────────────────────────────────────────────
-
-  const fetchItems = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+  const fetchItems = useCallback(async () => {
     try {
       const { data } = await axios.get<InventoryItem[]>('/api/inventory');
       setItems(data);
-      setIsOffline(false);
-      await cache.saveAll(data);
     } catch {
-      // Offline fallback
-      const cached = await cache.readAll();
-      if (cached.length > 0) {
-        setItems(cached as unknown as InventoryItem[]);
-        setIsOffline(true);
-      }
+      // silently fail
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [cache]);
+  }, []);
 
   useFocusEffect(useCallback(() => { fetchItems(); }, [fetchItems]));
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchItems(true);
-  }, [fetchItems]);
-
-  // ── Quick adjust ────────────────────────────────────────────────────────────
-
+  // ── Quick adjust ──────────────────────────────────────────────────────────
   const handleAdjust = useCallback(async (id: string, delta: number) => {
-    if (isOffline) return; // Can't adjust while offline
+    // Optimistic update
+    setItems(prev =>
+      prev.map(it =>
+        it._id === id
+          ? { ...it, currentStock: Math.max(0, it.currentStock + delta) }
+          : it,
+      ),
+    );
     setAdjustingId(id);
     try {
-      const { data } = await axios.patch<InventoryItem & { lowStockAlert?: boolean }>(
-        `/api/inventory/${id}/adjust`,
-        { delta }
+      const { data } = await axios.patch<InventoryItem>(`/api/inventory/${id}`, { delta });
+      setItems(prev =>
+        prev.map(it => it._id === id ? { ...it, currentStock: data.currentStock } : it),
       );
-      setItems(prev => prev.map(it => it._id === id ? { ...it, currentStock: data.currentStock } : it));
-      await cache.patchStock(id, data.currentStock);
-      if (data.lowStockAlert) {
-        setShowAlert(true);
-        setTimeout(() => setShowAlert(false), 3500);
-      }
     } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.error ?? 'Failed to adjust stock.');
+      fetchItems(); // revert
+      Alert.alert('Error', e.response?.data?.error ?? 'Failed to update stock.');
     } finally {
       setAdjustingId(null);
     }
-  }, [cache, isOffline]);
+  }, [fetchItems]);
 
-  // ── Delete ──────────────────────────────────────────────────────────────────
-
-  const handleDelete = useCallback((item: InventoryItem) => {
-    Alert.alert(
-      'Delete Item',
-      `Remove "${item.name}" from inventory? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete', style: 'destructive',
-          onPress: async () => {
-            try {
-              await axios.delete(`/api/inventory/${item._id}`);
-              setItems(prev => prev.filter(it => it._id !== item._id));
-              await cache.remove(item._id);
-            } catch (e: any) {
-              Alert.alert('Error', e.response?.data?.error ?? 'Delete failed.');
-            }
-          },
-        },
-      ]
-    );
-  }, [cache]);
-
-  // ── Navigate to edit ────────────────────────────────────────────────────────
-
-  const openEdit = (item?: InventoryItem) => {
-    router.push({
-      pathname: `${routeGroup}/inventory/edit` as any,
-      params:   item ? { id: item._id } : {},
-    });
-  };
-
-  // ── Filter ──────────────────────────────────────────────────────────────────
+  // ── Filter ────────────────────────────────────────────────────────────────
+  const lowCount = items.filter(isLowStock).length;
 
   const filtered = useMemo(() => {
-    let list = items;
-    if (category !== 'All') list = list.filter(it => it.category === category);
+    let list = showLowOnly ? items.filter(isLowStock) : items;
+    if (category !== 'All') {
+      list = list.filter(it =>
+        it.category.toLowerCase().includes(category.toLowerCase()),
+      );
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(it =>
         it.name.toLowerCase().includes(q) ||
-        it.category.toLowerCase().includes(q)
+        it.category.toLowerCase().includes(q),
       );
     }
     return list;
-  }, [items, category, search]);
+  }, [items, category, search, showLowOnly]);
 
-  // ── Stats ───────────────────────────────────────────────────────────────────
+  const openAdd = () => router.push('/(tabs)/inventory/edit' as any);
 
-  const lowCount = items.filter(it => stockLevel(it) === 'low' || stockLevel(it) === 'out').length;
-
-  // ── Render ──────────────────────────────────────────────────────────────────
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
-      <LowStockBanner visible={showAlert} />
 
-      <ScreenHeader
-        title="Inventory"
-        rightAction={
-          isAdmin
-            ? {
-                label: 'Add',
-                icon: 'add-outline',
-                onPress: () => openEdit(),
-              }
-            : undefined
-        }
-      />
+      {/* Header */}
+      <View style={s.header}>
+        <Text style={s.headerTitle}>Inventory</Text>
+        <Pressable style={s.addBtn} onPress={openAdd} hitSlop={8}>
+          <Ionicons name="add" size={18} color={Colors.white} />
+          <Text style={s.addBtnText}>Add Item</Text>
+        </Pressable>
+      </View>
 
       {/* Low stock alert banner */}
       {lowCount > 0 && (
-        <View style={s.lowBanner}>
-          <Ionicons name="warning" size={16} color={Colors.error} />
-          <Text style={s.lowBannerText}>
-            {lowCount} item{lowCount !== 1 ? 's' : ''} running low — tap to review
+        <Pressable
+          style={[s.lowBanner, showLowOnly && s.lowBannerOn]}
+          onPress={() => setShowLowOnly(v => !v)}
+        >
+          <Ionicons
+            name="warning"
+            size={16}
+            color={showLowOnly ? Colors.white : Colors.error}
+          />
+          <Text style={[s.lowBannerText, showLowOnly && { color: Colors.white }]}>
+            {showLowOnly
+              ? `Showing ${lowCount} low-stock item${lowCount !== 1 ? 's' : ''} — tap to show all`
+              : `⚠ ${lowCount} item${lowCount !== 1 ? 's' : ''} running low — tap to view`}
           </Text>
-        </View>
+          <Ionicons
+            name={showLowOnly ? 'close-circle' : 'chevron-forward'}
+            size={14}
+            color={showLowOnly ? Colors.white : Colors.errorText}
+          />
+        </Pressable>
       )}
 
-      {/* Offline banner */}
-      {isOffline && (
-        <View style={s.offlineBanner}>
-          <Ionicons name="cloud-offline-outline" size={14} color={Colors.warningText} />
-          <Text style={s.offlineText}>Offline — showing cached data</Text>
-        </View>
-      )}
-
-      {/* Search */}
+      {/* Search bar */}
       <View style={s.searchWrap}>
-        <Ionicons name="search" size={16} color={Colors.textMuted} style={{ marginLeft: 12 }} />
+        <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
         <TextInput
           style={s.searchInput}
           value={search}
@@ -468,27 +331,28 @@ export default function InventoryScreen() {
         />
       </View>
 
-      {/* Category filter */}
-      <FlatList
-        data={ALL_CATEGORIES}
-        keyExtractor={c => c}
+      {/* Category filter chips */}
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={s.catList}
-        renderItem={({ item: cat }) => (
+        contentContainerStyle={s.chips}
+        style={{ flexGrow: 0, marginBottom: 8 }}
+      >
+        {CATEGORIES.map(cat => (
           <Pressable
-            style={[s.catChip, category === cat && s.catChipActive]}
+            key={cat}
+            style={[s.chip, category === cat && s.chipActive]}
             onPress={() => {
-              if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setCategory(cat);
             }}
-            android_ripple={{ color: Colors.accent + '20', borderless: false }}
           >
-            <Text style={[s.catText, category === cat && s.catTextActive]}>{cat}</Text>
+            <Text style={[s.chipText, category === cat && s.chipTextActive]}>
+              {cat}
+            </Text>
           </Pressable>
-        )}
-        style={{ marginBottom: 4 }}
-      />
+        ))}
+      </ScrollView>
 
       {/* Inventory list */}
       {loading ? (
@@ -499,129 +363,124 @@ export default function InventoryScreen() {
         <FlatList
           data={filtered}
           keyExtractor={it => it._id}
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={[s.list, { paddingBottom: 100 }]}
           showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={s.separator} />}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); fetchItems(); }}
+              tintColor={Colors.accent}
+            />
           }
           ListEmptyComponent={
-            <ReAnimated.View entering={FadeIn.duration(300)} style={s.empty}>
-              <View style={s.emptyIconWrap}>
+            <View style={s.empty}>
+              <View style={s.emptyIcon}>
                 <Ionicons name="cube-outline" size={36} color={Colors.textMuted} />
               </View>
               <Text style={s.emptyTitle}>
-                {search || category !== 'All' ? 'No items match' : 'No inventory items'}
+                {search || category !== 'All' || showLowOnly
+                  ? 'No items match'
+                  : 'No inventory items'}
               </Text>
-              <Text style={s.emptyText}>
-                {isAdmin
-                  ? 'Tap + to add your first item.'
-                  : 'Ask an admin to add inventory items.'}
-              </Text>
-            </ReAnimated.View>
+              <Text style={s.emptyText}>Tap + to add your first item.</Text>
+            </View>
           }
-          renderItem={({ item, index }) => (
+          renderItem={({ item }) => (
             <InventoryCard
               item={item}
-              isAdmin={isAdmin}
-              adjusting={adjustingId === item._id}
+              adjustingId={adjustingId}
               onAdjust={handleAdjust}
-              onEdit={openEdit}
-              onDelete={handleDelete}
-              index={index}
             />
           )}
         />
       )}
 
-      {/* FAB — admin only */}
-      {isAdmin && (
-        <Pressable
-          style={({ pressed }) => [s.fab, pressed && { opacity: 0.88 }]}
-          onPress={() => {
-            if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            openEdit();
-          }}
-          android_ripple={{ color: Colors.accentDark, borderless: false }}
-        >
-          <Ionicons name="add" size={26} color={Colors.white} />
-        </Pressable>
-      )}
+      {/* FAB */}
+      <Pressable style={s.fab} onPress={openAdd}>
+        <Ionicons name="add" size={28} color={Colors.white} />
+      </Pressable>
     </SafeAreaView>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.background },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
+  safe:     { flex: 1, backgroundColor: Colors.background },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  // Low stock alert banner
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: SCREEN_PADDING, paddingVertical: 16,
+    backgroundColor: Colors.white,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border,
+  },
+  headerTitle: { fontSize: 24, fontWeight: '800', color: Colors.textPrimary },
+  addBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: Colors.accent, borderRadius: borderRadius.md,
+    paddingHorizontal: 14, paddingVertical: 8,
+  },
+  addBtnText: { fontSize: 13, fontWeight: '700', color: Colors.white },
+
+  // Low stock banner
   lowBanner: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: Colors.errorBg,
-    paddingHorizontal: 20, paddingVertical: 12,
-    borderRadius: 0,
+    paddingHorizontal: SCREEN_PADDING, paddingVertical: 12,
+    borderLeftWidth: 3, borderLeftColor: Colors.error,
   },
-  lowBannerText: { fontSize: 13, fontWeight: '600', color: Colors.errorText, flex: 1 },
-
-  offlineBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: Colors.warningBg, marginHorizontal: SCREEN_PADDING, borderRadius: borderRadius.sm,
-    paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8,
-    borderLeftWidth: 3, borderLeftColor: Colors.warning,
-  },
-  offlineText: { fontSize: 12, color: Colors.warningText, fontWeight: '600' },
+  lowBannerOn:   { backgroundColor: Colors.error, borderLeftColor: Colors.errorText },
+  lowBannerText: { flex: 1, fontSize: 13, fontWeight: '600', color: Colors.errorText },
 
   // Search
   searchWrap: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.surface,
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: Colors.white,
     borderRadius: borderRadius.md,
-    marginHorizontal: SCREEN_PADDING, marginBottom: 8,
-    marginTop: 8,
+    marginHorizontal: SCREEN_PADDING, marginTop: 10, marginBottom: 6,
+    paddingHorizontal: 12,
     borderWidth: 1, borderColor: Colors.border,
   },
   searchInput: {
-    flex: 1, paddingHorizontal: 10, paddingVertical: 12,
+    flex: 1, paddingVertical: 12,
     fontSize: 14, color: Colors.textPrimary,
   },
 
   // Category chips
-  catList: { paddingHorizontal: SCREEN_PADDING, gap: 8 },
-  catChip: {
+  chips:         { paddingHorizontal: SCREEN_PADDING, gap: 8 },
+  chip: {
     borderRadius: borderRadius.full, borderWidth: 1.5, borderColor: Colors.border,
-    paddingHorizontal: 14, paddingVertical: 7, backgroundColor: Colors.surface,
-    overflow: 'hidden',
+    paddingHorizontal: 14, paddingVertical: 7,
+    backgroundColor: Colors.white, overflow: 'hidden',
   },
-  catChipActive: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  catText:       { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
-  catTextActive: { color: Colors.accent },
+  chipActive:     { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
+  chipText:       { fontSize: 13, fontWeight: '600', color: Colors.textMuted },
+  chipTextActive: { color: Colors.accent },
 
   // List
-  listContent: { paddingHorizontal: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
-  separator:   { height: 8 },
+  list: { paddingHorizontal: SCREEN_PADDING, paddingTop: 4 },
 
   // FAB
   fab: {
-    position: 'absolute', bottom: IS_IOS ? TAB_BAR_HEIGHT + 8 : 24, right: 24,
-    width: 56, height: 56, borderRadius: borderRadius.full,
-    backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
+    position: 'absolute', bottom: 30, right: 20,
+    width: 56, height: 56, borderRadius: 28,
+    backgroundColor: Colors.accent,
+    alignItems: 'center', justifyContent: 'center',
     ...Platform.select({
-      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 8 },
     }),
   },
 
   // Empty
-  empty:       { alignItems: 'center', paddingTop: 60 },
-  emptyIconWrap: {
-    width: 72, height: 72, borderRadius: borderRadius.full,
+  empty:     { alignItems: 'center', paddingTop: 60, paddingHorizontal: SCREEN_PADDING },
+  emptyIcon: {
+    width: 72, height: 72, borderRadius: 36,
     backgroundColor: Colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center', marginBottom: 16,
   },
-  emptyTitle:  { fontSize: 18, fontWeight: '700', color: Colors.textPrimary, marginBottom: 8 },
-  emptyText:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: Colors.textPrimary, marginBottom: 6 },
+  emptyText:  { fontSize: 13, color: Colors.textMuted },
 });

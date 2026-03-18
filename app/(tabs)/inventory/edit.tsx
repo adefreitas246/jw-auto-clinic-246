@@ -1,438 +1,534 @@
-﻿// app/(tabs)/inventory/edit.tsx — Add / Edit Inventory Item
-//
-// Route params:
-//   ?id=<objectId>   → edit mode (fetches existing item)
-//   (no params)      → create mode
-import { Ionicons } from '@expo/vector-icons';
-import { router, useLocalSearchParams } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
   View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  Alert,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import axios from 'axios';
-import { useInventoryCache } from '@/hooks/useInventoryCache';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS, IS_ANDROID } from '@/utils/platform';
-import { SCREEN_PADDING } from '@/utils/platformStyles';
-import { ScreenHeader } from '@/components/ui';
+import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+const CATEGORIES = ['Soap', 'Wax', 'Cloths', 'Equipment', 'Other'];
+const UNITS = ['units', 'liters', 'gallons', 'kg', 'lbs', 'bottles', 'bags', 'rolls', 'boxes'];
 
-const CATEGORIES = [
-  'Soaps & Chemicals',
-  'Wax & Polish',
-  'Interior Care',
-  'Towels & Cloths',
-  'Disposables',
-  'Equipment',
-  'Other',
-];
+interface InventoryItem {
+  _id: string;
+  name: string;
+  category: string;
+  currentStock: number;
+  unit: string;
+  lowStockThreshold: number;
+  notes?: string;
+}
 
-const UNITS = ['units', 'pcs', 'ml', 'L', 'g', 'kg', 'rolls', 'sheets', 'bottles', 'boxes'];
-
-// ── Picker modal ──────────────────────────────────────────────────────────────
-
+// ── Picker Modal ──────────────────────────────────────────────────────────────
 function PickerModal({
   visible,
   title,
   options,
-  value,
+  selected,
   onSelect,
   onClose,
 }: {
   visible: boolean;
-  title:   string;
+  title: string;
   options: string[];
-  value:   string;
-  onSelect:(v: string) => void;
+  selected: string;
+  onSelect: (v: string) => void;
   onClose: () => void;
 }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={pm.overlay} onPress={onClose} />
-      <View style={pm.sheet}>
-        <View style={pm.handle} />
-        <Text style={pm.title}>{title}</Text>
-        <ScrollView contentContainerStyle={{ paddingBottom: SCROLL_PADDING_BOTTOM }}>
-          {options.map(opt => (
-            <Pressable
-              key={opt}
-              style={[pm.option, value === opt && pm.optionActive]}
-              onPress={() => { onSelect(opt); onClose(); }}
-            >
-              <Text style={[pm.optionText, value === opt && pm.optionTextActive]}>{opt}</Text>
-              {value === opt && <Ionicons name="checkmark" size={18} color={Colors.accent} />}
-            </Pressable>
-          ))}
-        </ScrollView>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={onClose} />
+        <View style={styles.pickerSheet}>
+          <View style={styles.pickerHandle} />
+          <View style={styles.pickerHeader}>
+            <Text style={styles.pickerTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Ionicons name="close" size={24} color={Colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={options}
+            keyExtractor={(item) => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[styles.pickerOption, item === selected && styles.pickerOptionSelected]}
+                onPress={() => { onSelect(item); onClose(); }}
+              >
+                <Text style={[styles.pickerOptionText, item === selected && styles.pickerOptionTextSelected]}>
+                  {item}
+                </Text>
+                {item === selected && (
+                  <Ionicons name="checkmark" size={20} color={Colors.accent} />
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
       </View>
     </Modal>
   );
 }
 
-const pm = StyleSheet.create({
-  overlay:  { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
-  sheet: {
-    backgroundColor: Colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: 20, paddingBottom: 32, maxHeight: '60%',
-  },
-  handle: {
-    width: 40, height: 4, borderRadius: 2, backgroundColor: Colors.border,
-    alignSelf: 'center', marginVertical: 12,
-  },
-  title:           { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, marginBottom: 12 },
-  option:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: Colors.surfaceAlt },
-  optionActive:    { backgroundColor: Colors.accentMuted, borderRadius: 8, paddingHorizontal: 8 },
-  optionText:      { fontSize: 15, color: Colors.textSecondary },
-  optionTextActive:{ color: Colors.accent, fontWeight: '700' },
-});
-
-// ── Field ─────────────────────────────────────────────────────────────────────
-
-function Field({
-  label, required, error, children,
-}: {
-  label: string; required?: boolean; error?: string; children: React.ReactNode;
-}) {
-  return (
-    <View style={f.wrap}>
-      <Text style={f.label}>
-        {label}{required && <Text style={{ color: Colors.error }}> *</Text>}
-      </Text>
-      {children}
-      {error ? <Text style={f.error}>{error}</Text> : null}
-    </View>
-  );
-}
-
-const f = StyleSheet.create({
-  wrap:  { marginBottom: 16 },
-  label: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary, marginBottom: 6 },
-  error: { fontSize: 11, color: Colors.error, marginTop: 4 },
-});
-
-// ── Screen ────────────────────────────────────────────────────────────────────
-
-export default function EditInventoryScreen() {
+// ── Main Screen ───────────────────────────────────────────────────────────────
+export default function InventoryEditScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const isEdit  = !!id;
-  const cache   = useInventoryCache();
+  const router = useRouter();
+  const isEdit = !!id;
+
+  const [loading, setLoading] = useState(isEdit);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Form state
-  const [name,      setName]      = useState('');
-  const [category,  setCategory]  = useState('Other');
-  const [stock,     setStock]     = useState('0');
-  const [unit,      setUnit]      = useState('units');
-  const [threshold, setThreshold] = useState('10');
-  const [notes,     setNotes]     = useState('');
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('Soap');
+  const [currentStock, setCurrentStock] = useState('');
+  const [unit, setUnit] = useState('units');
+  const [lowStockThreshold, setLowStockThreshold] = useState('');
+  const [notes, setNotes] = useState('');
 
-  // UI state
-  const [loading,      setLoading]      = useState(isEdit);
-  const [saving,       setSaving]       = useState(false);
-  const [catPicker,    setCatPicker]    = useState(false);
-  const [unitPicker,   setUnitPicker]   = useState(false);
-  const [errors,       setErrors]       = useState<Record<string, string>>({});
+  // Picker visibility
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showUnitPicker, setShowUnitPicker] = useState(false);
 
-  // ── Load existing item ──────────────────────────────────────────────────────
-
+  // Load existing item in edit mode
   useEffect(() => {
     if (!isEdit) return;
+    let cancelled = false;
     (async () => {
       try {
-        const { data } = await axios.get(`/api/inventory/${id}`);
-        setName(data.name ?? '');
-        setCategory(data.category ?? 'Other');
-        setStock(String(data.currentStock ?? 0));
-        setUnit(data.unit ?? 'units');
-        setThreshold(String(data.lowStockThreshold ?? 10));
-        setNotes(data.notes ?? '');
+        const res = await fetch(`/api/inventory/${id}`);
+        if (!res.ok) throw new Error('Failed to load item');
+        const item: InventoryItem = await res.json();
+        if (cancelled) return;
+        setName(item.name);
+        setCategory(item.category);
+        setCurrentStock(String(item.currentStock));
+        setUnit(item.unit);
+        setLowStockThreshold(String(item.lowStockThreshold));
+        setNotes(item.notes ?? '');
       } catch {
-        // Fall back to cache if offline
-        const cached = await cache.readAll();
-        const item   = cached.find(it => it._id === id);
-        if (item) {
-          setName(item.name);
-          setCategory(item.category);
-          setStock(String(item.currentStock));
-          setUnit(item.unit);
-          setThreshold(String(item.lowStockThreshold));
-          setNotes(item.notes ?? '');
+        if (!cancelled) {
+          Alert.alert('Error', 'Could not load item.', [{ text: 'OK', onPress: () => router.back() }]);
         }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, [id]);
 
-  // ── Validate ────────────────────────────────────────────────────────────────
+  const validate = useCallback(() => {
+    if (!name.trim()) { Alert.alert('Validation', 'Name is required.'); return false; }
+    const stock = Number(currentStock);
+    if (isNaN(stock) || stock < 0) { Alert.alert('Validation', 'Current stock must be a non-negative number.'); return false; }
+    const threshold = Number(lowStockThreshold);
+    if (isNaN(threshold) || threshold < 0) { Alert.alert('Validation', 'Low stock threshold must be a non-negative number.'); return false; }
+    return true;
+  }, [name, currentStock, lowStockThreshold]);
 
-  const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!name.trim())             errs.name      = 'Name is required.';
-    if (isNaN(Number(stock)))     errs.stock     = 'Must be a number.';
-    if (!unit.trim())             errs.unit      = 'Unit is required.';
-    if (isNaN(Number(threshold)) || Number(threshold) < 0) {
-      errs.threshold = 'Must be a non-negative number.';
-    }
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  // ── Save ────────────────────────────────────────────────────────────────────
-
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!validate()) return;
     setSaving(true);
     try {
-      const payload = {
-        name:              name.trim(),
+      const body = {
+        name: name.trim(),
         category,
-        currentStock:      Number(stock),
-        unit:              unit.trim(),
-        lowStockThreshold: Number(threshold),
-        notes:             notes.trim(),
+        currentStock: Number(currentStock),
+        unit,
+        lowStockThreshold: Number(lowStockThreshold),
+        notes: notes.trim(),
       };
-
-      const { data } = isEdit
-        ? await axios.patch(`/api/inventory/${id}`, payload)
-        : await axios.post('/api/inventory', payload);
-
-      await cache.upsertOne(data);
+      const res = await fetch(
+        isEdit ? `/api/inventory/${id}` : '/api/inventory',
+        {
+          method: isEdit ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!res.ok) throw new Error('Save failed');
       router.back();
-    } catch (e: any) {
-      const msg = e.response?.data?.error ?? 'Save failed.';
-      if (msg.includes('already exists')) {
-        setErrors(prev => ({ ...prev, name: 'An item with this name already exists.' }));
-      } else {
-        Alert.alert('Error', msg);
-      }
+    } catch {
+      Alert.alert('Error', 'Could not save item. Please try again.');
     } finally {
       setSaving(false);
     }
-  };
+  }, [validate, name, category, currentStock, unit, lowStockThreshold, notes, id, isEdit]);
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  const handleDelete = useCallback(() => {
+    Alert.alert(
+      'Delete Item',
+      `Are you sure you want to delete "${name}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              const res = await fetch(`/api/inventory/${id}`, { method: 'DELETE' });
+              if (!res.ok) throw new Error('Delete failed');
+              router.back();
+            } catch {
+              Alert.alert('Error', 'Could not delete item. Please try again.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [name, id]);
 
+  // ── Render ─────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <SafeAreaView style={es.safe} edges={['top']}>
-        <View style={es.centered}><ActivityIndicator size="large" color={Colors.accent} /></View>
-      </SafeAreaView>
+      <>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            title: 'Edit Item',
+            headerStyle: { backgroundColor: Colors.background },
+            headerTintColor: Colors.accent,
+            headerTitleStyle: { color: Colors.textPrimary, fontWeight: '600' },
+          }}
+        />
+        <View style={styles.center}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      </>
     );
   }
 
   return (
-    <SafeAreaView style={es.safe} edges={['top']}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={IS_IOS ? 'padding' : undefined}
-      >
-        <ScreenHeader
-          title={isEdit ? 'Edit Item' : 'Add Item'}
-          backButton
-          rightAction={
-            <Pressable
-              style={({ pressed }) => [es.saveBtn, pressed && { opacity: 0.8 }]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              {saving
-                ? <ActivityIndicator size="small" color={Colors.white} />
-                : <Text style={es.saveBtnText}>Save</Text>
-              }
-            </Pressable>
-          }
-        />
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: isEdit ? 'Edit Item' : 'Add Item',
+          headerStyle: { backgroundColor: Colors.background },
+          headerTintColor: Colors.accent,
+          headerTitleStyle: { color: Colors.textPrimary, fontWeight: '600' },
+          headerBackTitle: 'Inventory',
+        }}
+      />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: Colors.background }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
         <ScrollView
-          contentContainerStyle={es.scroll}
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
         >
-          {/* Name */}
-          <Field label="Item Name" required error={errors.name}>
+          {/* ── Name ── */}
+          <View style={styles.section}>
+            <Text style={styles.label}>
+              Name <Text style={styles.required}>*</Text>
+            </Text>
             <TextInput
-              style={[es.input, errors.name && es.inputError]}
+              style={styles.input}
               value={name}
-              onChangeText={v => { setName(v); setErrors(p => ({ ...p, name: '' })); }}
-              placeholder="e.g. Car Shampoo Concentrate"
+              onChangeText={setName}
+              placeholder="e.g. Premium Car Shampoo"
               placeholderTextColor={Colors.textMuted}
               returnKeyType="next"
               autoCapitalize="words"
             />
-          </Field>
+          </View>
 
-          {/* Category picker */}
-          <Field label="Category">
-            <Pressable style={es.pickerBtn} onPress={() => setCatPicker(true)}>
-              <Text style={es.pickerText}>{category}</Text>
-              <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
-            </Pressable>
-          </Field>
+          {/* ── Category ── */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Category</Text>
+            <TouchableOpacity style={styles.pickerButton} onPress={() => setShowCategoryPicker(true)}>
+              <Text style={styles.pickerButtonText}>{category}</Text>
+              <Ionicons name="chevron-down" size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-          {/* Stock + Unit row */}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Field label="Current Stock" required error={errors.stock}>
-                <TextInput
-                  style={[es.input, errors.stock && es.inputError]}
-                  value={stock}
-                  onChangeText={v => { setStock(v); setErrors(p => ({ ...p, stock: '' })); }}
-                  keyboardType="decimal-pad"
-                  returnKeyType="next"
-                  placeholder="0"
-                  placeholderTextColor={Colors.textMuted}
-                />
-              </Field>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Field label="Unit" required error={errors.unit}>
-                <Pressable style={es.pickerBtn} onPress={() => setUnitPicker(true)}>
-                  <Text style={es.pickerText}>{unit}</Text>
-                  <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
-                </Pressable>
-              </Field>
+          {/* ── Stock + Unit ── */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Current Stock</Text>
+            <View style={styles.row}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginRight: 10 }]}
+                value={currentStock}
+                onChangeText={setCurrentStock}
+                placeholder="0"
+                placeholderTextColor={Colors.textMuted}
+                keyboardType="numeric"
+                returnKeyType="next"
+              />
+              <TouchableOpacity
+                style={[styles.pickerButton, { width: 120 }]}
+                onPress={() => setShowUnitPicker(true)}
+              >
+                <Text style={styles.pickerButtonText}>{unit}</Text>
+                <Ionicons name="chevron-down" size={18} color={Colors.textSecondary} />
+              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Threshold */}
-          <Field label="Low Stock Threshold" required error={errors.threshold}>
+          {/* ── Low Stock Threshold ── */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Low Stock Alert Threshold</Text>
             <TextInput
-              style={[es.input, errors.threshold && es.inputError]}
-              value={threshold}
-              onChangeText={v => { setThreshold(v); setErrors(p => ({ ...p, threshold: '' })); }}
-              keyboardType="decimal-pad"
-              returnKeyType="next"
-              placeholder="10"
+              style={styles.input}
+              value={lowStockThreshold}
+              onChangeText={setLowStockThreshold}
+              placeholder="e.g. 5"
               placeholderTextColor={Colors.textMuted}
+              keyboardType="numeric"
+              returnKeyType="next"
             />
-            <Text style={es.hint}>
-              Push notification fires when stock drops below this value.
-            </Text>
-          </Field>
+            <Text style={styles.hint}>Alert shows when stock is at or below this number.</Text>
+          </View>
 
-          {/* Notes */}
-          <Field label="Notes (optional)">
+          {/* ── Notes ── */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Notes</Text>
             <TextInput
-              style={[es.input, es.inputMulti]}
+              style={[styles.input, styles.textArea]}
               value={notes}
               onChangeText={setNotes}
-              placeholder="Supplier, storage location, etc."
+              placeholder="Supplier info, storage instructions, etc."
               placeholderTextColor={Colors.textMuted}
               multiline
-              numberOfLines={3}
-              returnKeyType="done"
+              numberOfLines={4}
+              textAlignVertical="top"
+              returnKeyType="default"
             />
-          </Field>
+          </View>
 
-          {/* Stock level preview */}
-          {name.trim() !== '' && (
-            <View style={es.preview}>
-              <Text style={es.previewLabel}>Stock Preview</Text>
-              <View style={es.previewRow}>
-                {(
-                  [
-                    { label: 'Out (0)',          stock: 0 },
-                    { label: `Low (<${threshold})`, stock: Math.max(Number(threshold) * 0.5, 0) },
-                    { label: `Watch`,              stock: Math.max(Number(threshold) * 1.2, 0) },
-                    { label: 'OK',                 stock: Math.max(Number(threshold) * 2, 0) },
-                  ] as const
-                ).map(({ label, stock: s }) => {
-                  const t = Number(threshold) || 10;
-                  let level: 'out' | 'low' | 'warn' | 'ok' = 'ok';
-                  if (s <= 0)      level = 'out';
-                  else if (s < t)  level = 'low';
-                  else if (s < t * 1.75) level = 'warn';
-                  const colors = { ok: Colors.success, warn: Colors.warning, low: Colors.error, out: Colors.error };
-                  return (
-                    <View key={label} style={es.previewPill}>
-                      <View style={[es.dot, { backgroundColor: colors[level] }]} />
-                      <Text style={es.previewPillText}>{label}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
+          {/* ── Save Button ── */}
+          <TouchableOpacity
+            style={[styles.saveButton, (saving || deleting) && styles.buttonDisabled]}
+            onPress={handleSave}
+            disabled={saving || deleting}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Ionicons name={isEdit ? 'checkmark-circle' : 'add-circle'} size={20} color="#fff" />
+                <Text style={styles.saveButtonText}>{isEdit ? 'Update Item' : 'Add Item'}</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* ── Delete Button (edit mode only) ── */}
+          {isEdit && (
+            <TouchableOpacity
+              style={[styles.deleteButton, (saving || deleting) && styles.buttonDisabled]}
+              onPress={handleDelete}
+              disabled={saving || deleting}
+            >
+              {deleting ? (
+                <ActivityIndicator size="small" color={Colors.error} />
+              ) : (
+                <>
+                  <Ionicons name="trash-outline" size={20} color={Colors.error} />
+                  <Text style={styles.deleteButtonText}>Delete Item</Text>
+                </>
+              )}
+            </TouchableOpacity>
           )}
-
-          <View style={{ height: 40 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Pickers */}
+      {/* ── Pickers ── */}
       <PickerModal
-        visible={catPicker}
+        visible={showCategoryPicker}
         title="Select Category"
         options={CATEGORIES}
-        value={category}
+        selected={category}
         onSelect={setCategory}
-        onClose={() => setCatPicker(false)}
+        onClose={() => setShowCategoryPicker(false)}
       />
       <PickerModal
-        visible={unitPicker}
+        visible={showUnitPicker}
         title="Select Unit"
         options={UNITS}
-        value={unit}
+        selected={unit}
         onSelect={setUnit}
-        onClose={() => setUnitPicker(false)}
+        onClose={() => setShowUnitPicker(false)}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-
-const SHADOW = IS_IOS
-  ? { shadowColor: Colors.black, shadowOpacity: 0.05, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } }
-  : IS_ANDROID ? { elevation: 2 } : {};
-
-const es = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: Colors.surfaceAlt },
-  centered:{ flex: 1, alignItems: 'center', justifyContent: 'center' },
-
-  saveBtn: {
-    backgroundColor: Colors.accent, borderRadius: 10,
-    paddingHorizontal: 18, paddingVertical: 9,
-    minWidth: 60, alignItems: 'center',
+const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.background,
   },
-  saveBtnText: { fontSize: 14, fontWeight: '700', color: Colors.white },
-
-  scroll: { paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: SCROLL_PADDING_BOTTOM },
-
+  scrollContent: {
+    padding: SCREEN_PADDING,
+    paddingBottom: 48,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  required: {
+    color: Colors.error,
+  },
   input: {
-    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 11,
-    fontSize: 15, color: Colors.textPrimary, backgroundColor: Colors.white,
-    ...SHADOW,
+    backgroundColor: Colors.card,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 16,
+    color: Colors.textPrimary,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
   },
-  inputError: { borderColor: Colors.error },
-  inputMulti: { height: 80, textAlignVertical: 'top', paddingTop: 11 },
-
-  pickerBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1.5, borderColor: Colors.border, borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 12,
-    backgroundColor: Colors.white, ...SHADOW,
+  textArea: {
+    minHeight: 100,
+    paddingTop: 13,
   },
-  pickerText: { fontSize: 15, color: Colors.textPrimary },
-
-  hint: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
-
-  preview: { backgroundColor: Colors.white, borderRadius: 12, padding: 14, ...SHADOW },
-  previewLabel: { fontSize: 12, fontWeight: '600', color: Colors.textMuted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.4 },
-  previewRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  previewPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.surfaceAlt, borderRadius: 99, paddingHorizontal: 10, paddingVertical: 5 },
-  dot:         { width: 8, height: 8, borderRadius: 4 },
-  previewPillText: { fontSize: 11, color: Colors.textSecondary },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hint: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 6,
+  },
+  pickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.card,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...cardShadow,
+  },
+  pickerButtonText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: 16,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  saveButtonText: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.card,
+    borderRadius: borderRadius.md,
+    paddingVertical: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.error,
+    marginBottom: 8,
+  },
+  deleteButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: Colors.error,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  // Picker modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10,22,40,0.5)',
+    justifyContent: 'flex-end',
+  },
+  pickerSheet: {
+    backgroundColor: Colors.card,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    maxHeight: '60%',
+    paddingBottom: 32,
+  },
+  pickerHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  pickerTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SCREEN_PADDING,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  pickerOptionSelected: {
+    backgroundColor: Colors.accentMuted,
+  },
+  pickerOptionText: {
+    fontSize: 16,
+    color: Colors.textPrimary,
+  },
+  pickerOptionTextSelected: {
+    fontWeight: '600',
+    color: Colors.accent,
+  },
 });

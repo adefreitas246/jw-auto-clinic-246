@@ -1,1166 +1,721 @@
-// app/(tabs)/walkin.tsx — Self-Service Walk-in Kiosk
-// Tablet-optimized, 5-screen flow (idle + 4 steps):
-//   0 — Idle/welcome (tap anywhere to start)
-//   1 — Choose service or package
-//   2 — Enter name + phone
-//   3 — Payment preference (Pay Now / Pay After)
-//   4 — Confirmation: queue number, position, wait + auto-reset countdown
-//
-// Requires:
-//   npx expo install expo-keep-awake
-import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
-import * as Haptics from "expo-haptics";
-import * as KeepAwake from "expo-keep-awake";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import * as ScreenOrientation from "expo-screen-orientation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+// app/(tabs)/walkin.tsx — Walk-in Queue Management
+// Staff/admin view of the live walk-in queue.
+// Polls GET /api/queue every 15 s.
+import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+  ActivityIndicator, Alert, Animated, KeyboardAvoidingView,
+  Platform, Pressable, ScrollView, StyleSheet, Text,
+  TextInput, View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ServiceDoc {
+interface Service {
   _id: string;
   name: string;
-  description: string;
-  price: number;
-  duration: number;
-  category: string;
+  duration: number; // minutes
 }
 
-interface PackageDoc {
+interface QueueEntry {
   _id: string;
-  name: string;
-  description: string;
-  price: number | null;
-  serviceIds: { name: string; price: number; duration: number }[];
-}
-
-interface CatalogItem {
-  id: string;
-  itemType: "package" | "service";
-  name: string;
-  description: string;
-  price: number;
-  durationMinutes: number;
-}
-
-interface QueueResult {
-  _id: string;
-  queueNumber: number;
   position: number;
-  estimatedWait: number;
   customerName: string;
-  serviceLabel: string;
+  phoneNumber?: string;
+  vehicleMake?: string;
+  vehicleModel?: string;
+  serviceName: string;
+  serviceId: string;
+  joinedAt: string;
 }
-
-type Step = 0 | 1 | 2 | 3 | 4;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const INACTIVITY_MS = 30_000;
-const CONFIRM_RESET_SEC = 30;
+const POLL_MS = 15_000;
+const FALLBACK_AVG_MINUTES = 25;
 
-const STEP_LABELS: Record<number, string> = {
-  1: "Choose Service",
-  2: "Your Details",
-  3: "Payment",
-  4: "You're In!",
-};
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// ─── Step indicator ───────────────────────────────────────────────────────────
-
-function StepDots({ step }: { step: Step }) {
-  if (step === 0 || step === 4) return null;
-  return (
-    <View style={k.dots}>
-      {[1, 2, 3].map((s) => (
-        <View
-          key={s}
-          style={[
-            k.dot,
-            step === s ? k.dotActive : step > s ? k.dotDone : k.dotIdle,
-          ]}
-        />
-      ))}
-    </View>
-  );
+function maskPhone(phone?: string): string {
+  if (!phone || phone.length < 4) return phone ?? '';
+  return '•••• ' + phone.slice(-4);
 }
 
-// ─── Service / package tile ───────────────────────────────────────────────────
-
-function CatalogTile({
-  item,
-  selected,
-  onPress,
-}: {
-  item: CatalogItem;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        k.tile,
-        selected && k.tileSelected,
-        pressed && { opacity: 0.88 },
-      ]}
-      onPress={onPress}
-      android_ripple={{ color: Colors.accentMuted }}
-    >
-      {item.itemType === "package" && (
-        <View style={k.bundleBadge}>
-          <Text style={k.bundleText}>BUNDLE</Text>
-        </View>
-      )}
-      <Text
-        style={[k.tileName, selected && k.tileNameSelected]}
-        numberOfLines={2}
-      >
-        {item.name}
-      </Text>
-      {!!item.description && (
-        <Text style={k.tileDesc} numberOfLines={1}>
-          {item.description}
-        </Text>
-      )}
-      <View style={k.tilePriceRow}>
-        <Text style={[k.tilePrice, selected && { color: Colors.accent }]}>
-          ${item.price.toFixed(2)}
-        </Text>
-        <View style={k.tileDurChip}>
-          <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
-          <Text style={k.tileDur}>{item.durationMinutes} min</Text>
-        </View>
-      </View>
-      {selected && (
-        <View style={k.tileCheck}>
-          <Ionicons name="checkmark" size={16} color={Colors.white} />
-        </View>
-      )}
-    </Pressable>
-  );
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ─── PulseDot ─────────────────────────────────────────────────────────────────
 
-export default function WalkinKioskScreen() {
-  const { user } = useAuth();
-
-  // ── Catalog ──────────────────────────────────────────────────────────────
-  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-  const [catalogBusy, setCatalogBusy] = useState(true);
-
-  // ── Step state ────────────────────────────────────────────────────────────
-  const [step, setStep] = useState<Step>(0);
-  const [selected, setSelected] = useState<CatalogItem | null>(null);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [payMethod, setPayMethod] = useState<"cash" | "counter">("counter");
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<QueueResult | null>(null);
-
-  // ── Inactivity + countdown ────────────────────────────────────────────────
-  const inactivityRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [countdown, setCountdown] = useState(CONFIRM_RESET_SEC);
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // ── Keep awake + orientation (native only) ────────────────────────────────
+function PulseDot() {
+  const scale = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    if (Platform.OS === 'web') return;
-    KeepAwake.activateKeepAwakeAsync();
-    ScreenOrientation.unlockAsync(); // allow portrait + landscape
-    return () => {
-      KeepAwake.deactivateKeepAwake();
-    };
-  }, []);
-
-  // ── Idle pulse ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (step !== 0) {
-      pulseAnim.setValue(1);
-      return;
-    }
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.12,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1.0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(scale, { toValue: 1.8, duration: 800, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.0, duration: 800, useNativeDriver: true }),
       ]),
     );
     loop.start();
     return () => loop.stop();
-  }, [step]);
-
-  // ── Fetch catalog ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    (async () => {
-      try {
-        const [pkgRes, svcRes] = await Promise.all([
-          axios.get<PackageDoc[]>("/api/packages/catalog"),
-          axios.get<ServiceDoc[]>("/api/services/catalog"),
-        ]);
-
-        const pkgItems: CatalogItem[] = pkgRes.data.map((p) => ({
-          id: p._id,
-          itemType: "package",
-          name: p.name,
-          description: p.description || "",
-          price: p.price ?? p.serviceIds.reduce((s, sv) => s + sv.price, 0),
-          durationMinutes:
-            p.serviceIds.reduce((s, sv) => s + sv.duration, 0) || 30,
-        }));
-
-        const svcItems: CatalogItem[] = svcRes.data.map((s) => ({
-          id: s._id,
-          itemType: "service",
-          name: s.name,
-          description: s.description || s.category || "",
-          price: s.price,
-          durationMinutes: s.duration,
-        }));
-
-        setCatalog([...pkgItems, ...svcItems]);
-      } catch {
-        // Silently fail — user sees empty catalog with retry option
-      } finally {
-        setCatalogBusy(false);
-      }
-    })();
   }, []);
+  return (
+    <View style={w.pulseDotWrap}>
+      <Animated.View style={[w.pulseDotOuter, { transform: [{ scale }] }]} />
+      <View style={w.pulseDotInner} />
+    </View>
+  );
+}
 
-  // ── Reset to idle ─────────────────────────────────────────────────────────
-  const resetToIdle = useCallback(() => {
-    if (inactivityRef.current) clearTimeout(inactivityRef.current);
-    setStep(0);
-    setSelected(null);
-    setName("");
-    setPhone("");
-    setPayMethod("counter");
-    setResult(null);
-    setCountdown(CONFIRM_RESET_SEC);
-  }, []);
+// ─── QueueCard ────────────────────────────────────────────────────────────────
 
-  // ── Inactivity timer (active on steps 1-3) ────────────────────────────────
-  const bumpTimer = useCallback(() => {
-    if (step === 0 || step === 4) return;
-    if (inactivityRef.current) clearTimeout(inactivityRef.current);
-    inactivityRef.current = setTimeout(resetToIdle, INACTIVITY_MS);
-  }, [step, resetToIdle]);
+function QueueCard({
+  entry,
+  avgMinutes,
+  onCallNext,
+  onRemove,
+  callNextBusy,
+}: {
+  entry: QueueEntry;
+  avgMinutes: number;
+  onCallNext: () => void;
+  onRemove: () => void;
+  callNextBusy: boolean;
+}) {
+  const waitMins = Math.max(0, entry.position - 1) * avgMinutes;
+  const isNext   = entry.position === 1;
+
+  return (
+    <View style={w.card}>
+      {/* Top row: position badge + name/phone + joined time */}
+      <View style={w.cardTop}>
+        <View style={w.posBadge}>
+          <Text style={w.posText}>{entry.position}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={w.customerName}>{entry.customerName}</Text>
+          {!!entry.phoneNumber && (
+            <Text style={w.phoneText}>{maskPhone(entry.phoneNumber)}</Text>
+          )}
+        </View>
+        <Text style={w.joinedTime}>{formatTime(entry.joinedAt)}</Text>
+      </View>
+
+      {/* Detail chips */}
+      <View style={w.chipsRow}>
+        {(entry.vehicleMake || entry.vehicleModel) && (
+          <View style={w.chip}>
+            <Ionicons name="car-outline" size={11} color={Colors.textMuted} />
+            <Text style={w.chipText}>
+              {[entry.vehicleMake, entry.vehicleModel].filter(Boolean).join(' ')}
+            </Text>
+          </View>
+        )}
+        <View style={[w.chip, { backgroundColor: Colors.accentMuted }]}>
+          <Ionicons name="layers-outline" size={11} color={Colors.accent} />
+          <Text style={[w.chipText, { color: Colors.accent }]}>{entry.serviceName}</Text>
+        </View>
+        {waitMins > 0 ? (
+          <View style={w.chip}>
+            <Ionicons name="time-outline" size={11} color={Colors.textMuted} />
+            <Text style={w.chipText}>~{waitMins} min wait</Text>
+          </View>
+        ) : (
+          <View style={[w.chip, { backgroundColor: Colors.successBg }]}>
+            <Ionicons name="checkmark-circle-outline" size={11} color={Colors.success} />
+            <Text style={[w.chipText, { color: Colors.success }]}>Ready now</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Action buttons */}
+      <View style={w.cardActions}>
+        {isNext && (
+          <Pressable
+            style={[w.callNextBtn, callNextBusy && { opacity: 0.6 }]}
+            onPress={onCallNext}
+            disabled={callNextBusy}
+          >
+            {callNextBusy ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <>
+                <Ionicons name="megaphone-outline" size={16} color={Colors.white} />
+                <Text style={w.callNextText}>Call Next</Text>
+              </>
+            )}
+          </Pressable>
+        )}
+        <Pressable
+          style={[w.removeBtn, isNext && { flex: 0, paddingHorizontal: 16 }]}
+          onPress={onRemove}
+        >
+          <Ionicons name="close-circle-outline" size={16} color={Colors.error} />
+          {!isNext && <Text style={w.removeBtnText}>Remove</Text>}
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+// ─── AddWalkInSheet ───────────────────────────────────────────────────────────
+
+function AddWalkInSheet({
+  visible,
+  services,
+  onClose,
+  onAdded,
+}: {
+  visible: boolean;
+  services: Service[];
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const insets    = useSafeAreaInsets();
+  const slideAnim = useRef(new Animated.Value(700)).current;
+  const bgOpacity = useRef(new Animated.Value(0)).current;
+
+  const [name,          setName]          = useState('');
+  const [phone,         setPhone]         = useState('');
+  const [vehicleMake,   setVehicleMake]   = useState('');
+  const [vehicleModel,  setVehicleModel]  = useState('');
+  const [selectedSvc,   setSelectedSvc]   = useState<Service | null>(null);
+  const [submitting,    setSubmitting]    = useState(false);
 
   useEffect(() => {
-    if (step >= 1 && step <= 3) {
-      bumpTimer(); // start timer on entering these steps
+    Animated.parallel([
+      Animated.spring(slideAnim, {
+        toValue:         visible ? 0 : 700,
+        useNativeDriver: true,
+        bounciness:      3,
+      }),
+      Animated.timing(bgOpacity, {
+        toValue:         visible ? 1 : 0,
+        duration:        250,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    if (!visible) {
+      setName(''); setPhone(''); setVehicleMake('');
+      setVehicleModel(''); setSelectedSvc(null);
     }
-    return () => {
-      if (inactivityRef.current) clearTimeout(inactivityRef.current);
-    };
-  }, [step]);
+  }, [visible]);
 
-  // ── Confirmation countdown ────────────────────────────────────────────────
-  useEffect(() => {
-    if (step !== 4) return;
-    setCountdown(CONFIRM_RESET_SEC);
-    const id = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(id);
-          resetToIdle();
-          return CONFIRM_RESET_SEC;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(id);
-  }, [step, resetToIdle]);
-
-  // ── Navigate steps ────────────────────────────────────────────────────────
-  const goTo = useCallback((s: Step) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setStep(s);
-  }, []);
-
-  // ── Submit queue entry ────────────────────────────────────────────────────
-  const handleSubmit = useCallback(async () => {
-    if (!selected || !name.trim()) return;
+  const handleAdd = async () => {
+    if (!name.trim() || !selectedSvc) return;
     setSubmitting(true);
     try {
-      const body = {
-        customerName: name.trim(),
-        phoneNumber: phone.trim(),
-        serviceLabel: selected.name,
-        price: selected.price,
-        durationMinutes: selected.durationMinutes,
-        paymentMethod: payMethod,
-        ...(selected.itemType === "package"
-          ? { packageId: selected.id }
-          : { serviceId: selected.id }),
-      };
-      const { data } = await axios.post<QueueResult>("/api/queue", body);
+      await axios.post('/api/queue', {
+        customerName:  name.trim(),
+        phoneNumber:   phone.trim() || undefined,
+        vehicleMake:   vehicleMake.trim() || undefined,
+        vehicleModel:  vehicleModel.trim() || undefined,
+        serviceId:     selectedSvc._id,
+        serviceName:   selectedSvc.name,
+      });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setResult(data);
-      setStep(4);
+      onAdded();
+      onClose();
     } catch (err: any) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert(
-        "Oops!",
-        err.response?.data?.error ??
-          "Could not add to queue. Please try again.",
-      );
+      Alert.alert('Error', err.response?.data?.error ?? 'Could not add to queue.');
     } finally {
       setSubmitting(false);
     }
-  }, [selected, name, phone, payMethod]);
+  };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  const canSubmit = name.trim().length > 0 && selectedSvc !== null;
 
   return (
-    <View style={{ flex: 1 }} onTouchStart={bumpTimer} onTouchMove={bumpTimer}>
-      {/* ── Step 0: Idle / welcome screen ── */}
-      {step === 0 && (
-        <Pressable style={{ flex: 1 }} onPress={() => goTo(1)}>
-          <LinearGradient
-            colors={[Colors.primaryDark, Colors.accent, Colors.accentDark]}
-            style={k.idleScreen}
-            start={{ x: 0.1, y: 0 }}
-            end={{ x: 0.9, y: 1 }}
-          >
-            <SafeAreaView style={k.idleInner}>
-              {/* Back button (admin can escape kiosk mode) */}
-              <Pressable
-                style={k.idleBack}
-                onPress={() => router.back()}
-                hitSlop={12}
-              >
-                <Ionicons
-                  name="arrow-back"
-                  size={20}
-                  color="rgba(255,255,255,0.5)"
-                />
-              </Pressable>
+    <>
+      {/* Backdrop */}
+      <Animated.View
+        style={[w.backdrop, { opacity: bgOpacity }]}
+        pointerEvents={visible ? 'auto' : 'none'}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+      </Animated.View>
 
-              {/* Main icon */}
-              <Animated.View
-                style={[k.idleIconWrap, { transform: [{ scale: pulseAnim }] }]}
-              >
-                <Ionicons name="car-sport-outline" size={72} color={Colors.white} />
-              </Animated.View>
+      {/* Sheet */}
+      <Animated.View
+        style={[
+          w.sheet,
+          { transform: [{ translateY: slideAnim }], paddingBottom: insets.bottom + 16 },
+        ]}
+        pointerEvents={visible ? 'auto' : 'none'}
+      >
+        {/* Handle + header */}
+        <View style={w.sheetHandle} />
+        <View style={w.sheetHeader}>
+          <Text style={w.sheetTitle}>Add Walk-in</Text>
+          <Pressable style={w.sheetCloseBtn} onPress={onClose} hitSlop={10}>
+            <Ionicons name="close" size={20} color={Colors.textMuted} />
+          </Pressable>
+        </View>
 
-              <Text style={k.idleTitle}>Walk-in Service</Text>
-              <Text style={k.idleSub}>
-                Join the queue and we'll get you sorted
-              </Text>
-
-              {catalogBusy ? (
-                <ActivityIndicator
-                  color="rgba(255,255,255,0.7)"
-                  style={{ marginTop: 40 }}
-                />
-              ) : (
-                <View style={k.idleTapHint}>
-                  <Ionicons
-                    name="hand-left-outline"
-                    size={22}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text style={k.idleTapText}>TAP ANYWHERE TO START</Text>
-                </View>
-              )}
-            </SafeAreaView>
-          </LinearGradient>
-        </Pressable>
-      )}
-
-      {/* ── Steps 1–3: Multi-step flow ── */}
-      {step >= 1 && step <= 3 && (
-        <SafeAreaView style={k.safe} edges={["top", "bottom"]}>
-          {/* Header */}
-          <View style={k.header}>
-            <Pressable
-              style={k.headerBack}
-              onPress={() =>
-                step === 1 ? resetToIdle() : goTo((step - 1) as Step)
-              }
-              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
-              hitSlop={10}
-            >
-              <Ionicons name="arrow-back" size={22} color={Colors.textPrimary} />
-            </Pressable>
-            <View style={k.headerCenter}>
-              <StepDots step={step} />
-              <Text style={k.headerTitle}>{STEP_LABELS[step]}</Text>
-            </View>
-            <Pressable
-              style={k.headerX}
-              onPress={resetToIdle}
-              android_ripple={{ color: Colors.border, borderless: true, radius: 22 }}
-              hitSlop={10}
-            >
-              <Ionicons name="close" size={22} color={Colors.textMuted} />
-            </Pressable>
-          </View>
-
-          {/* ── Step 1: Service selection ── */}
-          {step === 1 && (
-            <ScrollView
-              contentContainerStyle={k.gridContent}
-              showsVerticalScrollIndicator={false}
-            >
-              {catalogBusy && (
-                <View style={k.centered}>
-                  <ActivityIndicator size="large" color={Colors.accent} />
-                </View>
-              )}
-              {!catalogBusy && catalog.length === 0 && (
-                <View style={k.centered}>
-                  <View style={k.emptyIconWrap}>
-                    <Ionicons
-                      name="alert-circle-outline"
-                      size={32}
-                      color={Colors.textMuted}
-                    />
-                  </View>
-                  <Text style={k.emptyText}>
-                    No services available. Please see staff.
-                  </Text>
-                </View>
-              )}
-              {!catalogBusy && catalog.length > 0 && (
-                <>
-                  {/* Packages first */}
-                  {catalog.filter((c) => c.itemType === "package").length >
-                    0 && (
-                    <>
-                      <Text style={k.gridSection}>Packages</Text>
-                      <View style={k.grid}>
-                        {catalog
-                          .filter((c) => c.itemType === "package")
-                          .map((item) => (
-                            <CatalogTile
-                              key={item.id}
-                              item={item}
-                              selected={selected?.id === item.id}
-                              onPress={() => setSelected(item)}
-                            />
-                          ))}
-                      </View>
-                    </>
-                  )}
-                  {/* Services */}
-                  {catalog.filter((c) => c.itemType === "service").length >
-                    0 && (
-                    <>
-                      <Text style={k.gridSection}>Individual Services</Text>
-                      <View style={k.grid}>
-                        {catalog
-                          .filter((c) => c.itemType === "service")
-                          .map((item) => (
-                            <CatalogTile
-                              key={item.id}
-                              item={item}
-                              selected={selected?.id === item.id}
-                              onPress={() => setSelected(item)}
-                            />
-                          ))}
-                      </View>
-                    </>
-                  )}
-
-                  {/* Selected summary + continue */}
-                  {selected && (
-                    <View style={k.selectedSummary}>
-                      <View style={k.selectedInfo}>
-                        <Text style={k.selectedName}>{selected.name}</Text>
-                        <Text style={k.selectedPrice}>
-                          ${selected.price.toFixed(2)} ·{" "}
-                          {selected.durationMinutes} min
-                        </Text>
-                      </View>
-                      <Pressable
-                        style={k.continueBtn}
-                        onPress={() => goTo(2)}
-                        android_ripple={{ color: Colors.accentDark }}
-                      >
-                        <Text style={k.continueBtnText}>Continue</Text>
-                        <Ionicons name="arrow-forward" size={18} color={Colors.white} />
-                      </Pressable>
-                    </View>
-                  )}
-                </>
-              )}
-            </ScrollView>
-          )}
-
-          {/* ── Step 2: Customer details ── */}
-          {step === 2 && (
-            <KeyboardAvoidingView
-              style={{ flex: 1 }}
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-            >
-              <ScrollView
-                contentContainerStyle={k.formContent}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Selected service recap */}
-                {selected && (
-                  <View style={k.serviceRecap}>
-                    <View style={k.serviceRecapIcon}>
-                      <Ionicons name="layers-outline" size={16} color={Colors.accent} />
-                    </View>
-                    <Text style={k.serviceRecapText}>
-                      {selected.name} · ${selected.price.toFixed(2)}
-                    </Text>
-                  </View>
-                )}
-
-                {/* Name field */}
-                <Text style={k.inputLabel}>Full Name *</Text>
-                <TextInput
-                  style={k.input}
-                  placeholder="e.g. John Smith"
-                  placeholderTextColor={Colors.border}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                  onFocus={bumpTimer}
-                />
-
-                {/* Phone field */}
-                <Text style={k.inputLabel}>
-                  Phone Number (optional — for updates)
-                </Text>
-                <TextInput
-                  style={k.input}
-                  placeholder="e.g. 868-555-0123"
-                  placeholderTextColor={Colors.border}
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                  returnKeyType="done"
-                  onFocus={bumpTimer}
-                />
-
-                <Pressable
-                  style={({ pressed }) => [
-                    k.continueBtn,
-                    k.continueBtnFull,
-                    !name.trim() && k.continueBtnDisabled,
-                    pressed && { opacity: 0.88 },
-                  ]}
-                  onPress={() => (name.trim() ? goTo(3) : null)}
-                  disabled={!name.trim()}
-                  android_ripple={{ color: Colors.accentDark }}
-                >
-                  <Text style={k.continueBtnText}>Continue</Text>
-                  <Ionicons name="arrow-forward" size={18} color={Colors.white} />
-                </Pressable>
-              </ScrollView>
-            </KeyboardAvoidingView>
-          )}
-
-          {/* ── Step 3: Payment preference ── */}
-          {step === 3 && (
-            <View style={k.paymentScreen}>
-              {selected && (
-                <Text style={k.paymentTotal}>
-                  Total: ${selected.price.toFixed(2)}
-                </Text>
-              )}
-
-              <View style={k.paymentRow}>
-                {/* Pay Now */}
-                <Pressable
-                  style={[k.payCard, payMethod === "cash" && k.payCardSelected]}
-                  onPress={() => {
-                    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setPayMethod("cash");
-                  }}
-                  android_ripple={{ color: Colors.accentMuted }}
-                >
-                  <View
-                    style={[
-                      k.payIconWrap,
-                      payMethod === "cash" && k.payIconWrapSelected,
-                    ]}
-                  >
-                    <Ionicons
-                      name="cash-outline"
-                      size={36}
-                      color={payMethod === "cash" ? Colors.white : Colors.accent}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      k.payCardTitle,
-                      payMethod === "cash" && k.payCardTitleSelected,
-                    ]}
-                  >
-                    Pay Now
-                  </Text>
-                  <Text style={k.payCardSub}>
-                    Cash at the counter{"\n"}before your service starts
-                  </Text>
-                  {payMethod === "cash" && (
-                    <View style={k.payCheck}>
-                      <Ionicons name="checkmark" size={14} color={Colors.white} />
-                    </View>
-                  )}
-                </Pressable>
-
-                {/* Pay After */}
-                <Pressable
-                  style={[
-                    k.payCard,
-                    payMethod === "counter" && k.payCardSelected,
-                  ]}
-                  onPress={() => {
-                    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setPayMethod("counter");
-                  }}
-                  android_ripple={{ color: Colors.accentMuted }}
-                >
-                  <View
-                    style={[
-                      k.payIconWrap,
-                      payMethod === "counter" && k.payIconWrapSelected,
-                    ]}
-                  >
-                    <Ionicons
-                      name="receipt-outline"
-                      size={36}
-                      color={payMethod === "counter" ? Colors.white : Colors.accent}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      k.payCardTitle,
-                      payMethod === "counter" && k.payCardTitleSelected,
-                    ]}
-                  >
-                    Pay After
-                  </Text>
-                  <Text style={k.payCardSub}>
-                    Pay when your service{"\n"}is completed
-                  </Text>
-                  {payMethod === "counter" && (
-                    <View style={k.payCheck}>
-                      <Ionicons name="checkmark" size={14} color={Colors.white} />
-                    </View>
-                  )}
-                </Pressable>
-              </View>
-
-              {/* Confirm CTA */}
-              <Pressable
-                style={({ pressed }) => [
-                  k.confirmBtn,
-                  pressed && { opacity: 0.88 },
-                  submitting && { opacity: 0.6 },
-                ]}
-                onPress={handleSubmit}
-                disabled={submitting}
-                android_ripple={{ color: Colors.accentDark }}
-              >
-                {submitting ? (
-                  <ActivityIndicator color={Colors.white} />
-                ) : (
-                  <>
-                    <Text style={k.confirmBtnText}>Join Queue</Text>
-                    <Ionicons
-                      name="checkmark-circle-outline"
-                      size={20}
-                      color={Colors.white}
-                    />
-                  </>
-                )}
-              </Pressable>
-            </View>
-          )}
-        </SafeAreaView>
-      )}
-
-      {/* ── Step 4: Confirmation ── */}
-      {step === 4 && result && (
-        <LinearGradient
-          colors={[Colors.successText, Colors.success, Colors.success]}
-          style={k.confirmScreen}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
         >
-          <SafeAreaView style={k.confirmInner}>
-            {/* Check icon */}
-            <View style={k.confirmCheck}>
-              <Ionicons name="checkmark" size={48} color={Colors.white} />
-            </View>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={w.sheetContent}
+          >
+            {/* Customer Name */}
+            <Text style={w.label}>Customer Name *</Text>
+            <TextInput
+              style={w.input}
+              placeholder="e.g. John Smith"
+              placeholderTextColor={Colors.textMuted}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              returnKeyType="next"
+            />
 
-            <Text style={k.confirmTitle}>You're in the queue!</Text>
-            <Text style={k.confirmName}>
-              Welcome, {result.customerName.split(" ")[0]}!
-            </Text>
+            {/* Phone */}
+            <Text style={w.label}>Phone Number</Text>
+            <TextInput
+              style={w.input}
+              placeholder="Optional"
+              placeholderTextColor={Colors.textMuted}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+            />
 
-            {/* Queue number */}
-            <View style={k.queueNumWrap}>
-              <Text style={k.queueNumLabel}>Queue Number</Text>
-              <Text style={k.queueNum}>#{result.queueNumber}</Text>
-            </View>
-
-            {/* Stats row */}
-            <View style={k.statsRow}>
-              <View style={k.statCard}>
-                <Text style={k.statValue}>{result.position}</Text>
-                <Text style={k.statLabel}>
-                  {result.position === 1 ? "You're first!" : "In line"}
-                </Text>
-              </View>
-              <View style={k.statDivider} />
-              <View style={k.statCard}>
-                <Text style={k.statValue}>
-                  {result.estimatedWait > 0
-                    ? `~${result.estimatedWait}`
-                    : "Now"}
-                </Text>
-                <Text style={k.statLabel}>
-                  {result.estimatedWait > 0 ? "min wait" : "Ready!"}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={k.serviceConfirmText}>{result.serviceLabel}</Text>
-
-            {/* Countdown */}
-            <Text style={k.countdown}>Resetting in {countdown}s</Text>
-            <View style={k.countdownTrack}>
-              <View
-                style={[
-                  k.countdownFill,
-                  { width: `${(countdown / CONFIRM_RESET_SEC) * 100}%` as any },
-                ]}
+            {/* Vehicle */}
+            <Text style={w.label}>Vehicle Make / Model</Text>
+            <View style={w.inputRow}>
+              <TextInput
+                style={[w.input, { flex: 1 }]}
+                placeholder="Make"
+                placeholderTextColor={Colors.textMuted}
+                value={vehicleMake}
+                onChangeText={setVehicleMake}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={[w.input, { flex: 1 }]}
+                placeholder="Model"
+                placeholderTextColor={Colors.textMuted}
+                value={vehicleModel}
+                onChangeText={setVehicleModel}
+                autoCapitalize="words"
               />
             </View>
 
-            {/* Done button */}
+            {/* Service picker */}
+            <Text style={w.label}>Service *</Text>
+            <View style={w.svcGrid}>
+              {services.length === 0 ? (
+                <Text style={w.noSvcText}>No services available</Text>
+              ) : (
+                services.map(svc => {
+                  const sel = selectedSvc?._id === svc._id;
+                  return (
+                    <Pressable
+                      key={svc._id}
+                      style={[w.svcChip, sel && w.svcChipSel]}
+                      onPress={() => setSelectedSvc(svc)}
+                    >
+                      <Text style={[w.svcChipText, sel && { color: Colors.accent }]}>
+                        {svc.name}
+                      </Text>
+                      {sel && (
+                        <Ionicons name="checkmark-circle" size={14} color={Colors.accent} />
+                      )}
+                    </Pressable>
+                  );
+                })
+              )}
+            </View>
+
+            {/* Submit */}
             <Pressable
-              style={k.doneBtn}
-              onPress={resetToIdle}
-              android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+              style={[w.addBtn, (!canSubmit || submitting) && { opacity: 0.5 }]}
+              onPress={handleAdd}
+              disabled={!canSubmit || submitting}
             >
-              <Text style={k.doneBtnText}>Done</Text>
+              {submitting ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="person-add-outline" size={18} color={Colors.white} />
+                  <Text style={w.addBtnText}>Add to Queue</Text>
+                </>
+              )}
             </Pressable>
-          </SafeAreaView>
-        </LinearGradient>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Animated.View>
+    </>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+
+export default function WalkinQueueScreen() {
+  const { user }  = useAuth();
+  const insets    = useSafeAreaInsets();
+
+  const [queue,         setQueue]         = useState<QueueEntry[]>([]);
+  const [services,      setServices]      = useState<Service[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [callNextBusy,  setCallNextBusy]  = useState(false);
+  const [sheetVisible,  setSheetVisible]  = useState(false);
+
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Fetch queue
+  const fetchQueue = useCallback(async () => {
+    try {
+      const { data } = await axios.get<QueueEntry[]>('/api/queue');
+      setQueue(data);
+    } catch {
+      // silently fail on poll
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch services (once)
+  useEffect(() => {
+    axios.get<Service[]>('/api/services').then(r => setServices(r.data)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchQueue();
+    intervalRef.current = setInterval(fetchQueue, POLL_MS);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [fetchQueue]);
+
+  // Call Next
+  const handleCallNext = useCallback(async () => {
+    setCallNextBusy(true);
+    try {
+      await axios.patch('/api/queue/next');
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      fetchQueue();
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.error ?? 'Could not call next customer.');
+    } finally {
+      setCallNextBusy(false);
+    }
+  }, [fetchQueue]);
+
+  // Remove entry
+  const handleRemove = useCallback((entry: QueueEntry) => {
+    Alert.alert(
+      'Remove from Queue',
+      `Remove ${entry.customerName} from the queue?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove', style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(`/api/queue/${entry._id}`);
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              fetchQueue();
+            } catch {
+              Alert.alert('Error', 'Could not remove from queue.');
+            }
+          },
+        },
+      ],
+    );
+  }, [fetchQueue]);
+
+  const avgMinutes = services.length > 0
+    ? Math.round(services.reduce((s, sv) => s + sv.duration, 0) / services.length)
+    : FALLBACK_AVG_MINUTES;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+
+      {/* ── Floating back button ── */}
+      <Pressable
+        style={[w.backBtn, { top: insets.top + 12 }]}
+        onPress={() => router.back()}
+        hitSlop={8}
+      >
+        <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+      </Pressable>
+
+      {/* ── Header ── */}
+      <View style={[w.header, { paddingTop: insets.top + 12 }]}>
+        <View style={w.headerLeft}>
+          <Text style={w.headerTitle}>Walk-in Queue</Text>
+          <View style={w.liveRow}>
+            <PulseDot />
+            <Text style={w.liveText}>Live</Text>
+          </View>
+        </View>
+        <View style={w.queueCountBadge}>
+          <Text style={w.queueCountText}>{queue.length} in queue</Text>
+        </View>
+      </View>
+
+      {/* ── Queue list ── */}
+      {loading ? (
+        <View style={w.centered}>
+          <ActivityIndicator size="large" color={Colors.accent} />
+        </View>
+      ) : queue.length === 0 ? (
+        <View style={w.centered}>
+          <View style={w.emptyIconWrap}>
+            <Ionicons name="checkmark-circle-outline" size={52} color={Colors.success} />
+          </View>
+          <Text style={w.emptyTitle}>Queue is empty ✓</Text>
+          <Text style={w.emptyText}>Customers will appear here when they join</Text>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={[w.listContent, { paddingBottom: 120 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {queue.map(entry => (
+            <QueueCard
+              key={entry._id}
+              entry={entry}
+              avgMinutes={avgMinutes}
+              onCallNext={handleCallNext}
+              onRemove={() => handleRemove(entry)}
+              callNextBusy={callNextBusy}
+            />
+          ))}
+        </ScrollView>
       )}
+
+      {/* ── FAB ── */}
+      <Pressable
+        style={[w.fab, { bottom: insets.bottom + 30 }]}
+        onPress={() => setSheetVisible(true)}
+      >
+        <Ionicons name="add" size={30} color={Colors.white} />
+      </Pressable>
+
+      {/* ── Add walk-in bottom sheet ── */}
+      <AddWalkInSheet
+        visible={sheetVisible}
+        services={services}
+        onClose={() => setSheetVisible(false)}
+        onAdded={fetchQueue}
+      />
     </View>
   );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const k = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.surfaceAlt },
+const w = StyleSheet.create({
+  // Layout helpers
   centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    padding: 32,
-  },
-  emptyIconWrap: {
-    width: 72, height: 72, borderRadius: borderRadius.full,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
-  emptyText: { fontSize: 16, color: Colors.textMuted, textAlign: "center" },
-
-  // ── Idle screen ──
-  idleScreen: { flex: 1 },
-  idleInner: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
-  },
-  idleBack: { position: "absolute", top: 52, left: 24 },
-  idleIconWrap: {
-    width: 140,
-    height: 140,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 32,
-  },
-  idleTitle: {
-    fontSize: 44,
-    fontWeight: "900",
-    color: Colors.white,
-    marginBottom: 10,
-  },
-  idleSub: {
-    fontSize: 20,
-    color: "rgba(255,255,255,0.75)",
-    textAlign: "center",
-    marginBottom: 60,
-  },
-  idleTapHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    marginTop: 40,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: borderRadius.full,
-  },
-  idleTapText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "rgba(255,255,255,0.9)",
-    letterSpacing: 2,
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: 12, paddingHorizontal: SCREEN_PADDING,
   },
 
-  // ── Header ──
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SCREEN_PADDING,
-    paddingVertical: 12,
+  // Floating back button
+  backBtn: {
+    position: 'absolute', left: 16, zIndex: 100,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceAlt,
-  },
-  headerBack: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerX: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: { flex: 1, alignItems: "center", gap: 6 },
-  headerTitle: { fontSize: 18, fontWeight: "800", color: Colors.textPrimary },
-
-  // Step dots
-  dots: { flexDirection: "row", gap: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { backgroundColor: Colors.accent, width: 20, borderRadius: 4 },
-  dotDone: { backgroundColor: Colors.accent, opacity: 0.4 },
-  dotIdle: { backgroundColor: Colors.border },
-
-  // ── Step 1: Grid ──
-  gridContent: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
-  gridSection: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: Colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginBottom: 8 },
-  tile: {
-    width: "47.5%",
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.lg,
-    padding: 18,
-    borderWidth: 2,
-    borderColor: Colors.transparent,
-    position: "relative",
-    minHeight: 130,
+    alignItems: 'center', justifyContent: 'center',
     ...cardShadow,
   },
-  tileSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  bundleBadge: {
-    alignSelf: "flex-start",
+
+  // Header
+  header: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SCREEN_PADDING,
+    paddingLeft: 64, // space for back button
+    paddingBottom: 16,
+    backgroundColor: Colors.white,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.border,
+  },
+  headerLeft: { flex: 1 },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: Colors.textPrimary },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  pulseDotWrap: { width: 14, height: 14, alignItems: 'center', justifyContent: 'center' },
+  pulseDotOuter: {
+    position: 'absolute',
+    width: 14, height: 14, borderRadius: 7,
+    backgroundColor: Colors.success + '40',
+  },
+  pulseDotInner: {
+    width: 8, height: 8, borderRadius: 4,
+    backgroundColor: Colors.success,
+  },
+  liveText: { fontSize: 13, fontWeight: '700', color: Colors.success },
+  queueCountBadge: {
+    backgroundColor: Colors.accentMuted,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 14, paddingVertical: 6,
+  },
+  queueCountText: { fontSize: 13, fontWeight: '700', color: Colors.accent },
+
+  // List
+  listContent: { paddingHorizontal: SCREEN_PADDING, paddingTop: 12 },
+
+  // Queue card
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: borderRadius.xl,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1, borderColor: Colors.border,
+    ...cardShadow,
+  },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  posBadge: {
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: Colors.accent,
+  },
+  posText:      { fontSize: 18, fontWeight: '900', color: Colors.accent },
+  customerName: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },
+  phoneText:    { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
+  joinedTime:   { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  chipText: { fontSize: 11, fontWeight: '600', color: Colors.textSecondary },
+
+  cardActions: { flexDirection: 'row', gap: 10 },
+  callNextBtn: {
+    flex: 1,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.success,
+    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+  },
+  callNextText: { fontSize: 14, fontWeight: '700', color: Colors.white },
+  removeBtn: {
+    flex: 1,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6,
+    backgroundColor: Colors.errorBg,
+    borderRadius: borderRadius.md,
+    paddingVertical: 12,
+  },
+  removeBtnText: { fontSize: 14, fontWeight: '700', color: Colors.error },
+
+  // FAB
+  fab: {
+    position: 'absolute', right: 20, zIndex: 50,
+    width: 58, height: 58, borderRadius: 29,
     backgroundColor: Colors.accent,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 8,
+    alignItems: 'center', justifyContent: 'center',
+    ...Platform.select({
+      ios:     { shadowColor: Colors.accent, shadowOpacity: 0.4, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+      android: { elevation: 8 },
+    }),
   },
-  bundleText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: Colors.white,
-    letterSpacing: 0.8,
-  },
-  tileName: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: Colors.textPrimary,
+
+  // Empty state
+  emptyIconWrap: {
+    width: 80, height: 80, borderRadius: 40,
+    backgroundColor: Colors.successBg,
+    alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },
-  tileNameSelected: { color: Colors.accent },
-  tileDesc: { fontSize: 13, color: Colors.textMuted, marginBottom: 10, lineHeight: 18 },
-  tilePriceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: "auto" as any,
+  emptyTitle: { fontSize: 20, fontWeight: '800', color: Colors.textPrimary },
+  emptyText:  { fontSize: 14, color: Colors.textMuted, textAlign: 'center' },
+
+  // Bottom sheet
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,22,40,0.5)',
+    zIndex: 98,
   },
-  tilePrice: { fontSize: 20, fontWeight: "900", color: Colors.textPrimary },
-  tileDurChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
+  sheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    zIndex: 99,
+    backgroundColor: Colors.white,
+    borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 12,
+    maxHeight: '88%',
+    ...Platform.select({
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
+      android: { elevation: 16 },
+    }),
+  },
+  sheetHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center', marginBottom: 16,
+  },
+  sheetHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sheetTitle: { fontSize: 18, fontWeight: '800', color: Colors.textPrimary },
+  sheetCloseBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  sheetContent: { paddingTop: 8, paddingBottom: 16 },
+
+  // Form fields
+  label: {
+    fontSize: 13, fontWeight: '700', color: Colors.textSecondary,
+    marginTop: 16, marginBottom: 6,
+  },
+  input: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, color: Colors.textPrimary,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  inputRow: { flexDirection: 'row', gap: 10 },
+
+  // Service picker
+  svcGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  svcChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: Colors.surfaceAlt,
     borderRadius: borderRadius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: Colors.border,
   },
-  tileDur: { fontSize: 11, color: Colors.textMuted, fontWeight: "600" },
-  tileCheck: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 24,
-    height: 24,
-    borderRadius: borderRadius.full,
-    backgroundColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
+  svcChipSel: {
+    backgroundColor: Colors.accentMuted,
+    borderColor: Colors.accent,
   },
-  selectedSummary: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: Colors.white,
-    padding: SCREEN_PADDING,
-    borderTopWidth: 1,
-    borderTopColor: Colors.surfaceAlt,
-    ...cardShadow,
-  },
-  selectedInfo: { flex: 1 },
-  selectedName: { fontSize: 15, fontWeight: "700", color: Colors.textPrimary },
-  selectedPrice: { fontSize: 13, color: Colors.textMuted, marginTop: 2 },
+  svcChipText: { fontSize: 13, fontWeight: '600', color: Colors.textSecondary },
+  noSvcText:   { fontSize: 13, color: Colors.textMuted },
 
-  // ── Continue / action buttons ──
-  continueBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+  // Add button
+  addBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 8,
     backgroundColor: Colors.accent,
     borderRadius: borderRadius.md,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    overflow: 'hidden',
+    paddingVertical: 15,
+    marginTop: 24,
   },
-  continueBtnFull: { marginTop: 32, justifyContent: "center" },
-  continueBtnDisabled: { backgroundColor: Colors.border },
-  continueBtnText: { color: Colors.white, fontSize: 16, fontWeight: "700" },
-
-  // ── Step 2: Form ──
-  formContent: { padding: SCREEN_PADDING, paddingBottom: SCROLL_PADDING_BOTTOM },
-  serviceRecap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.accentMuted,
-    borderRadius: borderRadius.md,
-    padding: 12,
-    marginBottom: 24,
-  },
-  serviceRecapIcon: {
-    width: 32, height: 32, borderRadius: borderRadius.sm,
-    backgroundColor: Colors.white,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  serviceRecapText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.accent,
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textSecondary,
-    marginBottom: 8,
-    marginTop: 20,
-  },
-  input: {
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.md,
-    padding: 18,
-    fontSize: 18,
-    color: Colors.textPrimary,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    ...cardShadow,
-  },
-
-  // ── Step 3: Payment ──
-  paymentScreen: { flex: 1, padding: SCREEN_PADDING, justifyContent: "center", gap: 24 },
-  paymentTotal: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: Colors.textPrimary,
-    textAlign: "center",
-  },
-  paymentRow: { flexDirection: "row", gap: 16 },
-  payCard: {
-    flex: 1,
-    backgroundColor: Colors.white,
-    borderRadius: borderRadius.lg,
-    padding: 24,
-    alignItems: "center",
-    gap: 10,
-    borderWidth: 2,
-    borderColor: Colors.transparent,
-    overflow: 'hidden',
-    ...cardShadow,
-  },
-  payCardSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentMuted },
-  payIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: borderRadius.full,
-    backgroundColor: Colors.accentMuted,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  payIconWrapSelected: { backgroundColor: Colors.accent },
-  payCardTitle: { fontSize: 20, fontWeight: "800", color: Colors.textPrimary },
-  payCardTitleSelected: { color: Colors.accent },
-  payCardSub: {
-    fontSize: 14,
-    color: Colors.textMuted,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  payCheck: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    width: 24,
-    height: 24,
-    borderRadius: borderRadius.full,
-    backgroundColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: Colors.accent,
-    borderRadius: borderRadius.md,
-    paddingVertical: 18,
-    overflow: 'hidden',
-    ...cardShadow,
-  },
-  confirmBtnText: { color: Colors.white, fontSize: 18, fontWeight: "800" },
-
-  // ── Step 4: Confirmation ──
-  confirmScreen: { flex: 1 },
-  confirmInner: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 32,
-    gap: 12,
-  },
-  confirmCheck: {
-    width: 90,
-    height: 90,
-    borderRadius: borderRadius.full,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
-  },
-  confirmTitle: { fontSize: 36, fontWeight: "900", color: Colors.white },
-  confirmName: {
-    fontSize: 20,
-    color: "rgba(255,255,255,0.85)",
-    marginBottom: 8,
-  },
-  queueNumWrap: { alignItems: "center", marginVertical: 8 },
-  queueNumLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "rgba(255,255,255,0.7)",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  queueNum: { fontSize: 80, fontWeight: "900", color: Colors.white, lineHeight: 90 },
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: borderRadius.lg,
-    padding: 20,
-    gap: 0,
-    width: "100%",
-    maxWidth: 400,
-  },
-  statCard: { flex: 1, alignItems: "center" },
-  statDivider: { width: 1, backgroundColor: "rgba(255,255,255,0.3)" },
-  statValue: { fontSize: 32, fontWeight: "900", color: Colors.white },
-  statLabel: { fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 },
-  serviceConfirmText: {
-    fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
-    marginTop: 8,
-  },
-  countdown: { fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 16 },
-  countdownTrack: {
-    width: 200,
-    height: 4,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  countdownFill: {
-    height: "100%",
-    backgroundColor: "rgba(255,255,255,0.6)",
-    borderRadius: 2,
-  },
-  doneBtn: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    borderRadius: borderRadius.md,
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    marginTop: 12,
-    overflow: 'hidden',
-  },
-  doneBtnText: { color: Colors.white, fontSize: 18, fontWeight: "700" },
+  addBtnText: { fontSize: 16, fontWeight: '700', color: Colors.white },
 });

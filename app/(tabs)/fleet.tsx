@@ -1,84 +1,73 @@
-// app/(tabs)/fleet.tsx — Admin Fleet Map
-// Shows all currently-tracking staff members on a live map.
-// Polls GET /api/staff/fleet every 30 s. Admin only.
+// app/(tabs)/fleet.tsx — Fleet Map
+// Full-screen live map of all active technicians.
+// Polls GET /api/staff/locations every 30 s.
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, {
-  useCallback, useEffect, useRef, useState,
-} from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Animated, Dimensions, Platform, Pressable,
+  ActivityIndicator, Animated, Platform, Pressable,
   ScrollView, StyleSheet, Text, View,
 } from 'react-native';
-import MapView, { Marker, Region } from 'react-native-maps';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import ReAnimated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
-import { IS_IOS } from '@/utils/platform';
 import { borderRadius, cardShadow, SCREEN_PADDING } from '@/utils/platformStyles';
-import { Avatar, Badge, SectionHeader } from '@/components/ui';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+interface CurrentJob {
+  _id: string;
+  customerName: string;
+  address: string;
+}
 
 interface FleetMember {
   _id: string;
   name: string;
   role: string;
+  status: 'active' | 'idle' | 'offline';
   currentLat: number;
   currentLng: number;
-  locationAccuracy: number | null;
   locationUpdatedAt: string | null;
+  currentJob: CurrentJob | null;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const POLL_MS = 30_000;
-const SCREEN_H = Dimensions.get('window').height;
+const BOTTOM_SHEET_H = 200;
 
-// Default region when no techs are visible yet (broad view)
-const DEFAULT_REGION: Region = {
-  latitude:      -23.5505,
-  longitude:     -46.6333,
-  latitudeDelta:  0.15,
-  longitudeDelta: 0.15,
+const DEFAULT_REGION = {
+  latitude:       -23.5505,
+  longitude:      -46.6333,
+  latitudeDelta:   0.15,
+  longitudeDelta:  0.15,
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatAgo(isoString: string | null): string {
-  if (!isoString) return 'Unknown';
-  const diff = Date.now() - new Date(isoString).getTime();
-  const secs = Math.floor(diff / 1000);
+function formatAgo(iso: string | null): string {
+  if (!iso) return 'Unknown';
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (secs < 60)  return `${secs}s ago`;
   const mins = Math.floor(secs / 60);
   if (mins < 60)  return `${mins}m ago`;
   return `${Math.floor(mins / 60)}h ago`;
 }
 
-/** Derive initials from a name, max 2 chars. */
 function initials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map(w => w[0].toUpperCase())
-    .slice(0, 2)
-    .join('');
+  return name.split(' ').filter(Boolean).map(w => w[0].toUpperCase()).slice(0, 2).join('');
 }
 
-/** Fit a region around a list of coordinates with padding. */
-function regionForCoords(members: FleetMember[]): Region {
+function regionForCoords(members: FleetMember[]) {
   if (!members.length) return DEFAULT_REGION;
   const lats = members.map(m => m.currentLat);
   const lngs = members.map(m => m.currentLng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
   const PAD = 0.02;
   return {
     latitude:       (minLat + maxLat) / 2,
@@ -88,98 +77,108 @@ function regionForCoords(members: FleetMember[]): Region {
   };
 }
 
-// ─── Marker pin component ─────────────────────────────────────────────────────
+function statusColor(status: FleetMember['status']): string {
+  if (status === 'active') return Colors.success;
+  if (status === 'idle')   return Colors.warning;
+  return Colors.textMuted;
+}
 
-function TechMarker({
-  member,
-  selected,
-}: {
-  member: FleetMember;
-  selected: boolean;
-}) {
+function statusLabel(status: FleetMember['status']): string {
+  if (status === 'active') return 'Active';
+  if (status === 'idle')   return 'Idle';
+  return 'Offline';
+}
+
+// ─── Lazy-require react-native-maps ──────────────────────────────────────────
+
+let MapView: any = null;
+let Marker:  any = null;
+try {
+  const Maps = require('react-native-maps');
+  MapView = Maps.default;
+  Marker  = Maps.Marker;
+} catch {}
+
+// ─── TechMarker ───────────────────────────────────────────────────────────────
+
+function TechMarker({ member, selected }: { member: FleetMember; selected: boolean }) {
+  const color = statusColor(member.status);
   return (
-    <View style={[fl.markerWrap, selected && fl.markerWrapSel]}>
-      <View style={[fl.markerAvatar, selected && fl.markerAvatarSel]}>
-        <Text style={[fl.markerInitials, selected && fl.markerInitialsSel]}>
-          {initials(member.name)}
-        </Text>
+    <View style={fl.markerWrap}>
+      <View style={[
+        fl.markerCircle,
+        { backgroundColor: color, borderColor: selected ? Colors.white : color },
+        selected && fl.markerCircleSel,
+      ]}>
+        <Text style={fl.markerInitials}>{initials(member.name)}</Text>
       </View>
-      <Text style={[fl.markerName, selected && fl.markerNameSel]} numberOfLines={1}>
-        {member.name.split(' ')[0]}
-      </Text>
-      <View style={[fl.markerNib, selected && fl.markerNibSel]} />
+      <View style={[fl.markerNib, { borderTopColor: color }]} />
     </View>
   );
 }
 
-// ─── Technician list row ──────────────────────────────────────────────────────
+// ─── TechRow (bottom sheet) ───────────────────────────────────────────────────
 
 function TechRow({ member, onPress }: { member: FleetMember; onPress: () => void }) {
+  const color = statusColor(member.status);
   return (
     <Pressable
       style={fl.techRow}
       onPress={onPress}
       android_ripple={{ color: Colors.accent + '20', borderless: false }}
     >
-      <Avatar name={member.name} size={40} />
+      <View style={[fl.techAvatar, { backgroundColor: color + '20' }]}>
+        <Text style={[fl.techAvatarText, { color }]}>{initials(member.name)}</Text>
+      </View>
       <View style={{ flex: 1 }}>
         <Text style={fl.techName}>{member.name}</Text>
-        <Text style={fl.techLastSeen}>Last seen {formatAgo(member.locationUpdatedAt)}</Text>
+        <Text style={fl.techLocation} numberOfLines={1}>
+          {member.currentJob ? member.currentJob.address : 'No active job'}
+        </Text>
       </View>
-      <View style={fl.techStatusDot} />
+      <View style={[fl.statusDot, { backgroundColor: color }]} />
     </Pressable>
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function FleetScreen() {
-  const { user } = useAuth();
+  const { user }  = useAuth();
+  const insets    = useSafeAreaInsets();
 
-  const [fleet,       setFleet]       = useState<FleetMember[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState<string | null>(null);
-  const [selected,    setSelected]    = useState<FleetMember | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [refreshing,  setRefreshing]  = useState(false);
+  const [fleet,      setFleet]      = useState<FleetMember[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selected,   setSelected]   = useState<FleetMember | null>(null);
 
-  const mapRef    = useRef<MapView>(null);
-  const slideAnim = useRef(new Animated.Value(300)).current;
+  const mapRef      = useRef<any>(null);
+  const slideAnim   = useRef(new Animated.Value(500)).current;
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const isFitted  = useRef(false);
+  const isFitted    = useRef(false);
 
-  // ── Slide detail card in/out ───────────────────────────────────────────────
+  // Slide info card in/out
   useEffect(() => {
     Animated.spring(slideAnim, {
-      toValue:        selected ? 0 : 300,
+      toValue:         selected ? 0 : 500,
       useNativeDriver: true,
-      bounciness:     4,
+      bounciness:      4,
     }).start();
   }, [selected]);
 
-  // ── Fetch fleet data ───────────────────────────────────────────────────────
+  // Fetch fleet data
   const fetchFleet = useCallback(async (showSpinner = false) => {
     if (showSpinner) setRefreshing(true);
     try {
-      const { data } = await axios.get<FleetMember[]>('/api/staff/fleet');
+      const { data } = await axios.get<FleetMember[]>('/api/staff/locations');
       setFleet(data);
-      setError(null);
-      setLastRefresh(new Date());
-
-      // On first load, fit the map around all markers
       if (!isFitted.current && data.length) {
         isFitted.current = true;
-        setTimeout(() => {
-          mapRef.current?.animateToRegion(regionForCoords(data), 600);
-        }, 300);
+        setTimeout(() => mapRef.current?.animateToRegion(regionForCoords(data), 600), 300);
       }
-
-      // If selected tech moved, keep selection data fresh
-      setSelected(prev =>
-        prev ? (data.find(m => m._id === prev._id) ?? null) : null
-      );
+      setSelected(prev => prev ? (data.find(m => m._id === prev._id) ?? null) : null);
     } catch {
-      setError('Could not load fleet data.');
+      // silently fail on poll errors
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -189,71 +188,42 @@ export default function FleetScreen() {
   useEffect(() => {
     fetchFleet();
     intervalRef.current = setInterval(() => fetchFleet(), POLL_MS);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchFleet]);
 
-  // ── Marker press ──────────────────────────────────────────────────────────
+  // Marker / row press
   const handleMarkerPress = useCallback((member: FleetMember) => {
-    if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelected(prev => (prev?._id === member._id ? null : member));
-    mapRef.current?.animateToRegion(
-      {
-        latitude:       member.currentLat,
-        longitude:      member.currentLng,
-        latitudeDelta:  0.008,
-        longitudeDelta: 0.008,
-      },
-      400
-    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelected(prev => prev?._id === member._id ? null : member);
+    mapRef.current?.animateToRegion({
+      latitude:       member.currentLat,
+      longitude:      member.currentLng,
+      latitudeDelta:  0.008,
+      longitudeDelta: 0.008,
+    }, 400);
   }, []);
 
-  // ── Fit all ───────────────────────────────────────────────────────────────
-  const fitAll = useCallback(() => {
-    if (!fleet.length) return;
-    setSelected(null);
-    mapRef.current?.animateToRegion(regionForCoords(fleet), 600);
-  }, [fleet]);
-
-  // ─── Render ───────────────────────────────────────────────────────────────
-
-  if (user?.role !== 'admin') {
-    return (
-      <SafeAreaView style={fl.safe} edges={['top']}>
-        <View style={fl.centered}>
-          <View style={fl.emptyIconWrap}>
-            <Ionicons name="lock-closed-outline" size={32} color={Colors.textMuted} />
-          </View>
-          <Text style={fl.emptyTitle}>Admin access required</Text>
-          <Text style={fl.emptyText}>This screen is only accessible to administrators.</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
+  // Web fallback
   if (Platform.OS === 'web') {
     return (
-      <SafeAreaView style={fl.safe} edges={['top']}>
-        <View style={fl.centered}>
-          <View style={fl.emptyIconWrap}>
-            <Ionicons name="map-outline" size={32} color={Colors.accent} />
-          </View>
-          <Text style={fl.emptyTitle}>Fleet Map</Text>
-          <Text style={fl.emptyText}>
-            Live map view is available on the mobile app.
-          </Text>
-        </View>
-      </SafeAreaView>
+      <View style={[fl.centered, { paddingTop: insets.top }]}>
+        <Ionicons name="map-outline" size={40} color={Colors.accent} />
+        <Text style={fl.emptyTitle}>Fleet Map</Text>
+        <Text style={fl.emptyText}>Live map view is available on the mobile app.</Text>
+      </View>
     );
   }
 
+  const activeCount = fleet.filter(m => m.status === 'active').length;
+
   return (
-    <View style={{ flex: 1 }}>
-      {/* ── Map (full screen) ── */}
-      {loading ? (
+    <View style={{ flex: 1, backgroundColor: Colors.surfaceAlt }}>
+
+      {/* ── Full-screen map ── */}
+      {loading || !MapView ? (
         <View style={fl.mapPlaceholder}>
           <ActivityIndicator size="large" color={Colors.accent} />
+          <Text style={[fl.emptyText, { marginTop: 12 }]}>Loading fleet map…</Text>
         </View>
       ) : (
         <MapView
@@ -277,170 +247,152 @@ export default function FleetScreen() {
         </MapView>
       )}
 
-      {/* ── Fixed header overlay with LinearGradient ── */}
-      <SafeAreaView style={fl.headerOverlay} edges={['top']} pointerEvents="box-none">
-        <LinearGradient
-          colors={[Colors.primary, Colors.primary + 'CC', 'transparent']}
-          style={fl.gradientOverlay}
-          pointerEvents="none"
-        />
-        <View style={fl.header} pointerEvents="box-none">
-          {/* Back button */}
-          <Pressable
-            style={fl.headerIconBtn}
-            onPress={() => router.back()}
-            android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 22 }}
-            hitSlop={8}
-          >
-            <Ionicons name="arrow-back" size={20} color={Colors.white} />
-          </Pressable>
+      {/* ── Floating back button (top left) ── */}
+      <Pressable
+        style={[fl.backBtn, { top: insets.top + 12 }]}
+        onPress={() => router.back()}
+        hitSlop={8}
+      >
+        <Ionicons name="arrow-back" size={20} color={Colors.textPrimary} />
+      </Pressable>
 
-          <View style={[fl.headerContent, { flex: 1, marginHorizontal: 8 }]}>
-            <Text style={fl.headerTitle}>Fleet Tracking</Text>
-            <Badge status="active" label={`${fleet.length} active`} size="sm" />
-          </View>
-          {/* Actions */}
-          <View style={fl.headerActions}>
-            <Pressable
-              style={fl.headerIconBtn}
-              onPress={() => {
-                if (IS_IOS) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                fetchFleet(true);
-              }}
-              android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 22 }}
-              hitSlop={8}
-              disabled={refreshing}
-            >
-              {refreshing
-                ? <ActivityIndicator size="small" color={Colors.white} />
-                : <Ionicons name="refresh" size={20} color={Colors.white} />
-              }
-            </Pressable>
-            <Pressable
-              style={fl.headerIconBtn}
-              onPress={fitAll}
-              android_ripple={{ color: Colors.accent + '20', borderless: true, radius: 22 }}
-              hitSlop={8}
-            >
-              <Ionicons name="expand-outline" size={20} color={Colors.white} />
-            </Pressable>
-          </View>
+      {/* ── Header overlay card (top right) ── */}
+      <View style={[fl.headerCard, { top: insets.top + 12 }]} pointerEvents="box-none">
+        <View style={{ flex: 1 }}>
+          <Text style={fl.headerTitle}>Fleet Map</Text>
+          <Text style={fl.headerSub}>
+            {activeCount} technician{activeCount !== 1 ? 's' : ''} active
+          </Text>
         </View>
+        <Pressable
+          style={fl.refreshBtn}
+          onPress={() => fetchFleet(true)}
+          disabled={refreshing}
+          hitSlop={8}
+          pointerEvents="auto"
+        >
+          {refreshing
+            ? <ActivityIndicator size="small" color={Colors.accent} />
+            : <Ionicons name="sync-outline" size={18} color={Colors.accent} />
+          }
+        </Pressable>
+      </View>
 
-        {/* Last refreshed */}
-        {lastRefresh && (
-          <View style={fl.refreshedBadge} pointerEvents="none">
-            <View style={fl.refreshedDot} />
-            <Text style={fl.refreshedText}>
-              Updated {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </Text>
-          </View>
-        )}
-      </SafeAreaView>
-
-      {/* ── Error toast ── */}
-      {error && (
-        <View style={fl.errorToast} pointerEvents="none">
-          <Ionicons name="warning-outline" size={15} color={Colors.error} />
-          <Text style={fl.errorText}>{error}</Text>
-        </View>
-      )}
-
-      {/* ── Empty state ── */}
-      {!loading && !fleet.length && !error && (
+      {/* ── Empty state overlay ── */}
+      {!loading && fleet.length === 0 && (
         <View style={fl.emptyOverlay} pointerEvents="none">
           <View style={fl.emptyCard}>
             <Ionicons name="navigate-circle-outline" size={36} color={Colors.border} />
             <Text style={fl.emptyCardTitle}>No active technicians</Text>
-            <Text style={fl.emptyCardSub}>Staff members will appear here once they start their shift.</Text>
+            <Text style={fl.emptyCardSub}>
+              Staff members appear here once they start their shift.
+            </Text>
           </View>
         </View>
       )}
 
-      {/* ── Bottom sheet with technician list ── */}
-      <View style={fl.bottomSheet} pointerEvents="box-none">
-        {/* Handle bar */}
+      {/* ── Bottom sheet — always visible ── */}
+      <View style={fl.bottomSheet}>
         <View style={fl.handle} />
-        <SectionHeader
-          title={`Active Technicians (${fleet.length})`}
-        />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
-          {fleet.map((member, index) => (
-            <ReAnimated.View key={member._id} entering={FadeInDown.delay(index * 50).springify()}>
+        <Text style={fl.sheetTitle}>Active Technicians</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {fleet.length === 0 ? (
+            <Text style={fl.noTechText}>No technicians currently active</Text>
+          ) : (
+            fleet.map(member => (
               <TechRow
+                key={member._id}
                 member={member}
                 onPress={() => handleMarkerPress(member)}
               />
-            </ReAnimated.View>
-          ))}
-          {fleet.length === 0 && (
-            <Text style={fl.noTechText}>No technicians currently active</Text>
+            ))
           )}
         </ScrollView>
       </View>
 
-      {/* ── Detail card (bottom slide-up) when marker selected ── */}
+      {/* ── Technician info card — slides up on marker tap ── */}
       <Animated.View
         style={[
-          fl.detailCard,
-          { transform: [{ translateY: slideAnim }] },
+          fl.infoCard,
+          { transform: [{ translateY: slideAnim }], paddingBottom: insets.bottom + 16 },
         ]}
         pointerEvents={selected ? 'auto' : 'none'}
       >
-        {/* Handle */}
-        <View style={fl.detailHandle} />
+        <View style={fl.infoHandle} />
 
         {selected && (
           <>
-            {/* Avatar + name row */}
-            <View style={fl.detailRow}>
-              <View style={fl.detailAvatar}>
-                <Text style={fl.detailInitials}>{initials(selected.name)}</Text>
+            {/* Avatar + name + close */}
+            <View style={fl.infoHeaderRow}>
+              <View style={[fl.infoAvatar, { backgroundColor: statusColor(selected.status) + '20' }]}>
+                <Text style={[fl.infoAvatarText, { color: statusColor(selected.status) }]}>
+                  {initials(selected.name)}
+                </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={fl.detailName}>{selected.name}</Text>
-                <View style={fl.detailBadgeRow}>
-                  <View style={fl.onlineDot} />
-                  <Text style={fl.onlineText}>Online</Text>
-                  <View style={fl.rolePill}>
-                    <Text style={fl.rolePillText}>{selected.role}</Text>
-                  </View>
-                </View>
+                <Text style={fl.infoName}>{selected.name}</Text>
+                <Text style={fl.infoRole}>{selected.role}</Text>
               </View>
               <Pressable
                 style={fl.closeBtn}
                 onPress={() => setSelected(null)}
-                android_ripple={{ color: Colors.border, borderless: true, radius: 18 }}
                 hitSlop={10}
               >
                 <Ionicons name="close" size={18} color={Colors.textMuted} />
               </Pressable>
             </View>
 
-            {/* Coordinates row */}
-            <View style={fl.detailInfoRow}>
-              <View style={fl.detailInfoIcon}>
-                <Ionicons name="location-outline" size={15} color={Colors.accent} />
-              </View>
-              <Text style={fl.detailInfoText}>
-                {selected.currentLat.toFixed(5)}°, {selected.currentLng.toFixed(5)}°
+            {/* Status badge */}
+            <View style={[fl.statusBadge, { backgroundColor: statusColor(selected.status) + '18' }]}>
+              <View style={[fl.statusDot, { backgroundColor: statusColor(selected.status) }]} />
+              <Text style={[fl.statusBadgeText, { color: statusColor(selected.status) }]}>
+                {statusLabel(selected.status)}
               </Text>
-              {selected.locationAccuracy != null && (
-                <View style={fl.accuracyChip}>
-                  <Text style={fl.accuracyChipText}>±{Math.round(selected.locationAccuracy)} m</Text>
-                </View>
-              )}
             </View>
 
-            {/* Last seen row */}
-            <View style={fl.detailInfoRow}>
-              <View style={fl.detailInfoIcon}>
-                <Ionicons name="time-outline" size={15} color={Colors.textMuted} />
+            {/* Current job */}
+            {selected.currentJob ? (
+              <View style={fl.infoRow}>
+                <View style={fl.infoRowIcon}>
+                  <Ionicons name="car-outline" size={14} color={Colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={fl.infoRowLabel}>Current Job</Text>
+                  <Text style={fl.infoRowValue}>{selected.currentJob.customerName}</Text>
+                  <Text style={fl.infoRowSub} numberOfLines={1}>{selected.currentJob.address}</Text>
+                </View>
               </View>
-              <Text style={fl.detailInfoSub}>
-                Last seen {formatAgo(selected.locationUpdatedAt)}
+            ) : (
+              <View style={fl.infoRow}>
+                <View style={fl.infoRowIcon}>
+                  <Ionicons name="car-outline" size={14} color={Colors.textMuted} />
+                </View>
+                <Text style={fl.infoRowSub}>No active job</Text>
+              </View>
+            )}
+
+            {/* Last location update */}
+            <View style={fl.infoRow}>
+              <View style={fl.infoRowIcon}>
+                <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
+              </View>
+              <Text style={fl.infoRowSub}>
+                Last updated {formatAgo(selected.locationUpdatedAt)}
               </Text>
             </View>
+
+            {/* View Jobs button */}
+            <Pressable
+              style={fl.viewJobsBtn}
+              onPress={() => {
+                const staffId = selected._id;
+                setSelected(null);
+                router.push(`/jobs?staffId=${staffId}` as any);
+              }}
+            >
+              <Ionicons name="briefcase-outline" size={16} color={Colors.white} />
+              <Text style={fl.viewJobsBtnText}>View Jobs</Text>
+            </Pressable>
           </>
         )}
       </Animated.View>
@@ -451,187 +403,182 @@ export default function FleetScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const fl = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: Colors.surfaceAlt },
-  centered:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, paddingHorizontal: SCREEN_PADDING },
-  mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.surfaceAlt },
+  centered: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: 12, paddingHorizontal: SCREEN_PADDING,
+    backgroundColor: Colors.background,
+  },
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
+  emptyText:  { fontSize: 13, color: Colors.textMuted, textAlign: 'center' },
 
-  // Centered empty states
-  emptyIconWrap: {
-    width: 72, height: 72, borderRadius: borderRadius.full,
+  mapPlaceholder: {
+    flex: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
-  },
-  emptyTitle: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center' },
-  emptyText:  { fontSize: 13, color: Colors.textMuted, textAlign: 'center', lineHeight: 20 },
-
-  // Floating header with gradient
-  headerOverlay: { position: 'absolute', top: 0, left: 0, right: 0 },
-  gradientOverlay: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: 140,
-  },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: SCREEN_PADDING, paddingTop: 8, paddingBottom: 12,
-  },
-  headerContent: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerTitle:   { fontSize: 20, fontWeight: '700', color: Colors.white },
-  headerActions: { flexDirection: 'row', gap: 4 },
-  headerIconBtn: {
-    width: 40, height: 40, alignItems: 'center', justifyContent: 'center',
-    borderRadius: borderRadius.full,
   },
 
-  refreshedBadge: {
-    alignSelf: 'center', marginTop: 4,
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: borderRadius.full, paddingHorizontal: 12, paddingVertical: 4,
-  },
-  refreshedDot:  { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
-  refreshedText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
-
-  // Markers
-  markerWrap:         { alignItems: 'center' },
-  markerWrapSel:      {},
-  markerAvatar: {
-    width: 38, height: 38, borderRadius: borderRadius.full,
-    backgroundColor: Colors.accent,
+  // Floating back button
+  backBtn: {
+    position: 'absolute', left: 16, zIndex: 100,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: Colors.white,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.white,
     ...cardShadow,
   },
-  markerAvatarSel: {
-    width: 48, height: 48, borderRadius: borderRadius.full,
-    backgroundColor: Colors.primary,
+
+  // Header overlay card (top right)
+  headerCard: {
+    position: 'absolute', right: 16, zIndex: 100,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: borderRadius.xl,
+    paddingHorizontal: 14, paddingVertical: 10,
+    maxWidth: 220,
+    ...cardShadow,
+  },
+  headerTitle: { fontSize: 14, fontWeight: '800', color: Colors.textPrimary },
+  headerSub:   { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
+  refreshBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+    marginLeft: 10,
+  },
+
+  // Markers
+  markerWrap: { alignItems: 'center' },
+  markerCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2,
+    ...cardShadow,
+  },
+  markerCircleSel: {
+    width: 50, height: 50, borderRadius: 25,
     borderWidth: 3, borderColor: Colors.white,
   },
-  markerInitials:    { fontSize: 13, fontWeight: '800', color: Colors.white },
-  markerInitialsSel: { fontSize: 16 },
-  markerName: {
-    fontSize: 11, fontWeight: '700', color: Colors.textPrimary,
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: borderRadius.sm, paddingHorizontal: 5, paddingVertical: 1,
-    marginTop: 2, maxWidth: 72, textAlign: 'center',
-  },
-  markerNameSel: { color: Colors.accent },
+  markerInitials: { fontSize: 14, fontWeight: '800', color: Colors.white },
   markerNib: {
     width: 0, height: 0,
     borderLeftWidth: 5, borderRightWidth: 5, borderTopWidth: 7,
     borderLeftColor: 'transparent', borderRightColor: 'transparent',
-    borderTopColor: Colors.accent,
   },
-  markerNibSel: { borderTopColor: Colors.primary },
 
   // Bottom sheet
   bottomSheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: BOTTOM_SHEET_H,
     backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 20,
-    maxHeight: SCREEN_H * 0.5,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingHorizontal: SCREEN_PADDING,
+    paddingTop: 12,
     borderTopWidth: 1, borderColor: Colors.border,
     ...Platform.select({
-      ios:     { shadowColor: Colors.black, shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },
-      android: { elevation: 12 },
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.10, shadowRadius: 10, shadowOffset: { width: 0, height: -3 } },
+      android: { elevation: 10 },
     }),
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: Colors.border,
-    alignSelf: 'center', marginBottom: 16,
+    alignSelf: 'center', marginBottom: 12,
+  },
+  sheetTitle: {
+    fontSize: 11, fontWeight: '700', color: Colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8,
   },
 
-  // Tech row in bottom sheet
+  // Tech row
   techRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: borderRadius.md,
-    padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: Colors.border,
-    overflow: 'hidden',
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: Colors.border,
   },
-  techName:     { fontSize: 14, fontWeight: '700', color: Colors.textPrimary },
-  techLastSeen: { fontSize: 12, color: Colors.textMuted, marginTop: 1 },
-  techStatusDot:{ width: 10, height: 10, borderRadius: 5, backgroundColor: Colors.success },
-  noTechText:   { fontSize: 13, color: Colors.textMuted, textAlign: 'center', paddingVertical: 16 },
+  techAvatar: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  techAvatarText: { fontSize: 13, fontWeight: '800' },
+  techName:       { fontSize: 13, fontWeight: '700', color: Colors.textPrimary },
+  techLocation:   { fontSize: 11, color: Colors.textMuted, marginTop: 1 },
+  statusDot:      { width: 10, height: 10, borderRadius: 5 },
+  noTechText:     { fontSize: 13, color: Colors.textMuted, textAlign: 'center', paddingVertical: 12 },
 
-  // Detail card (slide-up over bottom sheet)
-  detailCard: {
+  // Info card (slides up over bottom sheet)
+  infoCard: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 24, borderTopRightRadius: 24,
     paddingHorizontal: SCREEN_PADDING,
-    paddingTop: 12, paddingBottom: 40,
-    ...cardShadow,
+    paddingTop: 12,
+    ...Platform.select({
+      ios:     { shadowColor: Colors.black, shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
+      android: { elevation: 16 },
+    }),
   },
-  detailHandle: {
+  infoHandle: {
     width: 36, height: 4, borderRadius: 2,
     backgroundColor: Colors.border,
     alignSelf: 'center', marginBottom: 20,
   },
-  detailRow:    { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
-  detailAvatar: {
-    width: 52, height: 52, borderRadius: borderRadius.full,
-    backgroundColor: Colors.accentMuted,
+  infoHeaderRow:  { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+  infoAvatar: {
+    width: 52, height: 52, borderRadius: 26,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: Colors.accent,
   },
-  detailInitials:  { fontSize: 18, fontWeight: '800', color: Colors.accent },
-  detailName:      { fontSize: 16, fontWeight: '800', color: Colors.textPrimary, marginBottom: 4 },
-  detailBadgeRow:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  onlineDot:       { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
-  onlineText:      { fontSize: 12, color: Colors.success, fontWeight: '700' },
-  rolePill: {
-    backgroundColor: Colors.accentMuted, borderRadius: borderRadius.full,
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
-  rolePillText: { fontSize: 11, color: Colors.accent, fontWeight: '700' },
+  infoAvatarText: { fontSize: 18, fontWeight: '800' },
+  infoName:       { fontSize: 16, fontWeight: '800', color: Colors.textPrimary },
+  infoRole:       { fontSize: 12, color: Colors.textMuted, marginTop: 2, textTransform: 'capitalize' },
   closeBtn: {
-    width: 36, height: 36, borderRadius: borderRadius.full,
+    width: 36, height: 36, borderRadius: 18,
     backgroundColor: Colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden',
   },
-  detailInfoRow: {
-    flexDirection: 'row', alignItems: 'center',
-    gap: 8, marginBottom: 10,
+  statusBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-start',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 12, paddingVertical: 5,
+    marginBottom: 16,
   },
-  detailInfoIcon: {
+  statusBadgeText: { fontSize: 12, fontWeight: '700' },
+  infoRow: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 10, marginBottom: 12,
+  },
+  infoRowIcon: {
     width: 28, height: 28, borderRadius: borderRadius.sm,
     backgroundColor: Colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
+    marginTop: 1,
   },
-  detailInfoText: { fontSize: 13, fontWeight: '600', color: Colors.textPrimary, flex: 1 },
-  detailInfoSub:  { fontSize: 13, color: Colors.textMuted, flex: 1 },
-  accuracyChip: {
-    backgroundColor: Colors.surfaceAlt, borderRadius: borderRadius.full,
-    paddingHorizontal: 8, paddingVertical: 2,
+  infoRowLabel: {
+    fontSize: 10, color: Colors.textMuted,
+    fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5,
   },
-  accuracyChipText: { fontSize: 11, color: Colors.textMuted, fontWeight: '600' },
+  infoRowValue: { fontSize: 13, fontWeight: '700', color: Colors.textPrimary, marginTop: 2 },
+  infoRowSub:   { fontSize: 12, color: Colors.textMuted, marginTop: 2 },
 
-  // Error toast
-  errorToast: {
-    position: 'absolute', bottom: 100, left: 16, right: 16,
-    backgroundColor: Colors.errorBg,
-    borderRadius: borderRadius.md, padding: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    borderLeftWidth: 3, borderLeftColor: Colors.error,
-    ...cardShadow,
+  // View Jobs button
+  viewJobsBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: 14,
+    marginTop: 4,
   },
-  errorText: { flex: 1, fontSize: 13, color: Colors.error, fontWeight: '600' },
+  viewJobsBtnText: { fontSize: 15, fontWeight: '700', color: Colors.white },
 
-  // Empty state overlay
+  // Empty state
   emptyOverlay: {
     ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    paddingBottom: 80,
+    alignItems: 'center', justifyContent: 'flex-end',
+    paddingBottom: BOTTOM_SHEET_H + 16,
   },
   emptyCard: {
     backgroundColor: 'rgba(255,255,255,0.95)',
     borderRadius: borderRadius.xl, padding: 24,
-    alignItems: 'center', gap: 8,
-    marginHorizontal: 32,
+    alignItems: 'center', gap: 8, marginHorizontal: 32,
     ...cardShadow,
   },
   emptyCardTitle: { fontSize: 15, fontWeight: '800', color: Colors.textPrimary },

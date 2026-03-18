@@ -1,55 +1,54 @@
 // app/(tabs)/_layout.tsx
-// Admin-only native tab bar with "More" overflow sheet.
+// Staff-only native tab bar with "More" overflow sheet.
 //
-// Admin → Dashboard | Bookings | Staff | Revenue | More
-import { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { Tabs, Redirect } from "expo-router";
-import { ActivityIndicator, Platform, StyleSheet, View } from "react-native";
-import { Colors } from "@/constants/Colors";
-import { MoreMenu, MoreMenuItem } from "@/components/MoreMenu";
+// Staff → Jobs | Scanner | Schedule | Stats | More
+import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { Redirect, Tabs, router } from 'expo-router';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useAuth } from '@/context/AuthContext';
+import { Colors } from '@/constants/Colors';
 
-// ─── More-menu items (admin) ──────────────────────────────────────────────────
+// ── More sheet items ───────────────────────────────────────────────────────────
 
-function getMoreItems(logout: () => void): MoreMenuItem[] {
-  return [
-    { label: 'Services',           icon: 'cut-outline',             route: '/(tabs)/services'           },
-    { label: 'Packages',           icon: 'gift-outline',            route: '/(tabs)/packages'           },
-    { label: 'Inventory',          icon: 'cube-outline',            route: '/(tabs)/inventory'          },
-    { label: 'Marketing',          icon: 'megaphone-outline',       route: '/(tabs)/marketing'          },
-    { label: 'Queue',              icon: 'list-outline',            route: '/(tabs)/queue'              },
-    { label: 'Fleet Map',          icon: 'map-outline',             route: '/(tabs)/fleet'              },
-    { label: 'Reports',            icon: 'bar-chart-outline',       route: '/(tabs)/reports'            },
-    { label: 'AI Hub',             icon: 'sparkles-outline',        route: '/(tabs)/ai'                 },
-    { label: 'Walk-in',            icon: 'walk-outline',            route: '/(tabs)/walkin'             },
-    { label: 'Reviews',            icon: 'star-outline',            route: '/(tabs)/reviews'            },
-    { label: 'Subscription Plans', icon: 'card-outline',            route: '/(tabs)/subscription-plans' },
-    { label: 'Settings',           icon: 'settings-outline',        route: '/(tabs)/settings'           },
-    { label: 'Log Out',            icon: 'log-out-outline',         onPress: logout, danger: true       },
-  ];
-}
+type MoreItem = {
+  icon:  React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  route: string;
+};
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+const MORE_ITEMS: MoreItem[] = [
+  { icon: 'navigate-outline',       label: 'Tracking',      route: '/(tabs)/tracking'   },
+  { icon: 'map-outline',            label: 'Fleet Map',      route: '/(tabs)/fleet'      },
+  { icon: 'cube-outline',           label: 'Inventory',      route: '/(tabs)/inventory'  },
+  { icon: 'people-outline',         label: 'Walk-in Queue',  route: '/(tabs)/walkin'     },
+  { icon: 'tablet-portrait-outline',label: 'Kiosk Mode',     route: '/(tabs)/kiosk'      },
+  { icon: 'settings-outline',       label: 'Settings',       route: '/(tabs)/settings'   },
+];
 
-export default function TabLayout() {
-  const { user, loading, logout } = useAuth();
+// ── Layout ────────────────────────────────────────────────────────────────────
+
+export default function StaffLayout() {
+  const { user } = useAuth();
   const [moreVisible, setMoreVisible] = useState(false);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.accent} />
-      </View>
-    );
-  }
-
-  if (!user || user.role !== 'admin') {
+  // ── Role guard ──────────────────────────────────────────────────────────────
+  if (!user || user.role !== 'staff') {
     return <Redirect href="/auth/login" />;
   }
 
-  const moreItems = getMoreItems(logout);
+  function handleMoreNav(route: string) {
+    setMoreVisible(false);
+    setTimeout(() => router.push(route as any), 50);
+  }
 
   return (
     <>
@@ -63,7 +62,6 @@ export default function TabLayout() {
             ios: {
               position: 'absolute',
               borderTopWidth: 0,
-              elevation: 0,
               backgroundColor: 'transparent',
             },
             android: {
@@ -85,53 +83,56 @@ export default function TabLayout() {
             : undefined,
         }}
       >
-        {/* ── Dashboard ─────────────────────────────────────────────────── */}
-        <Tabs.Screen
-          name="home"
-          options={{
-            title: 'Dashboard',
-            tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
-            ),
-          }}
-        />
 
-        {/* ── Bookings ──────────────────────────────────────────────────── */}
+        {/* ── Tab 1: Jobs ────────────────────────────────────────────── */}
         <Tabs.Screen
-          name="jobs"
+          name="jobs/index"
           options={{
-            title: 'Bookings',
+            title: 'Jobs',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'briefcase' : 'briefcase-outline'} size={24} color={color} />
             ),
           }}
         />
 
-        {/* ── Staff ─────────────────────────────────────────────────────── */}
+        {/* ── Tab 2: Scanner ─────────────────────────────────────────── */}
         <Tabs.Screen
-          name="workers"
+          name="scanner"
           options={{
-            title: 'Staff',
+            title: 'Scanner',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'qr-code' : 'qr-code-outline'} size={24} color={color} />
+            ),
+            tabBarStyle: { display: 'none' },
+            headerShown: false,
+          }}
+        />
+
+        {/* ── Tab 3: Schedule ────────────────────────────────────────── */}
+        <Tabs.Screen
+          name="schedule"
+          options={{
+            title: 'Schedule',
+            tabBarIcon: ({ color, focused }) => (
+              <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
             ),
           }}
         />
 
-        {/* ── Revenue ───────────────────────────────────────────────────── */}
+        {/* ── Tab 4: Performance ─────────────────────────────────────── */}
         <Tabs.Screen
-          name="transactions"
+          name="performance"
           options={{
-            title: 'Revenue',
+            title: 'Stats',
             tabBarIcon: ({ color, focused }) => (
               <Ionicons name={focused ? 'bar-chart' : 'bar-chart-outline'} size={24} color={color} />
             ),
           }}
         />
 
-        {/* ── More — intercepts tabPress, opens MoreMenu sheet ─────────── */}
+        {/* ── Tab 5: More — intercepts tabPress, opens sheet ─────────── */}
         <Tabs.Screen
-          name="more"
+          name="more-staff"
           options={{
             title: 'More',
             tabBarIcon: ({ color }) => (
@@ -146,43 +147,146 @@ export default function TabLayout() {
           }}
         />
 
-        {/* ── Fleet — full-screen map ───────────────────────────────────── */}
+        {/* ── Hidden: job detail — tab bar hidden ────────────────────── */}
+        <Tabs.Screen
+          name="jobs/[id]"
+          options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
+        />
+
+        {/* ── Hidden: GPS tracking — tab bar hidden ──────────────────── */}
+        <Tabs.Screen
+          name="tracking"
+          options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
+        />
+
+        {/* ── Hidden: fleet map — tab bar hidden ─────────────────────── */}
         <Tabs.Screen
           name="fleet"
           options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
         />
 
-        {/* ── Kiosk — full-screen tablet UI ─────────────────────────────── */}
+        {/* ── Hidden: kiosk — tab bar hidden ─────────────────────────── */}
         <Tabs.Screen
           name="kiosk"
           options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
         />
 
-        {/* ── Staff-only screens — declared so router doesn't warn ──────── */}
-        <Tabs.Screen name="scanner"     options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }} />
-        <Tabs.Screen name="schedule"    options={{ href: null }} />
-        <Tabs.Screen name="performance" options={{ href: null }} />
-        <Tabs.Screen name="tracking"    options={{ href: null }} />
+        {/* ── Hidden: walk-in — tab bar hidden ───────────────────────── */}
+        <Tabs.Screen
+          name="walkin"
+          options={{ href: null, tabBarStyle: { display: 'none' }, headerShown: false }}
+        />
 
-        {/* ── Hidden routes — routable via More menu ────────────────────── */}
+        {/* ── Routable but not in tab bar ────────────────────────────── */}
+        <Tabs.Screen name="inventory"          options={{ href: null }} />
         <Tabs.Screen name="settings"           options={{ href: null }} />
+
+        {/* ── Admin-only screens — declared so router doesn't warn ───── */}
+        <Tabs.Screen name="home"               options={{ href: null }} />
+        <Tabs.Screen name="jobs"               options={{ href: null }} />
+        <Tabs.Screen name="workers"            options={{ href: null }} />
+        <Tabs.Screen name="transactions"       options={{ href: null }} />
+        <Tabs.Screen name="more"               options={{ href: null }} />
         <Tabs.Screen name="services"           options={{ href: null }} />
         <Tabs.Screen name="packages"           options={{ href: null }} />
-        <Tabs.Screen name="walkin"             options={{ href: null }} />
         <Tabs.Screen name="queue"              options={{ href: null }} />
         <Tabs.Screen name="reports"            options={{ href: null }} />
-        <Tabs.Screen name="inventory"          options={{ href: null }} />
         <Tabs.Screen name="reviews"            options={{ href: null }} />
         <Tabs.Screen name="subscription-plans" options={{ href: null }} />
         <Tabs.Screen name="marketing"          options={{ href: null }} />
         <Tabs.Screen name="ai"                 options={{ href: null }} />
+
       </Tabs>
 
-      <MoreMenu
+      {/* ── More bottom sheet ─────────────────────────────────────────────── */}
+      <Modal
         visible={moreVisible}
-        onClose={() => setMoreVisible(false)}
-        items={moreItems}
-      />
+        transparent
+        animationType="slide"
+        onRequestClose={() => setMoreVisible(false)}
+        statusBarTranslucent
+      >
+        {/* Backdrop */}
+        <Pressable style={sh.backdrop} onPress={() => setMoreVisible(false)} />
+
+        {/* Sheet */}
+        <View style={sh.sheet}>
+          <View style={sh.handle} />
+          <Text style={sh.sheetTitle}>More</Text>
+
+          {MORE_ITEMS.map((item, i) => (
+            <Pressable
+              key={item.route}
+              style={({ pressed }) => [
+                sh.row,
+                i < MORE_ITEMS.length - 1 && sh.rowBorder,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={() => handleMoreNav(item.route)}
+              android_ripple={{ color: Colors.accent + '18', borderless: false }}
+            >
+              <View style={sh.iconWrap}>
+                <Ionicons name={item.icon} size={20} color={Colors.accent} />
+              </View>
+              <Text style={sh.rowLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.border} />
+            </Pressable>
+          ))}
+        </View>
+      </Modal>
     </>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const sh = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(10,22,40,0.5)',
+  },
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingHorizontal: 20,
+  },
+  handle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 15,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  iconWrap: {
+    width: 36, height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+});

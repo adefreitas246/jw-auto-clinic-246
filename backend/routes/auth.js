@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
     let user = await User.findOne({ email: normalizedEmail });
     if (user && (await user.comparePassword(password))) {
       const token = jwt.sign(
-        { userId: user._id, role: user.role, name: user.name, type: 'User' },
+        { userId: user._id, role: user.role, name: user.name, type: 'User', businessId: user.businessId },
         JWT_SECRET,
         { expiresIn: '7d' }
       );
@@ -54,7 +54,7 @@ router.post('/login', async (req, res) => {
     const worker = await Worker.findOne({ email: normalizedEmail });
     if (worker && (await worker.comparePassword(password))) {
       const token = jwt.sign(
-        { userId: worker._id, role: worker.role, name: worker.name, type: 'Worker' },
+        { userId: worker._id, role: worker.role, name: worker.name, type: 'Worker', businessId: worker.businessId },
         JWT_SECRET,
         { expiresIn: '7d' }
       );

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,13 +19,10 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import axios from 'axios';
 import { Colors } from '@/constants/Colors';
-import { SCROLL_PADDING_BOTTOM } from '@/constants/Layout';
-import { IS_IOS, IS_ANDROID } from '@/utils/platform';
+import { IS_IOS } from '@/utils/platform';
 import { SCREEN_PADDING } from '@/utils/platformStyles';
-import { ScreenHeader } from '@/components/ui';
 
 // ── Column definitions ────────────────────────────────────────────────────────
 
@@ -376,11 +373,20 @@ export default function ReportViewer() {
 
   return (
     <SafeAreaView style={rv.safe} edges={['top']}>
-      <ScreenHeader
-        title={cfg.title}
-        subtitle={`${startDate} → ${endDate}`}
-        backButton
-        rightAction={{ icon: 'refresh', onPress: load, label: '' }}
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: cfg.title,
+          headerStyle: { backgroundColor: Colors.background },
+          headerTintColor: Colors.accent,
+          headerTitleStyle: { color: Colors.textPrimary, fontWeight: '600' },
+          headerBackTitle: 'Reports',
+          headerRight: () => (
+            <Pressable onPress={load} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginRight: 8 }}>
+              <Ionicons name="refresh-outline" size={20} color={Colors.accent} />
+            </Pressable>
+          ),
+        }}
       />
 
       <ScrollView
@@ -388,7 +394,7 @@ export default function ReportViewer() {
         contentContainerStyle={rv.scroll}
       >
         {/* ── Date range picker ── */}
-        <Animated.View entering={FadeInDown.delay(80).duration(350)} style={rv.filterCard}>
+        <View style={rv.filterCard}>
           {/* Preset chips */}
           <View style={rv.chipRow}>
             {(['today', 'week', 'month', 'custom'] as Preset[]).map(p => (
@@ -443,26 +449,26 @@ export default function ReportViewer() {
               <Text style={rv.applyBtnText}>Apply</Text>
             </Pressable>
           </View>
-        </Animated.View>
+        </View>
 
         {/* ── Error ── */}
         {!!error && (
-          <Animated.View entering={FadeInDown.duration(250)} style={rv.errorBox}>
+          <View style={rv.errorBox}>
             <Ionicons name="alert-circle-outline" size={16} color={Colors.error} />
             <Text style={rv.errorText}>{error}</Text>
-          </Animated.View>
+          </View>
         )}
 
         {/* ── Summary stats ── */}
         {stats.length > 0 && !loading && (
-          <Animated.View entering={FadeInDown.delay(140).duration(350)} style={rv.statsRow}>
+          <View style={rv.statsRow}>
             {stats.map((s, i) => (
               <View key={s.label} style={rv.statCard}>
                 <Text style={rv.statValue}>{s.value}</Text>
                 <Text style={rv.statLabel}>{s.label}</Text>
               </View>
             ))}
-          </Animated.View>
+          </View>
         )}
 
         {/* ── Table or loader ── */}
@@ -478,7 +484,7 @@ export default function ReportViewer() {
             <Text style={rv.emptyText}>No records found for this date range.</Text>
           </View>
         ) : (
-          <Animated.View entering={FadeInDown.delay(200).duration(350)} style={rv.tableWrap}>
+          <View style={rv.tableWrap}>
             {/* Row count badge */}
             <View style={rv.tableHeader}>
               <View style={rv.rowCountBadge}>
@@ -531,7 +537,7 @@ export default function ReportViewer() {
                 Showing first 200 rows. Export for the full dataset.
               </Text>
             )}
-          </Animated.View>
+          </View>
         )}
 
         <View style={{ height: 120 }} />
@@ -578,14 +584,14 @@ export default function ReportViewer() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const SHADOW = IS_IOS
-  ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }
-  : IS_ANDROID ? { elevation: 2 } : {};
+  ? { shadowColor: Colors.shadow, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } }
+  : { elevation: 2 };
 
 const rv = StyleSheet.create({
   safe:    { flex: 1, backgroundColor: Colors.background },
   centered:{ alignItems: 'center', paddingTop: 48, paddingBottom: 24 },
 
-  scroll: { paddingBottom: SCROLL_PADDING_BOTTOM },
+  scroll: { paddingBottom: 100 },
 
   // Filter card
   filterCard: {
@@ -669,7 +675,7 @@ const rv = StyleSheet.create({
     paddingHorizontal: SCREEN_PADDING, paddingBottom: IS_IOS ? 28 : 16, paddingTop: 12,
     backgroundColor: Colors.surface,
     borderTopWidth: 1, borderTopColor: Colors.border,
-    ...(IS_IOS ? { shadowColor: Colors.black, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: -2 } } : IS_ANDROID ? { elevation: 4 } : {}),
+    ...(IS_IOS ? { shadowColor: Colors.shadow, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: -2 } } : { elevation: 4 }),
   },
   exportBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',

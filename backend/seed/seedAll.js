@@ -67,32 +67,31 @@ async function seed() {
     console.log(`Business created: ${business.name}`);
 
     // ── 2. Admin User ──────────────────────────────────────────────────────────
-    const adminPassword = await bcrypt.hash('Admin@1234', 10);
+    // Pass plaintext — pre-save hook hashes it
     const admin = await User.create({
       name:       'Admin User',
       email:      'admin@washhub.com',
-      password:   adminPassword,
+      password:   'Admin@1234',
       role:       'admin',
       businessId,
     });
     console.log(`Admin user created: ${admin.email}`);
 
     // ── 3. Staff Workers ───────────────────────────────────────────────────────
+    // insertMany skips pre-save hooks, so hash manually for workers
     const staffPassword = await bcrypt.hash('Staff@1234', 10);
     const [carlos, maria, james] = await Worker.insertMany([
       { name: 'Carlos Mendez', email: 'carlos@washhub.com', password: staffPassword, role: 'staff', businessId },
       { name: 'Maria Santos',  email: 'maria@washhub.com',  password: staffPassword, role: 'staff', businessId },
       { name: 'James Lee',     email: 'james@washhub.com',  password: staffPassword, role: 'staff', businessId },
     ]);
-    // Workers pre-save hook hashes password — use create individually to trigger hooks
-    // (insertMany skips pre-save middleware, so manually set already-hashed passwords above)
     console.log('Staff workers created: Carlos, Maria, James');
 
     // ── 4. Customer Users ──────────────────────────────────────────────────────
-    const custPassword = await bcrypt.hash('Customer@1234', 10);
-    const john  = await User.create({ name: 'John Smith',    email: 'john@example.com',  password: custPassword, role: 'customer', businessId });
-    const sarah = await User.create({ name: 'Sarah Johnson', email: 'sarah@example.com', password: custPassword, role: 'customer', businessId });
-    const mike  = await User.create({ name: 'Mike Davis',    email: 'mike@example.com',  password: custPassword, role: 'customer', businessId });
+    // Pass plaintext — pre-save hook hashes it
+    const john  = await User.create({ name: 'John Smith',    email: 'john@example.com',  password: 'Customer@1234', role: 'customer', businessId });
+    const sarah = await User.create({ name: 'Sarah Johnson', email: 'sarah@example.com', password: 'Customer@1234', role: 'customer', businessId });
+    const mike  = await User.create({ name: 'Mike Davis',    email: 'mike@example.com',  password: 'Customer@1234', role: 'customer', businessId });
     console.log('Customers created: John, Sarah, Mike');
 
     // ── 5. WashBays ───────────────────────────────────────────────────────────

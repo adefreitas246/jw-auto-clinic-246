@@ -1,26 +1,28 @@
 // server.js
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+require('dotenv').config();
+const express = require('express');
+const cors    = require('cors');
 
-const customersRouter = require('./routes/customers');
-const transactionsRouter = require('./routes/transactions');
-const authRouter  = require('./routes/auth');
-const oauthRouter = require('./routes/oauth');
-const employeesRouter = require('./routes/workers');
-const shiftsRouter = require('./routes/shifts');
-const profileRouter = require('./routes/profile');
-const reportRoutes = require('./routes/reports');
-const serviceRoutes = require('./routes/services');
-const specialRoutes = require('./routes/specials');
-const supportRoutes  = require('./routes/support');
-const vehicleRoutes  = require('./routes/vehicles');
-const packageRoutes  = require('./routes/packages');
-const bookingRoutes  = require('./routes/bookings');
-const jobRoutes      = require('./routes/jobs');
-const staffRoutes    = require('./routes/staff');
-const queueRoutes    = require('./routes/queue');
+const connectDB = require('./config/db');
+
+// ── Route imports ─────────────────────────────────────────────────────────────
+const customersRouter     = require('./routes/customers');
+const transactionsRouter  = require('./routes/transactions');
+const authRouter          = require('./routes/auth');
+const oauthRouter         = require('./routes/oauth');
+const employeesRouter     = require('./routes/workers');
+const shiftsRouter        = require('./routes/shifts');
+const profileRouter       = require('./routes/profile');
+const reportRoutes        = require('./routes/reports');
+const serviceRoutes       = require('./routes/services');
+const specialRoutes       = require('./routes/specials');
+const supportRoutes       = require('./routes/support');
+const vehicleRoutes       = require('./routes/vehicles');
+const packageRoutes       = require('./routes/packages');
+const bookingRoutes       = require('./routes/bookings');
+const jobRoutes           = require('./routes/jobs');
+const staffRoutes         = require('./routes/staff');
+const queueRoutes         = require('./routes/queue');
 const inventoryRoutes     = require('./routes/inventory');
 const loyaltyRoutes       = require('./routes/loyalty');
 const subscriptionRoutes  = require('./routes/subscriptions');
@@ -28,12 +30,18 @@ const reviewRoutes        = require('./routes/reviews');
 const marketingRoutes     = require('./routes/marketing');
 const receiptRoutes       = require('./routes/receipts');
 const aiRoutes            = require('./routes/ai');
+const statsRoutes         = require('./routes/stats');
+const notificationRoutes  = require('./routes/notifications');
+const referralRoutes      = require('./routes/referrals');
 
 const app = express();
 app.use(cors());
 // allow large JSON bodies (PDF base64)
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
+
+// ── Health check ──────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date() }));
 
 /**
  * Public reset-password landing page.
@@ -48,11 +56,11 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
  *  - Always shows a browser form that POSTs JSON to /api/auth/reset-password
  *    using your existing API.
  */
-app.get("/auth/reset-password", (req, res) => {
-  const token = (req.query.token || "").toString();
-  const userAgent = (req.headers["user-agent"] || "").toLowerCase();
+app.get('/auth/reset-password', (req, res) => {
+  const token = (req.query.token || '').toString();
+  const userAgent = (req.headers['user-agent'] || '').toLowerCase();
 
-  const scheme = process.env.CLIENT_SCHEME || "washhub";
+  const scheme = process.env.CLIENT_SCHEME || 'washhub';
   const deepLink = `${scheme}://auth/reset-password?token=${encodeURIComponent(token)}`;
   const isMobile = /iphone|ipad|ipod|android/.test(userAgent);
 
@@ -143,7 +151,7 @@ app.get("/auth/reset-password", (req, res) => {
           If nothing happens, you can reset your password below in this browser.
         </p>
         `
-            : ""
+            : ''
         }
 
         ${
@@ -172,21 +180,15 @@ app.get("/auth/reset-password", (req, res) => {
           <div id="status" class="status"></div>
         </div>
         `
-            : ""
+            : ''
         }
       </div>
 
       <script>
         const token = ${JSON.stringify(token)};
         const deepLink = ${JSON.stringify(deepLink)};
-        const isMobile = ${isMobile ? "true" : "false"};
+        const isMobile = ${isMobile ? 'true' : 'false'};
 
-        // Same strong password rule as the Expo screen:
-        // - at least 8 chars
-        // - at least 1 uppercase
-        // - at least 1 lowercase
-        // - at least 1 number
-        // - at least 1 special character from @$!%*?&()[\\]{}^#_+=-
         const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&()[\\]{}^#_+=-])[A-Za-z\\d@$!%*?&()[\\]{}^#_+=-]{8,}$/;
 
         function openApp() {
@@ -195,62 +197,58 @@ app.get("/auth/reset-password", (req, res) => {
         }
 
         async function submitReset() {
-          const status = document.getElementById("status");
-          const pwdInput = document.getElementById("password");
-          const confirmInput = document.getElementById("passwordConfirm");
+          const status = document.getElementById('status');
+          const pwdInput = document.getElementById('password');
+          const confirmInput = document.getElementById('passwordConfirm');
 
-          const password = (pwdInput.value || "").trim();
-          const confirm = (confirmInput.value || "").trim();
+          const password = (pwdInput.value || '').trim();
+          const confirm = (confirmInput.value || '').trim();
 
-          status.textContent = "";
-          status.className = "status";
+          status.textContent = '';
+          status.className = 'status';
 
-          // Basic required fields
           if (!password || !confirm) {
-            status.textContent = "Both password fields are required.";
-            status.classList.add("error");
+            status.textContent = 'Both password fields are required.';
+            status.classList.add('error');
             return;
           }
 
-          // Strong password check (same as app)
           if (!strongRegex.test(password)) {
             status.textContent =
-              "Weak password. It must be at least 8 characters and include uppercase, lowercase, number, and special character.";
-            status.classList.add("error");
+              'Weak password. It must be at least 8 characters and include uppercase, lowercase, number, and special character.';
+            status.classList.add('error');
             return;
           }
 
-          // Match check
           if (password !== confirm) {
-            status.textContent = "Passwords do not match.";
-            status.classList.add("error");
+            status.textContent = 'Passwords do not match.';
+            status.classList.add('error');
             return;
           }
 
           try {
-            const res = await fetch("/api/auth/reset-password", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
+            const res = await fetch('/api/auth/reset-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ token, password }),
             });
 
             const data = await res.json();
             if (!res.ok) {
-              status.textContent = data.error || "Reset failed.";
-              status.classList.add("error");
+              status.textContent = data.error || 'Reset failed.';
+              status.classList.add('error');
             } else {
-              status.textContent = "Password reset successful. You can now close this page and log in.";
-              status.classList.add("success");
-              pwdInput.value = "";
-              confirmInput.value = "";
+              status.textContent = 'Password reset successful. You can now close this page and log in.';
+              status.classList.add('success');
+              pwdInput.value = '';
+              confirmInput.value = '';
             }
           } catch (err) {
-            status.textContent = "Something went wrong. Please try again.";
-            status.classList.add("error");
+            status.textContent = 'Something went wrong. Please try again.';
+            status.classList.add('error');
           }
         }
 
-        // Auto-attempt deep link on mobile when we have a token
         if (isMobile && token) {
           setTimeout(openApp, 400);
         }
@@ -260,37 +258,49 @@ app.get("/auth/reset-password", (req, res) => {
   `);
 });
 
-app.use('/api/customers', customersRouter);
-app.use('/api/transactions', transactionsRouter); 
-app.use('/api/auth', authRouter);
-app.use('/api/auth', oauthRouter);  // Google + Apple OAuth
-app.use('/api/workers', employeesRouter);
-app.use('/api/shifts', shiftsRouter);
-app.use('/api/profile', profileRouter);
-app.use('/api/reports', reportRoutes);
-app.use('/api/services', serviceRoutes);
-app.use('/api/specials', specialRoutes);
-app.use('/api/support', supportRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/packages', packageRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/jobs',    jobRoutes);
-app.use('/api/staff',   staffRoutes);
-app.use('/api/queue',     queueRoutes);
+// ── API Routes ────────────────────────────────────────────────────────────────
+app.use('/api/customers',     customersRouter);
+app.use('/api/transactions',  transactionsRouter);
+app.use('/api/auth',          authRouter);
+app.use('/api/auth',          oauthRouter);       // Google + Apple OAuth
+app.use('/api/workers',       employeesRouter);
+app.use('/api/shifts',        shiftsRouter);
+app.use('/api/profile',       profileRouter);
+app.use('/api/reports',       reportRoutes);
+app.use('/api/services',      serviceRoutes);
+app.use('/api/specials',      specialRoutes);
+app.use('/api/support',       supportRoutes);
+app.use('/api/vehicles',      vehicleRoutes);
+app.use('/api/packages',      packageRoutes);
+app.use('/api/bookings',      bookingRoutes);
+app.use('/api/jobs',          jobRoutes);
+app.use('/api/staff',         staffRoutes);
+app.use('/api/queue',         queueRoutes);
 app.use('/api/inventory',     inventoryRoutes);
 app.use('/api/loyalty',       loyaltyRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/reviews',       reviewRoutes);
-app.use('/api/marketing',    marketingRoutes);
-app.use('/api/receipts',     receiptRoutes);
-app.use('/ai',               aiRoutes);          // Claude AI proxy
+app.use('/api/marketing',     marketingRoutes);
+app.use('/api/receipts',      receiptRoutes);
+app.use('/ai',                aiRoutes);           // Claude AI proxy
+app.use('/api/stats',         statsRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/referrals',     referralRoutes);
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.error(err));
+app.get('/', (req, res) => res.send('Wash Hub API Running'));
 
-app.get("/", (req, res) => res.send("Wash Hub API Running"));
+// ── 404 handler ───────────────────────────────────────────────────────────────
+app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 
+// ── Global error handler ──────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: err.message || 'Internal server error' });
+});
+
+// ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8081;
-app.listen(PORT, "0.0.0.0", () => console.log(`Server running on ${PORT}`));
 
+connectDB().then(() => {
+  app.listen(PORT, '0.0.0.0', () => console.log(`Server running on ${PORT}`));
+});

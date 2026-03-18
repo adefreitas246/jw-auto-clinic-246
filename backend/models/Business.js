@@ -37,6 +37,6 @@ const BusinessSchema = new mongoose.Schema({
   active: { type: Boolean, default: true },
 }, { timestamps: true });
 
-BusinessSchema.index({ slug: 1 });
+// slug already has a unique index declared inline above
 
 module.exports = mongoose.model('Business', BusinessSchema);

@@ -9,7 +9,8 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String, trim: true },
   avatar: { type: String },
   notificationsEnabled: { type: Boolean, default: true },
-  role: { type: String },
+  role: { type: String, enum: ['admin', 'staff', 'customer'], default: 'customer' },
+  active: { type: Boolean, default: true },
   businessId: { type: mongoose.Schema.Types.ObjectId, ref: 'Business', default: null },
 
   // OAuth provider IDs — sparse so null values don't collide on the unique index

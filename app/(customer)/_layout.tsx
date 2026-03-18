@@ -1,71 +1,64 @@
 // app/(customer)/_layout.tsx
-// Customer native tab bar.
-// Tabs: Home | Browse | Vehicles | Rewards | More
-// Booking / track / rate screens hide the tab bar (immersive flows).
+// Customer tab navigator — 5 tabs + More bottom sheet.
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { Tabs, Redirect } from 'expo-router';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { Redirect, Tabs, router } from 'expo-router';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
-import { MoreMenu, MoreMenuItem } from '@/components/MoreMenu';
 
-// ─── More-menu items ──────────────────────────────────────────────────────────
+// ── More sheet items ───────────────────────────────────────────────────────────
 
-function getMoreItems(logout: () => void): MoreMenuItem[] {
-  return [
-    { label: 'My Bookings',        icon: 'calendar-outline',    route: '/(customer)/booking'       },
-    { label: 'Subscriptions',      icon: 'card-outline',        route: '/(customer)/subscriptions' },
-    { label: 'Refer a Friend',     icon: 'gift-outline',        route: '/(customer)/referral'      },
-    { label: 'Rate a Service',     icon: 'star-outline',        route: '/(customer)/rate'          },
-    { label: 'Profile & Settings', icon: 'person-outline',      route: '/(customer)/settings'      },
-    { label: 'Log Out',            icon: 'log-out-outline',     onPress: logout, danger: true      },
-  ];
-}
+type MoreItem = {
+  icon:  React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  route: string;
+};
 
-// ─── Layout ───────────────────────────────────────────────────────────────────
+const MORE_ITEMS: MoreItem[] = [
+  { icon: 'grid-outline',     label: 'Catalog',        route: '/(customer)/catalog'       },
+  { icon: 'card-outline',     label: 'Subscriptions',  route: '/(customer)/subscriptions' },
+  { icon: 'people-outline',   label: 'Refer a Friend', route: '/(customer)/referral'      },
+  { icon: 'settings-outline', label: 'Settings',       route: '/(customer)/settings'      },
+];
+
+// ── Layout ────────────────────────────────────────────────────────────────────
 
 export default function CustomerLayout() {
-  const { user, loading, logout } = useAuth();
+  const { user } = useAuth();
   const [moreVisible, setMoreVisible] = useState(false);
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={Colors.accent} />
-      </View>
-    );
-  }
-
+  // ── Role guard ──────────────────────────────────────────────────────────────
   if (!user || user.role !== 'customer') {
     return <Redirect href="/auth/login" />;
   }
 
-  const moreItems = getMoreItems(logout);
+  function handleMoreNav(route: string) {
+    setMoreVisible(false);
+    // Small delay so the sheet closes before push animation starts
+    setTimeout(() => router.push(route as any), 50);
+  }
 
   return (
     <>
       <Tabs
         screenOptions={{
           headerShown: false,
-
-          // ── Colors ─────────────────────────────────────────────────────
           tabBarActiveTintColor:   Colors.accent,
           tabBarInactiveTintColor: Colors.textMuted,
-
-          // ── Label ──────────────────────────────────────────────────────
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-          },
-
-          // ── Platform bar style ─────────────────────────────────────────
+          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
           tabBarStyle: Platform.select({
             ios: {
               position: 'absolute',
               borderTopWidth: 0,
-              elevation: 0,
               backgroundColor: 'transparent',
             },
             android: {
@@ -76,8 +69,6 @@ export default function CustomerLayout() {
               height: 60,
             },
           }),
-
-          // ── iOS native blur ────────────────────────────────────────────
           tabBarBackground: Platform.OS === 'ios'
             ? () => (
                 <BlurView
@@ -89,7 +80,8 @@ export default function CustomerLayout() {
             : undefined,
         }}
       >
-        {/* ── Home ─────────────────────────────────────────────────────── */}
+
+        {/* ── Tab 1: Home ───────────────────────────────────────────────── */}
         <Tabs.Screen
           name="home"
           options={{
@@ -100,29 +92,29 @@ export default function CustomerLayout() {
           }}
         />
 
-        {/* ── Catalog / Browse ──────────────────────────────────────────── */}
+        {/* ── Tab 2: Book ───────────────────────────────────────────────── */}
         <Tabs.Screen
-          name="catalog"
+          name="book"
           options={{
-            title: 'Browse',
+            title: 'Book',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'layers' : 'layers-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'add-circle' : 'add-circle-outline'} size={24} color={color} />
             ),
           }}
         />
 
-        {/* ── Vehicles ──────────────────────────────────────────────────── */}
+        {/* ── Tab 3: My Washes ──────────────────────────────────────────── */}
         <Tabs.Screen
-          name="vehicles"
+          name="booking"
           options={{
-            title: 'Vehicles',
+            title: 'My Washes',
             tabBarIcon: ({ color, focused }) => (
-              <Ionicons name={focused ? 'car' : 'car-outline'} size={24} color={color} />
+              <Ionicons name={focused ? 'water' : 'water-outline'} size={24} color={color} />
             ),
           }}
         />
 
-        {/* ── Loyalty / Rewards ─────────────────────────────────────────── */}
+        {/* ── Tab 4: Rewards ────────────────────────────────────────────── */}
         <Tabs.Screen
           name="loyalty"
           options={{
@@ -133,7 +125,7 @@ export default function CustomerLayout() {
           }}
         />
 
-        {/* ── More — intercepts tabPress, opens MoreMenu sheet ─────────── */}
+        {/* ── Tab 5: More — intercepts tabPress, opens sheet ────────────── */}
         <Tabs.Screen
           name="more"
           options={{
@@ -150,49 +142,143 @@ export default function CustomerLayout() {
           }}
         />
 
-        {/* ── Booking flow — immersive, tab bar hidden ──────────────────── */}
+        {/* ── Hidden: book sub-steps — tab bar hidden ───────────────────── */}
         <Tabs.Screen
-          name="book"
-          options={{
-            href: null,
-            tabBarStyle: { display: 'none' },
-            headerShown: false,
-          }}
+          name="book/[step]"
+          options={{ href: null, tabBarStyle: { display: 'none' } }}
         />
 
-        {/* ── Job tracking — immersive, tab bar hidden ───────────────────── */}
+        {/* ── Hidden: booking detail — tab bar hidden ───────────────────── */}
         <Tabs.Screen
-          name="track"
-          options={{
-            href: null,
-            tabBarStyle: { display: 'none' },
-            headerShown: false,
-          }}
+          name="booking/[id]"
+          options={{ href: null, tabBarStyle: { display: 'none' } }}
         />
 
-        {/* ── Rate / review — deep-linked, tab bar hidden ───────────────── */}
+        {/* ── Hidden: live job tracking — tab bar hidden ────────────────── */}
         <Tabs.Screen
-          name="rate"
-          options={{
-            href: null,
-            tabBarStyle: { display: 'none' },
-            headerShown: false,
-          }}
+          name="track/[id]"
+          options={{ href: null, tabBarStyle: { display: 'none' } }}
         />
 
-        {/* ── Hidden routes — routable, not in tab bar ──────────────────── */}
-        <Tabs.Screen name="booking"       options={{ href: null }} />
+        {/* ── Hidden: rate screen — tab bar hidden ──────────────────────── */}
+        <Tabs.Screen
+          name="rate/[bookingId]"
+          options={{ href: null, tabBarStyle: { display: 'none' } }}
+        />
+
+        {/* ── Hidden: vehicle add — tab bar hidden ──────────────────────── */}
+        <Tabs.Screen
+          name="vehicles/add"
+          options={{ href: null, tabBarStyle: { display: 'none' } }}
+        />
+
+        {/* ── Hidden: vehicle detail/edit — tab bar hidden ──────────────── */}
+        <Tabs.Screen
+          name="vehicles/[id]"
+          options={{ href: null, tabBarStyle: { display: 'none' } }}
+        />
+
+        {/* ── Routable but not in tab bar ───────────────────────────────── */}
+        <Tabs.Screen name="rate"          options={{ href: null }} />
+        <Tabs.Screen name="track"         options={{ href: null }} />
+        <Tabs.Screen name="vehicles"      options={{ href: null }} />
+        <Tabs.Screen name="catalog"       options={{ href: null }} />
         <Tabs.Screen name="subscriptions" options={{ href: null }} />
         <Tabs.Screen name="referral"      options={{ href: null }} />
         <Tabs.Screen name="settings"      options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
+
       </Tabs>
 
-      <MoreMenu
+      {/* ── More bottom sheet ─────────────────────────────────────────────── */}
+      <Modal
         visible={moreVisible}
-        onClose={() => setMoreVisible(false)}
-        items={moreItems}
-      />
+        transparent
+        animationType="slide"
+        onRequestClose={() => setMoreVisible(false)}
+        statusBarTranslucent
+      >
+        {/* Backdrop */}
+        <Pressable style={sh.backdrop} onPress={() => setMoreVisible(false)} />
+
+        {/* Sheet */}
+        <View style={sh.sheet}>
+          <View style={sh.handle} />
+          <Text style={sh.sheetTitle}>More</Text>
+
+          {MORE_ITEMS.map((item, i) => (
+            <Pressable
+              key={item.route}
+              style={({ pressed }) => [
+                sh.row,
+                i < MORE_ITEMS.length - 1 && sh.rowBorder,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={() => handleMoreNav(item.route)}
+              android_ripple={{ color: Colors.accent + '18', borderless: false }}
+            >
+              <View style={sh.iconWrap}>
+                <Ionicons name={item.icon} size={20} color={Colors.accent} />
+              </View>
+              <Text style={sh.rowLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.border} />
+            </Pressable>
+          ))}
+        </View>
+      </Modal>
     </>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const sh = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(10,22,40,0.5)',
+  },
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    paddingHorizontal: 20,
+  },
+  handle: {
+    width: 40, height: 4, borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  sheetTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 15,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  iconWrap: {
+    width: 36, height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.accentMuted,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+});
